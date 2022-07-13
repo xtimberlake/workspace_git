@@ -1,0 +1,48 @@
+load(
+    "@drake//tools/skylark:drake_cc.bzl",
+    "drake_cc_library",
+    "drake_cc_binary",
+)
+
+drake_cc_library(
+    name = "three_links_lib",
+    hdrs = ["three_links_passive.h"],
+)
+
+drake_cc_library(
+    name = "myPID_controller_lib",
+    srcs = ["myPID_controller.cc"],
+    hdrs = ["myPID_controller.h"],
+    deps = [
+        "//systems/framework:leaf_system",
+        "//systems/framework:vector",
+        "//multibody/plant",
+    ],
+)
+
+
+drake_cc_binary(
+    name = "run_three_links_passive",
+    srcs = ["three_links_passive.cc"],
+    data = [
+        "threeLinks.sdf"
+    ],
+    deps = [
+        ":three_links_lib",
+        ":myPID_controller_lib",
+        "//common:add_text_logging_gflags",
+        "//common:find_resource",
+        "//common/proto:call_python",
+        "//systems/framework:diagram_builder",
+        "//systems/primitives:constant_vector_source",
+        "//systems/primitives:vector_log_sink",
+        "//systems/analysis:simulator",
+        "//geometry:scene_graph",
+        "//geometry:drake_visualizer",
+        "//multibody/plant",
+        "//multibody/parsing",
+        "//lcm",
+        "//systems/lcm",
+        "@gflags",
+    ],
+)

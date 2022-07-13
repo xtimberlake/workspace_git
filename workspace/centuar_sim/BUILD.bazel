@@ -1,0 +1,61 @@
+load(
+    "@drake//tools/skylark:drake_cc.bzl",
+    "drake_cc_library",
+    "drake_cc_binary",
+)
+
+drake_cc_library(
+    name = "centuar_sim_lib",
+    hdrs = ["centuar_sim.h"],
+)
+
+drake_cc_library(
+    name = "planner_lib",
+    srcs = ["planner.cc"],
+    hdrs = ["planner.h"],
+    deps = [
+        "//systems/framework:leaf_system",
+        "//systems/framework:vector",
+        "//multibody/plant",
+    ],
+)
+
+drake_cc_library(
+    name = "static_inv_controller_lib",
+    srcs = ["staticInvController.cc"],
+    hdrs = ["staticInvController.h"],
+    deps = [
+        "//systems/framework:leaf_system",
+        "//systems/framework:vector",
+        "//multibody/plant",
+    ],
+)
+
+drake_cc_binary(
+    name = "centuar_sim",
+    srcs = ["centuar_sim.cc"],
+    data = [
+        "centuar.urdf",
+        "Pendulum.urdf",
+        "centaur_v3.urdf",
+    ],
+    deps = [
+        ":centuar_sim_lib",
+        ":planner_lib",
+        ":static_inv_controller_lib",
+        "//common:add_text_logging_gflags",
+        "//common:find_resource",
+        "//common/proto:call_python",
+        "//systems/framework:diagram_builder",
+        "//systems/primitives:constant_vector_source",
+        "//systems/primitives:vector_log_sink",
+        "//systems/analysis:simulator",
+        "//geometry:scene_graph",
+        "//geometry:drake_visualizer",
+        "//multibody/plant",
+        "//multibody/parsing",
+        "//lcm",
+        "//systems/lcm",
+        "@gflags",
+    ],
+)

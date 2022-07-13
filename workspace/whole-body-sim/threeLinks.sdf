@@ -1,0 +1,170 @@
+<?xml version="1.0"?>
+<sdf version="1.7">
+  <model name="RRRrobot">
+
+    <link name="table_link">
+    <visual name="visual">
+        <geometry>
+        <box>
+          <size>1.0 0.6 0.1</size>
+        </box>
+        </geometry>
+        <material>
+          <diffuse>0.9 0.8 0.7 1.0</diffuse>
+        </material>
+    </visual>
+    </link>
+    
+    <link name="cylinder_link">
+      <pose relative_to="table_link">0 0 0.15 0 0 0</pose>
+      <inertial>
+        <mass>1.0</mass>
+      </inertial>
+      <visual name="visual">
+        <geometry>
+          <cylinder>
+            <radius>0.036</radius>
+            <length>0.2</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <diffuse>0.9 0.8 0.7 1.0</diffuse>
+        </material>
+      </visual>
+    </link>
+
+    <link name="link1">
+      <pose relative_to="cylinder_link">0 0 0.25 0 0 0</pose>
+      <inertial>
+        <mass>1.0</mass>
+      </inertial>
+      <visual name="visual">
+          <geometry>
+            <box>
+              <size>0.025 0.025 0.3</size>
+            </box>
+          </geometry>
+          <material>
+            <diffuse>0.9141 0.5 0.1602 1</diffuse>
+          </material>
+      </visual>
+      <collision name="collision">
+        <geometry>
+          <box>
+            <size>0.025 0.025 0.3</size>
+          </box>
+          </geometry>
+      </collision>
+    </link>
+
+    <link name="link2">
+      <pose relative_to="link1">0 0 0.3 0 0 0</pose>
+      <inertial>
+        <mass>1.0</mass>
+      </inertial>
+      <visual name="visual">
+          <geometry>
+            <box>
+              <size>0.025 0.025 0.3</size>
+            </box>
+          </geometry>
+          <material>
+            <diffuse>0.56 0.2 0.1602 1</diffuse>
+          </material>
+      </visual>
+      <collision name="collision">
+        <geometry>
+          <box>
+            <size>0.025 0.025 0.3</size>
+          </box>
+          </geometry>
+      </collision>
+    </link>
+
+    <link name="link3">
+      <pose relative_to="link2">0 0 0.3 0 0 0</pose>
+      <inertial>
+        <mass>1.0</mass>
+      </inertial>
+      <visual name="visual">
+          <geometry>
+            <box>
+              <size>0.025 0.025 0.3</size>
+            </box>
+          </geometry>
+          <material>
+            <diffuse>0.9141 0.5 0.1602 1</diffuse>
+          </material>
+      </visual>
+      <collision name="collision">
+        <geometry>
+          <box>
+            <size>0.025 0.025 0.3</size>
+          </box>
+          </geometry>
+      </collision>
+    </link>
+
+    <link name="end_effector">
+      <pose relative_to="link3">0 0 0.15 0 0 0</pose>
+      <visual name="visual">
+          <geometry>
+            <sphere> <radius>0.03</radius> </sphere>
+          </geometry>
+          <material>
+            <diffuse>0.56 0.2 0.1602 0.8</diffuse>
+          </material>
+      </visual>
+      <collision name="collision">
+        <geometry>
+            <sphere> <radius>0.03</radius> </sphere>
+        </geometry>
+      </collision>
+    </link>
+
+    <joint name="fix_table_cyliner_joint" type="fixed">
+      <parent>table_link</parent>
+      <child>cylinder_link</child>
+    </joint>
+
+    <joint name="joint1" type="revolute">
+      <parent>cylinder_link</parent>
+      <child>link1</child>
+      <pose relative_to="cylinder_link">0 0 0.1 0 0 0</pose>
+      <axis>
+        <xyz>0 1 0</xyz>
+      </axis>
+    </joint>
+
+    <joint name="joint2" type="revolute">
+      <parent>link1</parent>
+      <child>link2</child>
+      <pose relative_to="link1">0 0 0.15 0 0 0</pose>
+      <axis>
+        <xyz>0 1 0</xyz>
+      </axis>
+    </joint>
+
+    <joint name="joint3" type="revolute">
+      <parent>link2</parent>
+      <child>link3</child>
+      <pose relative_to="link2">0 0 0.15 0 0 0</pose>
+      <axis>
+        <xyz>0 1 0</xyz>
+      </axis>
+    </joint>
+
+    <joint name="end_effector_fixed_joint" type="fixed">
+      <parent>link3</parent>
+      <child>end_effector</child>
+    </joint>
+
+    <frame name="table_fixed_frame" attached_to="table_link">
+    </frame>
+
+    <frame name="end_effector_frame" attached_to="link3">
+      <pose relative_to="link3">0 0 0.15 0 0 0</pose>
+    </frame>
+
+  </model>
+</sdf>
