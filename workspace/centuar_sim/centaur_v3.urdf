@@ -193,14 +193,14 @@
   </link>
 
   <joint name="left_foot_fixed_joint" type="fixed">
-    <origin rpy="0 0 0" xyz="0 0 -0.445"/>
+    <origin rpy="0 0 0" xyz="0 0 -0.455"/>
     <parent link="hind_left_shank"/>
     <child link="hind_left_foot"/>
   </joint>
 
   <link name="hind_left_foot">
     <visual>
-      <origin rpy="0 0 0" xyz="0 0 -0.01"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
         <sphere radius="0.02"/>
       </geometry>
@@ -321,14 +321,14 @@
   </link>
 
   <joint name="right_foot_fixed_joint" type="fixed">
-    <origin rpy="0 0 0" xyz="0 0 -0.445"/>
+    <origin rpy="0 0 0" xyz="0 0 -0.455"/>
     <parent link="hind_right_shank"/>
     <child link="hind_right_foot"/>
   </joint>
 
   <link name="hind_right_foot">
     <visual>
-      <origin rpy="0 0 0" xyz="0 0 -0.01"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
         <sphere radius="0.02"/>
       </geometry>

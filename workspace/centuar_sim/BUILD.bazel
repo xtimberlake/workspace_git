@@ -20,14 +20,56 @@ drake_cc_library(
     ],
 )
 
+
+
 drake_cc_library(
-    name = "static_inv_controller_lib",
-    srcs = ["staticInvController.cc"],
-    hdrs = ["staticInvController.h"],
+    name = "flaoting_base_model_lib",
+    srcs = ["FloatingBaseModel.cc"],
+    hdrs = ["FloatingBaseModel.h"],
+    deps = [
+        "//systems/framework:leaf_system",
+        "//systems/framework:vector",
+        "//systems/framework:witness_function",
+        "//common:find_resource",
+        "//multibody/plant",
+        "//multibody/parsing",
+    ],
+)
+
+drake_cc_library(
+    name = "extract_data_lib",
+    srcs = ["extract_data.cc"],
+    hdrs = ["extract_data.h"],
     deps = [
         "//systems/framework:leaf_system",
         "//systems/framework:vector",
         "//multibody/plant",
+        "//multibody/tree",
+    ],
+)
+
+
+drake_cc_library(
+    name = "centaur_controller_lib",
+    srcs = [
+        "centaur_controller.cc",
+        "staticInvController.cc",
+    ],
+    hdrs = [
+        "centaur_controller.h",
+        "staticInvController.h"
+
+    ],
+    data = [
+        "centaur_control_model.sdf",
+    ],
+    deps = [
+        "//systems/framework:leaf_system",
+        "//systems/framework:vector",
+        "//multibody/plant",
+        "//multibody/tree",
+        "//multibody/parsing",
+        "//common:find_resource",
     ],
 )
 
@@ -38,11 +80,15 @@ drake_cc_binary(
         "centuar.urdf",
         "Pendulum.urdf",
         "centaur_v3.urdf",
+        "centaur_sim_scene.sdf",
+
     ],
     deps = [
         ":centuar_sim_lib",
         ":planner_lib",
-        ":static_inv_controller_lib",
+        ":centaur_controller_lib",
+        ":flaoting_base_model_lib",
+        "extract_data_lib",
         "//common:add_text_logging_gflags",
         "//common:find_resource",
         "//common/proto:call_python",
