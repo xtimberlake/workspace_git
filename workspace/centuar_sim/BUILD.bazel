@@ -73,6 +73,7 @@ drake_cc_library(
     ],
 )
 
+
 drake_cc_binary(
     name = "centuar_sim",
     srcs = ["centuar_sim.cc"],
@@ -88,7 +89,7 @@ drake_cc_binary(
         ":planner_lib",
         ":centaur_controller_lib",
         ":flaoting_base_model_lib",
-        "extract_data_lib",
+        "extract_data_lib", 
         "//common:add_text_logging_gflags",
         "//common:find_resource",
         "//common/proto:call_python",
@@ -102,6 +103,10 @@ drake_cc_binary(
         "//multibody/parsing",
         "//lcm",
         "//systems/lcm",
+        "//solvers:mathematical_program",
+        "//solvers:mathematical_program_result",
+        "//solvers:mosek_solver",
+        "//solvers",
         "@gflags",
     ],
 )

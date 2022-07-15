@@ -17,6 +17,10 @@
 #include <drake/multibody/plant/multibody_plant.h>
 #include <drake/multibody/parsing/parser.h>
 #include <drake/multibody/tree/revolute_joint.h>
+#include <drake/solvers/mathematical_program.h>
+#include <drake/solvers/solver_interface.h>
+#include <drake/solvers/mosek_solver.h>
+#include <drake/solvers/mathematical_program_result.h>
 
 #include "drake/workspace/centuar_sim/planner.h"
 #include "drake/workspace/centuar_sim/staticInvController.h"
@@ -121,10 +125,50 @@ namespace centuar_sim {
         plant_context.SetDiscreteState(initial_state);  
 
         // test data:
-
-
         // drake::log()->info(plant->GetVelocities(plant_context));
         // drake::log()->info((plant->GetFrameByName("floating_base").CalcRotationMatrixInWorld(plant_context)).ToQuaternionAsVector4());                      
+
+        solvers::MathematicalProgram prog;
+        auto x = prog.NewContinuousVariables<2>();
+        Eigen::Matrix2d H;
+        H << 1, -1,
+            -1, 2;
+        Eigen::Vector2d f;
+        f << -2, -6;
+        prog.AddQuadraticCost(H, f, x);
+        Eigen::Matrix<double, 3 ,2> A;
+        A << 1, 1,
+            -1, 2,
+            2, 1;
+        Eigen::Vector3d ub;
+        ub << 2, 2, 3;
+        Eigen::Vector3d lb;
+        
+        lb << -std::numeric_limits<double>::infinity(),
+        -std::numeric_limits<double>::infinity(),
+        -std::numeric_limits<double>::infinity();
+
+        prog.AddLinearConstraint(A, lb, ub, x);
+
+        solvers::MosekSolver solver;
+        if(solver.available())
+        {
+            drake::log()->info("mosek is available! ");
+        }
+        solvers::MathematicalProgramResult result;
+        solver.Solve(prog, {}, {}, &result);
+        if (result.is_success())
+        {
+            drake::log()->info("congra!");
+            Eigen::Vector2d res;
+            res = result.GetSolution();
+            std::cout << "x = " << res.transpose() << std::endl;
+            std::cout << "fval = " << result.get_optimal_cost() << std::endl;
+            const solvers::MosekSolverDetails& mosek_solver_details =
+            result.get_solver_details<solvers::MosekSolver>();
+            drake::log()->info("optimizer time: " + std::to_string(mosek_solver_details.optimizer_time));
+        }
+        
 
         // ready to run the simulation
         simulator.set_publish_every_time_step(false);
