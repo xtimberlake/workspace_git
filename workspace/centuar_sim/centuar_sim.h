@@ -21,6 +21,7 @@
 #include <drake/solvers/solver_interface.h>
 #include <drake/solvers/mosek_solver.h>
 #include <drake/solvers/mathematical_program_result.h>
+#include <drake/common/yaml/yaml_io.h>
 
 #include "drake/workspace/centuar_sim/planner.h"
 #include "drake/workspace/centuar_sim/staticInvController.h"
@@ -30,13 +31,25 @@
 
 DEFINE_double(simulation_sec, 1.0,
               "Number of seconds to simulate.");
-DEFINE_double(sim_dt, 3e-3,
+DEFINE_double(sim_dt, 1e-3,
               "The time step to use for MultibodyPlant model"
               "discretization.");
 
 namespace drake {
 namespace workspace {
 namespace centuar_sim {
+
+    struct test_params_struct {
+        double foo{0.0};
+        std::vector<double> bar;
+
+        template <typename Archive>
+        void Serialize(Archive* a) {
+        a->Visit(DRAKE_NVP(foo));
+        a->Visit(DRAKE_NVP(bar));
+        }
+    };
+
     void DoMain()
     {
         // construct a builder
@@ -169,6 +182,14 @@ namespace centuar_sim {
             drake::log()->info("optimizer time: " + std::to_string(mosek_solver_details.optimizer_time));
         }
         
+        const test_params_struct test_params
+            = yaml::LoadYamlFile<test_params_struct>(
+                FindResourceOrThrow("drake/workspace/centuar_sim/config/test_params.yaml"));
+
+        // drake::log()->info(centaur_sim_control_params.bar);
+
+        std::cout << Eigen::Vector2d(test_params.bar.at(0), test_params.bar.at(1)) << std::endl;
+        drake::log()->info(test_params.foo);
 
         // ready to run the simulation
         simulator.set_publish_every_time_step(false);
@@ -192,6 +213,8 @@ namespace centuar_sim {
         
         
     }
+
+    
 }
 }
 }
