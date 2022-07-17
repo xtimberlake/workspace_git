@@ -19,10 +19,10 @@ CentuarGaitPattern::CentuarGaitPattern(double gait_period,
 {
     this->_gait_period = gait_period;
     this->_gait_total_counter = gait_resolution;
-    this->_mpc_table = new int[nMPC_per_period * 2]; // two legs
+    this->_nMPC_per_period = nMPC_per_period;
     this->_stance_duration = stance_duration;
     this->_offset = offset;
-
+    
     this->_swing_duration = Eigen::Vector2f(1.0, 1.0) - _stance_duration;
 
 }
@@ -37,7 +37,7 @@ void CentuarGaitPattern::update_gait_pattern(CentaurStates& state)
     _gait_counter_speed = _gait_total_counter / (_gait_period / state.control_dt);
     _gait_counter += _gait_counter_speed;
     _gait_counter = std::fmod(_gait_counter, _gait_total_counter);
-    drake::log()->info(std::to_string(_gait_counter));
+   
     _phase = _gait_counter / _gait_total_counter;
 
     for (size_t i = 0; i < 2; i++) // two legs
@@ -57,7 +57,35 @@ void CentuarGaitPattern::update_gait_pattern(CentaurStates& state)
         else state.plan_swings_phase(i) = 0;        
 
     }
-    
+
+    // mpc table
+    double mpc_incremental_phase = 1.f / static_cast<double>(_nMPC_per_period);
+
+    for (int i = 0; i < state.mpc_horizon; i++)
+    {
+        double next_phase = _phase + mpc_incremental_phase * i;
+        if(next_phase > 1.f) next_phase -= 1.f;
+
+        for (size_t j = 0; j < 2; j++)  // two legs
+        {
+            double progress = next_phase - _offset(j);
+            if(progress < 0) progress += 1;
+            if(progress < _stance_duration(j)) state.mpc_contact_table[i*2 + j] = 1;
+            else state.mpc_contact_table[i*2 + j] = 0;
+        }
+
+    }
+
+    // drake::log()->info(std::to_string(state.mpc_contact_table[0*2 + 1]) + ", "
+    //     + std::to_string(state.mpc_contact_table[1*2 + 1]) + ", "
+    //     + std::to_string(state.mpc_contact_table[2*2 + 1]) + ", "
+    //     + std::to_string(state.mpc_contact_table[3*2 + 1]) + ", "
+    //     + std::to_string(state.mpc_contact_table[4*2 + 1]) + ", "
+    //     + std::to_string(state.mpc_contact_table[5*2 + 1]) + ", "
+    //     + std::to_string(state.mpc_contact_table[6*2 + 1]) + ", "
+    //     + std::to_string(state.mpc_contact_table[7*2 + 1]) + ", "
+    //     + std::to_string(state.mpc_contact_table[8*2 + 1]) + ", "
+    //     + std::to_string(state.mpc_contact_table[9*2 + 1]) + ", ");
 
 }
 

@@ -21,7 +21,6 @@ class CentuarGaitPattern
 {
 private:
     double _gait_period;
-    int* _mpc_table;
     Eigen::Vector2f _stance_duration;
     Eigen::Vector2f _swing_duration;
     Eigen::Vector2f _offset;
@@ -31,6 +30,8 @@ private:
     double _gait_counter_speed;
     double _gait_counter;
     double _phase;
+    int _iterationsPerMPC;
+    int _nMPC_per_period;
     
     
 public:

@@ -8,3 +8,4 @@ gait_resolution: 120  # divide gait phase into # portion
 
 # MPC info
 nMPC_per_period: 10
+mpc_horizon: 10

@@ -28,12 +28,14 @@ struct control_params_constant {
 
     // mpc
     int nMPC_per_period;
+    int mpc_horizon;
 
     template <typename Archive>
         void Serialize(Archive* a) {
         a->Visit(DRAKE_NVP(control_dt));
         a->Visit(DRAKE_NVP(gait_resolution));
         a->Visit(DRAKE_NVP(nMPC_per_period));
+        a->Visit(DRAKE_NVP(mpc_horizon));
         
     }
 };
@@ -49,7 +51,10 @@ class CentaurStates {
         this->control_dt = ctrl_params_const.control_dt;
         this->nMPC_per_period = ctrl_params_const.nMPC_per_period;
         this->gait_resolution = ctrl_params_const.gait_resolution;
-        
+        this->mpc_horizon = ctrl_params_const.mpc_horizon;
+        this->mpc_contact_table = new int[ctrl_params_const.mpc_horizon * 2];
+
+
         this->k = 0;
 
         // default desired states
@@ -73,6 +78,10 @@ class CentaurStates {
     // gait
     int nMPC_per_period;
     double gait_resolution;
+
+    // mpc
+    int mpc_horizon;
+    int* mpc_contact_table;
     
     Eigen::Vector2f plan_contacts_phase;
     Eigen::Vector2f plan_swings_phase;

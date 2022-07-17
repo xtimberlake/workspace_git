@@ -72,20 +72,10 @@ private:
         Eigen::VectorXd output_torques(_control_model.num_actuators()); output_torques.setZero();
         update_states(context);
         
-    
-        // drake::log()->warn("time = " +  std::to_string(ct->ctrl_states.t));
-        // if (ct->ctrl_states.t > 0.8 && ct->ctrl_states.t < 0.9)
-        // {
-        //     std::cout << ct->ctrl_states.root_euler.transpose() << std::endl;
-        // }
-        
         if((ct->ctrl_states.t - ct->ctrl_states.k * ct->ctrl_states.control_dt) > ct->ctrl_states.control_dt)
         {
             ct->ctrl_states.k++;
             ct->walking->update_gait_pattern(ct->ctrl_states);
-            std::cout << "time: " << ct->ctrl_states.t << ", ";
-            std::cout << ct->ctrl_states.plan_contacts_phase(0) << ", ";
-            std::cout << ct->ctrl_states.plan_contacts_phase(1) << std::endl;
         }
         
        
