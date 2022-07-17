@@ -2,9 +2,9 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:30:49
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-17 11:24:01
+ * @LastEditTime: 2022-07-17 21:02:38
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurStates.h
- * @Description: define all the states that used in controller, mainly 
+ * @Description: define all the states that used in controller; mainly 
  *                adapted from https://github.com/ShuoYangRobotics/A1-QP-MPC-Controller
  * 
  * Copyright (c) 2022 by HAR-Lab, All Rights Reserved. 
@@ -18,13 +18,23 @@
 #include <drake/common/yaml/yaml_io.h>
 
 
+
 struct control_params_constant {
-    double gait_period;
+    // system
+    double control_dt;
+
+    // gait info
+    double gait_resolution;
+
+    // mpc
+    int nMPC_per_period;
 
     template <typename Archive>
         void Serialize(Archive* a) {
-        a->Visit(DRAKE_NVP(gait_period));
-  
+        a->Visit(DRAKE_NVP(control_dt));
+        a->Visit(DRAKE_NVP(gait_resolution));
+        a->Visit(DRAKE_NVP(nMPC_per_period));
+        
     }
 };
 
@@ -32,19 +42,23 @@ struct control_params_constant {
 class CentaurStates {
  public:
     CentaurStates() {
-      const control_params_constant ctrl_params_const = drake::yaml::LoadYamlFile<control_params_constant>(
+
+        const control_params_constant ctrl_params_const = drake::yaml::LoadYamlFile<control_params_constant>(
           drake::FindResourceOrThrow("drake/workspace/centaur_sim/config/centaur_sim_control_params.yaml"));
-      this->gait_period = ctrl_params_const.gait_period;
+        
+        this->control_dt = ctrl_params_const.control_dt;
+        this->nMPC_per_period = ctrl_params_const.nMPC_per_period;
+        this->gait_resolution = ctrl_params_const.gait_resolution;
+        
+        this->k = 0;
 
-
-
-      // default desired states
-      this->root_pos_d << 0.0, 0.0, 0.9;
-      this->root_euler_d.setZero();
-      this->root_lin_vel_d.setZero();
-      this->root_lin_vel_d_world.setZero();
-      this->root_ang_vel_d.setZero();
-      this->root_ang_vel_d_world.setZero();
+        // default desired states
+        this->root_pos_d << 0.0, 0.0, 0.9;
+        this->root_euler_d.setZero();
+        this->root_lin_vel_d.setZero();
+        this->root_lin_vel_d_world.setZero();
+        this->root_ang_vel_d.setZero();
+        this->root_ang_vel_d_world.setZero();
       
 
     }
@@ -53,9 +67,15 @@ class CentaurStates {
 
     // system
     double t;               // time in seconds
+    double control_dt;
+    uint64_t k;
 
     // gait
-    double gait_period;
+    int nMPC_per_period;
+    double gait_resolution;
+    
+    Eigen::Vector2f plan_contacts_phase;
+    Eigen::Vector2f plan_swings_phase;
 
     // robot's states
     Eigen::Quaterniond root_quat;

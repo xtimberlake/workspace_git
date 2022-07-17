@@ -1,3 +1,10 @@
 
 
-gait_period:  0.4  # in seconds
+# control frequency
+control_dt: 0.001
+
+# gait
+gait_resolution: 120  # divide gait phase into # portion
+
+# MPC info
+nMPC_per_period: 10

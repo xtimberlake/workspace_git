@@ -68,12 +68,14 @@ drake_cc_library(
         "centaur_controller.cc",
         "staticInvController.cc",
         "controller/CentaurControl.cc",
+        "controller/CentaurGaitPattern.cc",
         "centaurrobot/centaurrobot.cc",
     ],
     hdrs = [
         "centaur_controller.h",
         "staticInvController.h",
         "controller/CentaurControl.h",
+        "controller/CentaurGaitPattern.h",
         "centaurrobot/centaurrobot.h",
 
     ],

@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-14 12:43:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-17 10:29:56
+ * @LastEditTime: 2022-07-17 21:01:20
  * @FilePath: /drake/workspace/centaur_sim/centaur_controller.h
  * @Description: controller block for drake simulation
  * 
@@ -22,10 +22,15 @@
 #include <drake/multibody/math/spatial_velocity.h>
 #include <drake/math/roll_pitch_yaw.h>
 
-#include "drake/workspace/centaur_sim/centaurrobot/centaurrobot.h"
+#include "drake/workspace/centaur_sim/controller/CentaurGaitPattern.h"
 #include "drake/workspace/centaur_sim/controller/CentaurStates.h"
+#include "drake/workspace/centaur_sim/centaurrobot/centaurrobot.h"
+
+
+
 
 class centaurrobot;
+
 
 namespace drake{
 namespace workspace{
@@ -50,7 +55,6 @@ public:
         this->DeclareVectorOutputPort("actuated_torque", 6,
                                     &CentaurController::CalcTorques);
         
-        drake::log()->info("the robot gait period is " + std::to_string(ct->ctrl_states.gait_period));
         
     }
 
@@ -74,6 +78,15 @@ private:
         // {
         //     std::cout << ct->ctrl_states.root_euler.transpose() << std::endl;
         // }
+        
+        if((ct->ctrl_states.t - ct->ctrl_states.k * ct->ctrl_states.control_dt) > ct->ctrl_states.control_dt)
+        {
+            ct->ctrl_states.k++;
+            ct->walking->update_gait_pattern(ct->ctrl_states);
+            std::cout << "time: " << ct->ctrl_states.t << ", ";
+            std::cout << ct->ctrl_states.plan_contacts_phase(0) << ", ";
+            std::cout << ct->ctrl_states.plan_contacts_phase(1) << std::endl;
+        }
         
        
         output->set_value(output_torques);

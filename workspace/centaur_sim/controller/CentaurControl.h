@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:31:28
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-17 11:20:39
+ * @LastEditTime: 2022-07-17 17:25:14
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurControl.h
  * @Description: centaur root controller
  * 
@@ -12,7 +12,6 @@
 
 #include "drake/workspace/centaur_sim/controller/CentaurStates.h"
 
-class CentaurStates;
 
 class CentaurControl
 {
