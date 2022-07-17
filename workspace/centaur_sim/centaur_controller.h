@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-14 12:43:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-16 21:15:46
+ * @LastEditTime: 2022-07-17 10:29:56
  * @FilePath: /drake/workspace/centaur_sim/centaur_controller.h
  * @Description: controller block for drake simulation
  * 
@@ -10,14 +10,20 @@
  */
 #pragma once
 
+#include <iostream>
+
 #include "drake/systems/framework/leaf_system.h"
 #include "drake/systems/framework/basic_vector.h"
 #include "drake/multibody/plant/multibody_plant.h"
 #include "drake/multibody/parsing/parser.h"
 #include "drake/common/find_resource.h"
+#include "drake/multibody/tree/multibody_tree.h"
+#include "drake/multibody/tree/frame.h"
+#include <drake/multibody/math/spatial_velocity.h>
+#include <drake/math/roll_pitch_yaw.h>
 
 #include "drake/workspace/centaur_sim/centaurrobot/centaurrobot.h"
-#include "drake/workspace/centaur_sim/controller/CentaurControlStates.h"
+#include "drake/workspace/centaur_sim/controller/CentaurStates.h"
 
 class centaurrobot;
 
@@ -61,9 +67,14 @@ private:
 
         Eigen::VectorXd output_torques(_control_model.num_actuators()); output_torques.setZero();
         update_states(context);
-
+        
     
         // drake::log()->warn("time = " +  std::to_string(ct->ctrl_states.t));
+        // if (ct->ctrl_states.t > 0.8 && ct->ctrl_states.t < 0.9)
+        // {
+        //     std::cout << ct->ctrl_states.root_euler.transpose() << std::endl;
+        // }
+        
        
         output->set_value(output_torques);
     
@@ -78,12 +89,25 @@ private:
         Eigen::VectorXd states = this->GetInputPort("full_states").Eval(context);
         _control_model.SetPositionsAndVelocities(_plant_context.get(), states);
         ct->ctrl_states.t = context.get_time();
-        math::RigidTransformd X_BF_right = 
-            _control_model.GetBodyByName("floating_base").body_frame().CalcPoseInWorld(*_plant_context);
-        if(ct->ctrl_states.t < .001)
-            drake::log()->info(X_BF_right.translation());
+
+        const multibody::BodyFrame<T>& FloatingBodyFrame = 
+                _control_model.GetBodyByName("floating_base").body_frame();
+
+        //TODO(haoyun) acceleration is actuators- and wrench- dependent states
+        // // ct->ctrl_states.root_acc = FloatingBodyFrame.CalcSpatialAccelerationInWorld(*_plant_context).translational(); 
+
+        // kinematics states
+        ct->ctrl_states.root_quat = FloatingBodyFrame.CalcRotationMatrixInWorld(*_plant_context).ToQuaternion();
+        ct->ctrl_states.root_pos = FloatingBodyFrame.CalcPoseInWorld(*_plant_context).translation();
+        ct->ctrl_states.root_ang_vel = FloatingBodyFrame.CalcSpatialVelocityInWorld(*_plant_context).rotational();
+        ct->ctrl_states.root_lin_vel = FloatingBodyFrame.CalcSpatialVelocityInWorld(*_plant_context).translational();
+        ct->ctrl_states.root_rot_mat = FloatingBodyFrame.CalcRotationMatrixInWorld(*_plant_context).matrix();
+        ct->ctrl_states.root_rot_mat_z = FloatingBodyFrame.CalcRotationMatrixInWorld(*_plant_context).matrix().transpose();
+        ct->ctrl_states.root_euler = math::RollPitchYaw<T>(FloatingBodyFrame.CalcRotationMatrixInWorld(*_plant_context)).vector();
         
-        // ct->ctrl_states.root_pos = 
+        
+        
+        
         
 
     }

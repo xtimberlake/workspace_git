@@ -50,8 +50,8 @@ drake_cc_library(
 
 drake_cc_library(
     name = "centaur_states_lib",
-    srcs = ["controller/CentaurControlStates.cc", ],
-    hdrs = ["controller/CentaurControlStates.h", ],
+    srcs = ["controller/CentaurStates.cc", ],
+    hdrs = ["controller/CentaurStates.h", ],
     deps = [
         "//systems/framework:leaf_system",
         "//systems/framework:vector",
@@ -89,8 +89,10 @@ drake_cc_library(
         "//multibody/plant",
         "//multibody/tree",
         "//multibody/parsing",
+        "//multibody/math",
         "//common:find_resource",
         "//common/yaml",
+        
     ],
 )
 

@@ -31,7 +31,7 @@
 
 DEFINE_double(simulation_sec, 1.0,
               "Number of seconds to simulate.");
-DEFINE_double(sim_dt, 1e-4,
+DEFINE_double(sim_dt, 5e-4,
               "The time step to use for MultibodyPlant model"
               "discretization.");
 
