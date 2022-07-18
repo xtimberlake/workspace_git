@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-17 11:26:19
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-17 20:22:22
+ * @LastEditTime: 2022-07-18 09:07:45
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurGaitPattern.h
  * @Description: 
  * 
@@ -15,7 +15,7 @@
 #include "drake/multibody/plant/multibody_plant.h"
 #include "drake/workspace/centaur_sim/controller/CentaurStates.h"
 
-class CentaurStates;
+
 
 class CentuarGaitPattern
 {

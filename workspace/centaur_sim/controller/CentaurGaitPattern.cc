@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-17 11:21:35
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-17 21:15:52
+ * @LastEditTime: 2022-07-18 09:40:59
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurGaitPattern.cc
  * @Description: 
  * 

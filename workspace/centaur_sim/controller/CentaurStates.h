@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:30:49
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-17 21:02:38
+ * @LastEditTime: 2022-07-18 11:41:20
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurStates.h
  * @Description: define all the states that used in controller; mainly 
  *                adapted from https://github.com/ShuoYangRobotics/A1-QP-MPC-Controller
@@ -13,6 +13,7 @@
 
 #pragma once
 
+#include <iostream>
 #include <drake/multibody/plant/multibody_plant.h>
 #include <drake/common/find_resource.h>
 #include <drake/common/yaml/yaml_io.h>
@@ -29,6 +30,9 @@ struct control_params_constant {
     // mpc
     int nMPC_per_period;
     int mpc_horizon;
+    std::vector<double> q_weights;
+    std::vector<double> r_weights;
+
 
     template <typename Archive>
         void Serialize(Archive* a) {
@@ -36,6 +40,8 @@ struct control_params_constant {
         a->Visit(DRAKE_NVP(gait_resolution));
         a->Visit(DRAKE_NVP(nMPC_per_period));
         a->Visit(DRAKE_NVP(mpc_horizon));
+        a->Visit(DRAKE_NVP(q_weights));
+        a->Visit(DRAKE_NVP(r_weights));
         
     }
 };
@@ -53,8 +59,21 @@ class CentaurStates {
         this->gait_resolution = ctrl_params_const.gait_resolution;
         this->mpc_horizon = ctrl_params_const.mpc_horizon;
         this->mpc_contact_table = new int[ctrl_params_const.mpc_horizon * 2];
+        std::vector<double> a = {1, 2, 3, 4, 5, 6};
+
+        drake::log()->info(ctrl_params_const.r_weights.at(0));
+    
+        this->q_weights.resize(ctrl_params_const.q_weights.size());
+        for (size_t i = 0; i < ctrl_params_const.q_weights.size(); i++)
+            this->q_weights(i) = ctrl_params_const.q_weights.at(i);
 
 
+        this->r_weights.resize(ctrl_params_const.r_weights.size());
+        for (size_t i = 0; i < ctrl_params_const.r_weights.size(); i++)
+            this->r_weights(i) = ctrl_params_const.r_weights.at(i);
+        
+
+        //     std::cout << std::endl;
         this->k = 0;
 
         // default desired states
@@ -82,6 +101,9 @@ class CentaurStates {
     // mpc
     int mpc_horizon;
     int* mpc_contact_table;
+    Eigen::VectorXd q_weights;
+    Eigen::VectorXd r_weights;
+
     
     Eigen::Vector2f plan_contacts_phase;
     Eigen::Vector2f plan_swings_phase;

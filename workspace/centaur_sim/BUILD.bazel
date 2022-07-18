@@ -59,6 +59,7 @@ drake_cc_library(
         "//multibody/tree",
         "//common:find_resource",
         "//common/yaml",
+        "//common/schema",
     ],
 )
 
@@ -70,6 +71,7 @@ drake_cc_library(
         "controller/CentaurControl.cc",
         "controller/CentaurGaitPattern.cc",
         "centaurrobot/centaurrobot.cc",
+        "controller/ConvexMPC.cc",
     ],
     hdrs = [
         "centaur_controller.h",
@@ -77,7 +79,7 @@ drake_cc_library(
         "controller/CentaurControl.h",
         "controller/CentaurGaitPattern.h",
         "centaurrobot/centaurrobot.h",
-
+        "controller/ConvexMPC.h",
     ],
     data = [
         "centaur_control_model.sdf",
@@ -94,6 +96,8 @@ drake_cc_library(
         "//multibody/math",
         "//common:find_resource",
         "//common/yaml",
+        "//common/schema",
+        "//solvers",
         
     ],
 )
