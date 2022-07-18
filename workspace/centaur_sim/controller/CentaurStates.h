@@ -49,6 +49,26 @@ struct control_params_constant {
     }
 };
 
+struct robot_params_constant {
+    
+    // Inertia
+    double Ixx, Iyy, Izz, Ixy, Ixz, Iyz;
+    double mass;
+
+
+    template <typename Archive>
+        void Serialize(Archive* a) {
+        a->Visit(DRAKE_NVP(mass));
+        a->Visit(DRAKE_NVP(Ixx));
+        a->Visit(DRAKE_NVP(Iyy));
+        a->Visit(DRAKE_NVP(Izz));
+        a->Visit(DRAKE_NVP(Ixy));
+        a->Visit(DRAKE_NVP(Ixz));
+        a->Visit(DRAKE_NVP(Iyz));
+        
+    }
+};
+
 
 class CentaurStates {
  public:
@@ -57,14 +77,15 @@ class CentaurStates {
         this->ctrl_params_const = drake::yaml::LoadYamlFile<control_params_constant>(
           drake::FindResourceOrThrow("drake/workspace/centaur_sim/config/centaur_sim_control_params.yaml"));
         
+        this->robot_params_const = drake::yaml::LoadYamlFile<robot_params_constant>(
+          drake::FindResourceOrThrow("drake/workspace/centaur_sim/config/centaur_sim_robot_params.yaml"));
+
         this->control_dt = ctrl_params_const.control_dt;
         this->nMPC_per_period = ctrl_params_const.nMPC_per_period;
         this->gait_resolution = ctrl_params_const.gait_resolution;
         DRAKE_DEMAND(ctrl_params_const.mpc_horizon == MPC_HORIZON);
         this->mpc_horizon = ctrl_params_const.mpc_horizon;
         this->mpc_contact_table = new int[ctrl_params_const.mpc_horizon * 2];
-        std::vector<double> a = {1, 2, 3, 4, 5, 6};
-    
         
 
         //     std::cout << std::endl;
@@ -83,6 +104,7 @@ class CentaurStates {
 
     // variables
     control_params_constant ctrl_params_const;
+    robot_params_constant robot_params_const;
 
     // system
     double t;               // time in seconds
@@ -118,6 +140,9 @@ class CentaurStates {
     Eigen::Vector3d root_lin_vel_d_world;
     Eigen::Vector3d root_ang_vel_d;
     Eigen::Vector3d root_ang_vel_d_world;
+
+    Eigen::Matrix<double, 3, 2> foot_pos_world;
+    Eigen::Matrix<double, 3, 2> foot_pos_rel;
 
     
 

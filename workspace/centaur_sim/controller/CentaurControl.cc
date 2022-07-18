@@ -10,6 +10,8 @@
  */
 #include "drake/workspace/centaur_sim/controller/CentaurControl.h"
 
+
+
 CentaurControl::CentaurControl(const control_params_constant ctrl_params) {
 
 
@@ -31,8 +33,19 @@ CentaurControl::CentaurControl(const control_params_constant ctrl_params) {
 
 }
 
-void CentaurControl::compute_grf(CentaurStates& state)
+void CentaurControl::ComputeGoundReactionForce(CentaurStates& state)
 {
-    mpc_solver->update_A_d(state.root_euler);
+
+    
+    // initial state
+    mpc_solver->x0 << state.root_euler[0], state.root_euler[1], state.root_euler[2],
+                    state.root_pos[0], state.root_pos[1], state.root_pos[2],
+                    state.root_ang_vel[0], state.root_ang_vel[1], state.root_ang_vel[2],
+                    state.root_lin_vel[0], state.root_lin_vel[1], state.root_lin_vel[2];
+    
+
+
+    mpc_solver->UpdateAd(state.root_euler);
+    
 
 }

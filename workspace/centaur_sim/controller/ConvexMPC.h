@@ -20,12 +20,14 @@
 class ConvexMPC {
 public:
     ConvexMPC(int mpc_horizon, double dt, Eigen::VectorXd q_weights, Eigen::VectorXd r_weights);
-    void update_A_d(Eigen::Vector3d euler);
+    void UpdateAd(Eigen::Vector3d euler);
     
     int _state_dim;
     int _u_dim;
     int _mpc_horizon;
     double _dt;
+
+    Eigen::Matrix<double, NUM_STATE, 1> x0;
 
     Eigen::Matrix<double, NUM_STATE, NUM_STATE> A_power[MPC_HORIZON + 1];
     Eigen::Matrix<double, NUM_STATE * MPC_HORIZON, NUM_STATE> A_qp;

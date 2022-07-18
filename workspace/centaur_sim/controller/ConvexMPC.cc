@@ -78,8 +78,18 @@ ConvexMPC::ConvexMPC(int mpc_horizon,
     
 }
 
-void ConvexMPC::update_A_d(Eigen::Vector3d euler)
+void ConvexMPC::UpdateAd(Eigen::Vector3d euler)
 {
+    Eigen::Matrix3d R_yaw_T;
+    double yaw = euler(2);
+    R_yaw_T << cos(yaw), sin(yaw), 0,
+            -sin(yaw), cos(yaw), 0,
+            0, 0, 1;
+    
+    for (int i = 0; i < _mpc_horizon; i++)  {
+        // power = 1, 2, 3, ..., 10
+        int power = i + 1;
+        A_power[power].block<3, 3>(i * NUM_STATE, 6) = R_yaw_T * power * _dt;
+    }
 
-    this->_state_dim = euler(2);
 }

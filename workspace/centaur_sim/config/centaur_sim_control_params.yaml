@@ -16,3 +16,4 @@ q_weights: [10.0, 10.0, 10.0,    # Roll Pitch Yaw
 
 r_weights: [1.0, 1.0, 1.0,
             1.0, 1.0, 1.0] # fx fy fz
+

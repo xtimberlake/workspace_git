@@ -15,11 +15,13 @@
 #include "drake/workspace/centaur_sim/controller/CentaurParams.h"
 #include <type_traits>
 
+class CentaurStates;
+
 class CentaurControl
 {
 public:
     CentaurControl(const control_params_constant ctrl_params);
-    void compute_grf(CentaurStates& state);
+    void ComputeGoundReactionForce(CentaurStates& state);
     
     // variables:
     

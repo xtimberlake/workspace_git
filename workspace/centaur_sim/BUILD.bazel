@@ -91,6 +91,7 @@ drake_cc_library(
         "centaur_control_model.sdf",
         "centaur_v2.urdf",
         "config/centaur_sim_control_params.yaml",
+        "config/centaur_sim_robot_params.yaml",
     ],
     deps = [
         ":centaur_states_lib",

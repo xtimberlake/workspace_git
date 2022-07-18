@@ -57,6 +57,10 @@
         <diffuse>0.2 0.2 0.2 0.4</diffuse>
       </material>
     </visual>
+    <inertial>
+      <mass>20.0</mass>
+      <inertia> <ixx>0.0837</ixx> <iyy>0.3592</iyy> <izz>0.3465</izz> </inertia>
+    </inertial>
   </link>
 
   <frame name='left_abad_joint_frame' attached_to='torso'>
