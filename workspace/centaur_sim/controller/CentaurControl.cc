@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:31:07
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-18 10:18:12
+ * @LastEditTime: 2022-07-18 17:45:54
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurControl.cc
  * @Description: 
  * 
@@ -10,9 +10,29 @@
  */
 #include "drake/workspace/centaur_sim/controller/CentaurControl.h"
 
-CentaurControl::CentaurControl() {
+CentaurControl::CentaurControl(const control_params_constant ctrl_params) {
 
-    Eigen::VectorXd q(10);
-    q << 1.0,5.0;
-    mpc_solver = new ConvexMPC(10, q, Eigen::Vector3d(1.0, 4.0, 1.0));
+
+    DRAKE_DEMAND(ctrl_params.mpc_horizon == MPC_HORIZON);
+    this->mpc_horizon = ctrl_params.mpc_horizon;
+
+    this->mpc_dt = ctrl_params.control_dt;
+
+    DRAKE_DEMAND(ctrl_params.q_weights.size() == NUM_STATE);
+    for (size_t i = 0; i < ctrl_params.q_weights.size(); i++)
+        this->mpc_q_weights(i) = ctrl_params.q_weights.at(i);
+
+    DRAKE_DEMAND(ctrl_params.r_weights.size() == NUM_U);
+    for (size_t i = 0; i < ctrl_params.r_weights.size(); i++)
+        this->mpc_r_weights(i) = ctrl_params.r_weights.at(i);   
+        
+    mpc_solver = new ConvexMPC(this->mpc_horizon, this->mpc_dt, this->mpc_q_weights, this->mpc_r_weights);
+
+
+}
+
+void CentaurControl::compute_grf(CentaurStates& state)
+{
+    mpc_solver->update_A_d(state.root_euler);
+
 }

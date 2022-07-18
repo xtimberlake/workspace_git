@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:30:49
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-18 11:41:20
+ * @LastEditTime: 2022-07-18 14:50:08
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurStates.h
  * @Description: define all the states that used in controller; mainly 
  *                adapted from https://github.com/ShuoYangRobotics/A1-QP-MPC-Controller
@@ -17,6 +17,9 @@
 #include <drake/multibody/plant/multibody_plant.h>
 #include <drake/common/find_resource.h>
 #include <drake/common/yaml/yaml_io.h>
+#include <type_traits>
+
+#include "drake/workspace/centaur_sim/controller/CentaurParams.h"
 
 
 
@@ -51,26 +54,17 @@ class CentaurStates {
  public:
     CentaurStates() {
 
-        const control_params_constant ctrl_params_const = drake::yaml::LoadYamlFile<control_params_constant>(
+        this->ctrl_params_const = drake::yaml::LoadYamlFile<control_params_constant>(
           drake::FindResourceOrThrow("drake/workspace/centaur_sim/config/centaur_sim_control_params.yaml"));
         
         this->control_dt = ctrl_params_const.control_dt;
         this->nMPC_per_period = ctrl_params_const.nMPC_per_period;
         this->gait_resolution = ctrl_params_const.gait_resolution;
+        DRAKE_DEMAND(ctrl_params_const.mpc_horizon == MPC_HORIZON);
         this->mpc_horizon = ctrl_params_const.mpc_horizon;
         this->mpc_contact_table = new int[ctrl_params_const.mpc_horizon * 2];
         std::vector<double> a = {1, 2, 3, 4, 5, 6};
-
-        drake::log()->info(ctrl_params_const.r_weights.at(0));
     
-        this->q_weights.resize(ctrl_params_const.q_weights.size());
-        for (size_t i = 0; i < ctrl_params_const.q_weights.size(); i++)
-            this->q_weights(i) = ctrl_params_const.q_weights.at(i);
-
-
-        this->r_weights.resize(ctrl_params_const.r_weights.size());
-        for (size_t i = 0; i < ctrl_params_const.r_weights.size(); i++)
-            this->r_weights(i) = ctrl_params_const.r_weights.at(i);
         
 
         //     std::cout << std::endl;
@@ -88,6 +82,7 @@ class CentaurStates {
     }
 
     // variables
+    control_params_constant ctrl_params_const;
 
     // system
     double t;               // time in seconds
@@ -101,8 +96,7 @@ class CentaurStates {
     // mpc
     int mpc_horizon;
     int* mpc_contact_table;
-    Eigen::VectorXd q_weights;
-    Eigen::VectorXd r_weights;
+
 
     
     Eigen::Vector2f plan_contacts_phase;
