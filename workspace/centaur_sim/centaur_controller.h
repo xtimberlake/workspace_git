@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-14 12:43:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-17 21:01:20
+ * @LastEditTime: 2022-07-19 10:30:24
  * @FilePath: /drake/workspace/centaur_sim/centaur_controller.h
  * @Description: controller block for drake simulation
  * 
@@ -76,6 +76,7 @@ private:
         {
             ct->ctrl_states.k++;
             ct->walking->update_gait_pattern(ct->ctrl_states);
+
         }
         
        
@@ -113,8 +114,11 @@ private:
         const multibody::BodyFrame<T>& RightFootFrame = _control_model.GetBodyByName("right_foot").body_frame();
         ct->ctrl_states.foot_pos_rel.block<3, 1>(0, 1) = RightFootFrame.CalcPose(*_plant_context, FloatingBodyFrame).translation();
     
+        ct->ctrl_states.foot_pos_world.block<3, 1>(0, 0) = ct->ctrl_states.root_pos + ct->ctrl_states.root_rot_mat * ct->ctrl_states.foot_pos_rel.block<3, 1>(0, 0);
+        ct->ctrl_states.foot_pos_world.block<3, 1>(0, 1) = ct->ctrl_states.root_pos + ct->ctrl_states.root_rot_mat * ct->ctrl_states.foot_pos_rel.block<3, 1>(0, 1);
         
-        
+        // if(ct->ctrl_states.t < 0.1)
+        //     drake::log()->info(ct->ctrl_states.foot_pos_world);
         
 
     }

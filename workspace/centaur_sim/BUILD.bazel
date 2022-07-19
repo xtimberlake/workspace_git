@@ -50,10 +50,14 @@ drake_cc_library(
 
 drake_cc_library(
     name = "centaur_states_lib",
-    srcs = ["controller/CentaurStates.cc", ],
+    srcs = [
+        "controller/CentaurStates.cc",
+        "Utils/Utils.cc",
+     ],
     hdrs = [
         "controller/CentaurStates.h",
         "controller/CentaurParams.h",
+        "Utils/Utils.h",
          ],
     deps = [
         "//systems/framework:leaf_system",
@@ -77,6 +81,7 @@ drake_cc_library(
         "controller/CentaurGaitPattern.cc",
         "centaurrobot/centaurrobot.cc",
         "controller/ConvexMPC.cc",
+        "Utils/Utils.cc",
     ],
     hdrs = [
         "centaur_controller.h",
@@ -86,6 +91,7 @@ drake_cc_library(
         "centaurrobot/centaurrobot.h",
         "controller/ConvexMPC.h",
         "controller/CentaurParams.h",
+        "Utils/Utils.h",
     ],
     data = [
         "centaur_control_model.sdf",

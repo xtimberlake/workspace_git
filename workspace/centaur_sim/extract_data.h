@@ -1,3 +1,13 @@
+/*
+ * @Author: haoyun 
+ * @Date: 2022-07-19 09:55:16
+ * @LastEditors: haoyun 
+ * @LastEditTime: 2022-07-19 10:18:24
+ * @FilePath: /drake/workspace/centaur_sim/extract_data.h
+ * @Description: 
+ * 
+ * Copyright (c) 2022 by HAR-Lab, All Rights Reserved. 
+ */
 #pragma once
 
 #include "drake/systems/framework/leaf_system.h"
@@ -66,12 +76,13 @@ private:
         // qdot                   
         qdot = scene_states.segment<6>(12);                 
 
-        // TODO: what is the reference frame of floating base system in drake?
+        // Q: what is the reference frame of floating base system in drake?
+        // A: 
         full_states.segment<4>(0) = quat;
         full_states.segment<3>(4) = pos;
-        full_states.segment<3>(7) = v;
-        full_states.segment<3>(10) = omega;
-        full_states.segment<6>(13) = q;
+        full_states.segment<6>(7) = q;
+        full_states.segment<3>(13) = omega;
+        full_states.segment<3>(16) = v;
         full_states.segment<6>(19) = qdot;
         
         output->set_value(full_states);

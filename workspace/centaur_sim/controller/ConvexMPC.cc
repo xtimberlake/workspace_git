@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-18 09:28:36
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-18 22:36:03
+ * @LastEditTime: 2022-07-19 11:30:24
  * @FilePath: /drake/workspace/centaur_sim/controller/ConvexMPC.cc
  * @Description: 
  * 
@@ -65,20 +65,18 @@ ConvexMPC::ConvexMPC(int mpc_horizon,
     }
 
     // Step # 3:
-    // construct B_qp matrix(skip because B is time invarient)
+    // construct B_qp matrix(skip this part because B is time-invarient)
     
     // Step # 4:
-    // construct N_qp matrix(skip because N is time invarient)
-
+    // construct N_qp matrix
+    N_qp.block<12, 12>(0, 0) = eye12;
     
     
-    
-
 
     
 }
 
-void ConvexMPC::UpdateAd(Eigen::Vector3d euler)
+void ConvexMPC::Update_Ad_Nd(Eigen::Vector3d euler)
 {
     Eigen::Matrix3d R_yaw_T;
     double yaw = euler(2);
@@ -87,9 +85,42 @@ void ConvexMPC::UpdateAd(Eigen::Vector3d euler)
             0, 0, 1;
     
     for (int i = 0; i < _mpc_horizon; i++)  {
+
         // power = 1, 2, 3, ..., 10
         int power = i + 1;
         A_power[power].block<3, 3>(i * NUM_STATE, 6) = R_yaw_T * power * _dt;
+        if(i > 0) // i = 1, 2, ..., 9
+        {
+            int preview = i - 1;
+            N_qp.block<NUM_STATE, NUM_STATE>(i * NUM_STATE, 0) =
+                N_qp.block<NUM_STATE, NUM_STATE>(preview * NUM_STATE, 0) + A_power[i];
+        }
     }
+
+}
+
+/**
+ * @description: calculate B_d matrix
+ * @note: foot positions are already expreesd in the world frame
+ * @return {*}
+ */
+void ConvexMPC::Update_Bd(double mass, 
+                        Eigen::Matrix3d inertia,
+                        Eigen::Matrix3d R, 
+                        Eigen::Matrix<double, 3, 2> foot_pos) {
+
+    Eigen::Matrix3d inertia_in_world, I_inv;
+    inertia_in_world = R * inertia * R.transpose();
+    I_inv = Utils::pseudo_inverse(inertia_in_world); // improve robustness
+
+    Eigen::Matrix<double, NUM_STATE, NUM_U> B_d;
+    for (int i = 0; i < 2; i++) // two legs
+    {
+        B_d.block<3, 3>(6, i * NUM_U) = I_inv * Utils::skew(foot_pos.block<3, 1>(0, i)) * this->_dt;
+        B_d.block<3, 3>(9, i * NUM_U) = (1 / mass) * Eigen::Matrix3d::Identity() * this->_dt;
+    }
+    
+
+
 
 }

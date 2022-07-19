@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:31:07
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-18 17:45:54
+ * @LastEditTime: 2022-07-19 10:33:23
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurControl.cc
  * @Description: 
  * 
@@ -45,7 +45,7 @@ void CentaurControl::ComputeGoundReactionForce(CentaurStates& state)
     
 
 
-    mpc_solver->UpdateAd(state.root_euler);
+    mpc_solver->Update_Ad_Nd(state.root_euler);
     
 
 }

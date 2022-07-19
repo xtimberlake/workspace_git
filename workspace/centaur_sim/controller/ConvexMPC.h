@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-18 09:28:44
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-18 22:32:27
+ * @LastEditTime: 2022-07-19 11:19:01
  * @FilePath: /drake/workspace/centaur_sim/controller/ConvexMPC.h
  * @Description: mpc matrix transformation and qp sovler
  * 
@@ -16,11 +16,14 @@
 #include <drake/solvers/solve.h>
 #include <drake/workspace/centaur_sim/controller/CentaurStates.h>
 #include "drake/workspace/centaur_sim/controller/CentaurParams.h"
+#include "drake/workspace/centaur_sim/Utils/Utils.h"
 
 class ConvexMPC {
 public:
     ConvexMPC(int mpc_horizon, double dt, Eigen::VectorXd q_weights, Eigen::VectorXd r_weights);
-    void UpdateAd(Eigen::Vector3d euler);
+    void Update_Ad_Nd(Eigen::Vector3d euler);
+    void Update_Bd(double mass, Eigen::Matrix3d inertia,
+                    Eigen::Matrix3d R, Eigen::Matrix<double, 3, 2> foot_pos);
     
     int _state_dim;
     int _u_dim;
