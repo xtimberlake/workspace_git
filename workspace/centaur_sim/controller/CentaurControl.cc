@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:31:07
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-19 10:33:23
+ * @LastEditTime: 2022-07-19 23:46:00
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurControl.cc
  * @Description: 
  * 
@@ -28,7 +28,8 @@ CentaurControl::CentaurControl(const control_params_constant ctrl_params) {
     for (size_t i = 0; i < ctrl_params.r_weights.size(); i++)
         this->mpc_r_weights(i) = ctrl_params.r_weights.at(i);   
         
-    mpc_solver = new ConvexMPC(this->mpc_horizon, this->mpc_dt, this->mpc_q_weights, this->mpc_r_weights);
+    this->mu = ctrl_params.mu;
+    mpc_solver = new ConvexMPC(this->mpc_horizon, this->mpc_dt, this->mpc_q_weights, this->mpc_r_weights, this->mu);
 
 
 }
@@ -45,7 +46,9 @@ void CentaurControl::ComputeGoundReactionForce(CentaurStates& state)
     
 
 
-    mpc_solver->Update_Ad_Nd(state.root_euler);
+    mpc_solver->Update_Aqp_Nqp(state.root_euler);
     
+    mpc_solver->Update_Bd(state.mass, state.inertiaMat, state.root_rot_mat, state.foot_pos_world);
 
+    mpc_solver->FormulateQP(state.mpc_contact_table);
 }

@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:31:28
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-18 17:45:08
+ * @LastEditTime: 2022-07-19 18:51:01
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurControl.h
  * @Description: centaur root controller
  * 
@@ -29,6 +29,7 @@ public:
     ConvexMPC *mpc_solver;
     int mpc_horizon;
     double mpc_dt;
+    double mu;
     Eigen::Matrix<double, NUM_STATE, 1> mpc_q_weights;
     Eigen::Matrix<double, NUM_U, 1> mpc_r_weights;
 

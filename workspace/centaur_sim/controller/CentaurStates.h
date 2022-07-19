@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:30:49
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-18 14:50:08
+ * @LastEditTime: 2022-07-19 22:38:37
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurStates.h
  * @Description: define all the states that used in controller; mainly 
  *                adapted from https://github.com/ShuoYangRobotics/A1-QP-MPC-Controller
@@ -35,6 +35,7 @@ struct control_params_constant {
     int mpc_horizon;
     std::vector<double> q_weights;
     std::vector<double> r_weights;
+    double mu;
 
 
     template <typename Archive>
@@ -45,6 +46,7 @@ struct control_params_constant {
         a->Visit(DRAKE_NVP(mpc_horizon));
         a->Visit(DRAKE_NVP(q_weights));
         a->Visit(DRAKE_NVP(r_weights));
+        a->Visit(DRAKE_NVP(mu));
         
     }
 };
@@ -76,19 +78,32 @@ class CentaurStates {
 
         this->ctrl_params_const = drake::yaml::LoadYamlFile<control_params_constant>(
           drake::FindResourceOrThrow("drake/workspace/centaur_sim/config/centaur_sim_control_params.yaml"));
-        
-        this->robot_params_const = drake::yaml::LoadYamlFile<robot_params_constant>(
-          drake::FindResourceOrThrow("drake/workspace/centaur_sim/config/centaur_sim_robot_params.yaml"));
-
         this->control_dt = ctrl_params_const.control_dt;
         this->nMPC_per_period = ctrl_params_const.nMPC_per_period;
         this->gait_resolution = ctrl_params_const.gait_resolution;
         DRAKE_DEMAND(ctrl_params_const.mpc_horizon == MPC_HORIZON);
         this->mpc_horizon = ctrl_params_const.mpc_horizon;
         this->mpc_contact_table = new int[ctrl_params_const.mpc_horizon * 2];
+        this->mu = ctrl_params_const.mu;
+
+
+        this->robot_params_const = drake::yaml::LoadYamlFile<robot_params_constant>(
+          drake::FindResourceOrThrow("drake/workspace/centaur_sim/config/centaur_sim_robot_params.yaml"));
+
+        this->mass = robot_params_const.mass;
+        this->Ixx = robot_params_const.Ixx;
+        this->Iyy = robot_params_const.Iyy;
+        this->Izz = robot_params_const.Izz;
+        this->Ixy = robot_params_const.Ixy;
+        this->Ixz = robot_params_const.Ixz;
+        this->Iyz = robot_params_const.Iyz;
+        
+        this->inertiaMat << this->Ixx, this->Ixy, this->Ixz,
+                            this->Ixy, this->Iyy, this->Iyz,
+                            this->Ixz, this->Iyz, this->Izz;
         
 
-        //     std::cout << std::endl;
+
         this->k = 0;
 
         // default desired states
@@ -114,15 +129,19 @@ class CentaurStates {
     // gait
     int nMPC_per_period;
     double gait_resolution;
+    Eigen::Vector2f plan_contacts_phase;
+    Eigen::Vector2f plan_swings_phase;
+
 
     // mpc
     int mpc_horizon;
     int* mpc_contact_table;
+    double mu;
 
-
-    
-    Eigen::Vector2f plan_contacts_phase;
-    Eigen::Vector2f plan_swings_phase;
+    // robot's inertia
+    double Ixx, Iyy, Izz, Ixy, Ixz, Iyz;
+    double mass;
+    Eigen::Matrix3d inertiaMat;
 
     // robot's states
     Eigen::Quaterniond root_quat;
