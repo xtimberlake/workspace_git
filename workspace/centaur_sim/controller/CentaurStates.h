@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:30:49
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-19 22:38:37
+ * @LastEditTime: 2022-07-20 14:30:02
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurStates.h
  * @Description: define all the states that used in controller; mainly 
  *                adapted from https://github.com/ShuoYangRobotics/A1-QP-MPC-Controller
@@ -56,6 +56,7 @@ struct robot_params_constant {
     // Inertia
     double Ixx, Iyy, Izz, Ixy, Ixz, Iyz;
     double mass;
+    std::vector<double> sphere_joint_location;
 
 
     template <typename Archive>
@@ -67,6 +68,7 @@ struct robot_params_constant {
         a->Visit(DRAKE_NVP(Ixy));
         a->Visit(DRAKE_NVP(Ixz));
         a->Visit(DRAKE_NVP(Iyz));
+        a->Visit(DRAKE_NVP(sphere_joint_location));
         
     }
 };
@@ -102,6 +104,9 @@ class CentaurStates {
                             this->Ixy, this->Iyy, this->Iyz,
                             this->Ixz, this->Iyz, this->Izz;
         
+        for (int i = 0; i < 3; i++) {
+            this->sphere_joint_location(i) = robot_params_const.sphere_joint_location.at(i);
+        }
 
 
         this->k = 0;
@@ -114,7 +119,8 @@ class CentaurStates {
         this->root_ang_vel_d.setZero();
         this->root_ang_vel_d_world.setZero();
       
-
+        // Others:
+        this->external_wrench << 0, 0, 0, 0, 0, 15;
     }
 
     // variables
@@ -138,10 +144,12 @@ class CentaurStates {
     int* mpc_contact_table;
     double mu;
 
-    // robot's inertia
+    // robot's phsical configuration
     double Ixx, Iyy, Izz, Ixy, Ixz, Iyz;
     double mass;
     Eigen::Matrix3d inertiaMat;
+    Eigen::Vector3d sphere_joint_location;
+
 
     // robot's states
     Eigen::Quaterniond root_quat;
@@ -163,6 +171,8 @@ class CentaurStates {
     Eigen::Matrix<double, 3, 2> foot_pos_world;
     Eigen::Matrix<double, 3, 2> foot_pos_rel;
 
+    // Others
+    Eigen::Matrix<double, 6, 1> external_wrench;
     
 
 };

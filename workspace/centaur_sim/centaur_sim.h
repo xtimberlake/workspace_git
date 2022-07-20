@@ -164,12 +164,12 @@ namespace centaur_sim {
 
         prog.AddLinearConstraint(A, lb, ub, x);
 
-        solvers::MosekSolver solver;
+        drake::solvers::MosekSolver solver;
         if(solver.available())
         {
             drake::log()->info("mosek is available! ");
         }
-        solvers::MathematicalProgramResult result;
+        drake::solvers::MathematicalProgramResult result;
         solver.Solve(prog, {}, {}, &result);
         if (result.is_success())
         {

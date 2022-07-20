@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:31:07
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-19 23:46:00
+ * @LastEditTime: 2022-07-20 19:41:32
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurControl.cc
  * @Description: 
  * 
@@ -34,7 +34,7 @@ CentaurControl::CentaurControl(const control_params_constant ctrl_params) {
 
 }
 
-void CentaurControl::ComputeGoundReactionForce(CentaurStates& state)
+Eigen::Matrix<double, 3, 2> CentaurControl::ComputeGoundReactionForce(CentaurStates& state)
 {
 
     
@@ -44,11 +44,20 @@ void CentaurControl::ComputeGoundReactionForce(CentaurStates& state)
                     state.root_ang_vel[0], state.root_ang_vel[1], state.root_ang_vel[2],
                     state.root_lin_vel[0], state.root_lin_vel[1], state.root_lin_vel[2];
     
-
+    mpc_solver->Update_Xd_Trajectory(state);
 
     mpc_solver->Update_Aqp_Nqp(state.root_euler);
     
-    mpc_solver->Update_Bd(state.mass, state.inertiaMat, state.root_rot_mat, state.foot_pos_world);
+    mpc_solver->Update_Bd_ExternTerm(state.mass,
+                                     state.inertiaMat, 
+                                     state.root_euler, 
+                                     state.foot_pos_world,
+                                     state.external_wrench,
+                                     state.sphere_joint_location);
 
     mpc_solver->FormulateQP(state.mpc_contact_table);
+
+    mpc_solver->SolveMPC();
+
+    return mpc_solver->result_mat;
 }

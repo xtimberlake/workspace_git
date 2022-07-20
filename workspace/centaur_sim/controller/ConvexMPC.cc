@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-18 09:28:36
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-19 23:44:41
+ * @LastEditTime: 2022-07-20 19:42:44
  * @FilePath: /drake/workspace/centaur_sim/controller/ConvexMPC.cc
  * @Description: 
  * 
@@ -73,25 +73,30 @@ ConvexMPC::ConvexMPC(int mpc_horizon,
     N_qp.block<12, 12>(0, 0) = eye12;
 
     // Step # 5:
+    // Extern term
+    this->gravity << 0, 0, -9.81;
+    ExternalTerm.segment<3>(9) = this->gravity;
+
+    // Step # 6:
     // construct linear contraint matrix C
     for (int i = 0; i < 2 * MPC_HORIZON; i++) 
     {
-            ConstrianMat(0 + 5 * i, 0 + 3 * i) = 1;
-            ConstrianMat(1 + 5 * i, 0 + 3 * i) = 1;
-            ConstrianMat(2 + 5 * i, 1 + 3 * i) = 1;
-            ConstrianMat(3 + 5 * i, 1 + 3 * i) = 1;
-            ConstrianMat(4 + 5 * i, 2 + 3 * i) = 1;
+            ConstriantMat(0 + 5 * i, 0 + 3 * i) = 1;
+            ConstriantMat(1 + 5 * i, 0 + 3 * i) = 1;
+            ConstriantMat(2 + 5 * i, 1 + 3 * i) = 1;
+            ConstriantMat(3 + 5 * i, 1 + 3 * i) = 1;
+            ConstriantMat(4 + 5 * i, 2 + 3 * i) = 1;
 
-            ConstrianMat(0 + 5 * i, 2 + 3 * i) = mu;
-            ConstrianMat(1 + 5 * i, 2 + 3 * i) = -mu;
-            ConstrianMat(2 + 5 * i, 2 + 3 * i) = mu;
-            ConstrianMat(3 + 5 * i, 2 + 3 * i) = -mu;
+            ConstriantMat(0 + 5 * i, 2 + 3 * i) = mu;
+            ConstriantMat(1 + 5 * i, 2 + 3 * i) = -mu;
+            ConstriantMat(2 + 5 * i, 2 + 3 * i) = mu;
+            ConstriantMat(3 + 5 * i, 2 + 3 * i) = -mu;
         
     }
-    // drake::log()->info("C_mat rows = " + std::to_string(ConstrianMat.rows()) + ", C_qp cols = " + std::to_string(ConstrianMat.cols()));
+    // drake::log()->info("C_mat rows = " + std::to_string(ConstriantMat.rows()) + ", C_qp cols = " + std::to_string(ConstriantMat.cols()));
     
 
-    // Step # 6:
+    // Step # 7:
     // lower bound and upper bound
     Eigen::VectorXd lb_one_horizon(5 * 2); // two loegs
     Eigen::VectorXd ub_one_horizon(5 * 2);
@@ -115,6 +120,30 @@ ConvexMPC::ConvexMPC(int mpc_horizon,
         ub.segment<5 * 2>(i * 5 * 2) = ub_one_horizon;
     }
 
+    // solvers:
+    U_all.setZero();
+    next_result_vec.setZero();
+
+}
+
+void ConvexMPC::Update_Xd_Trajectory(CentaurStates& state)
+{
+    // velocity
+    for (int i = 0; i < MPC_HORIZON; i++)
+    {
+        xd_trajectory.segment<3>(6 + i * NUM_STATE) << state.root_ang_vel_d_world;
+        xd_trajectory.segment<3>(9 + i * NUM_STATE) << state.root_lin_vel_d_world;
+    }
+    
+    // position
+    for (int i = 0; i < MPC_HORIZON; i++)
+    {
+        xd_trajectory.segment<3>(0 + i * NUM_STATE) << state.root_pos_d + state.root_lin_vel_d_world * (i * _dt);
+        xd_trajectory.segment<3>(0 + i * NUM_STATE) << state.root_euler_d;
+        // TODO(haoyun) what's proper desired euler angle?
+    }
+    
+    
 }
 
 void ConvexMPC::Update_Aqp_Nqp(Eigen::Vector3d euler)
@@ -148,12 +177,17 @@ void ConvexMPC::Update_Aqp_Nqp(Eigen::Vector3d euler)
  * @note: foot positions are already expreesd in the world frame
  * @return {*}
  */
-void ConvexMPC::Update_Bd(double mass, 
-                        Eigen::Matrix3d inertia,
-                        Eigen::Matrix3d R, 
-                        Eigen::Matrix<double, 3, 2> foot_pos) {
+void ConvexMPC::Update_Bd_ExternTerm(double mass,
+                            Eigen::Matrix3d inertia,
+                            Eigen::Vector3d euler,
+                            Eigen::Matrix<double, 3, 2> foot_pos,
+                            Eigen::Matrix<double, 6, 1> wrench,
+                            Eigen::Vector3d sphere_joint_location) {
 
-    Eigen::Matrix3d inertia_in_world, I_inv;
+    Eigen::Matrix3d R, inertia_in_world, I_inv;
+    R << cos(euler[2]), -sin(euler[2]), 0,
+            sin(euler[2]), cos(euler[2]), 0,
+            0, 0, 1;
     inertia_in_world = R * inertia * R.transpose();
     I_inv = Utils::pseudo_inverse(inertia_in_world); // improve robustness
 
@@ -162,7 +196,8 @@ void ConvexMPC::Update_Bd(double mass,
         B_d.block<3, 3>(6, i * NUM_U) = I_inv * Utils::skew(foot_pos.block<3, 1>(0, i)) * this->_dt;
         B_d.block<3, 3>(9, i * NUM_U) = (1 / mass) * Eigen::Matrix3d::Identity() * this->_dt;
     }
-    
+
+    ExternalTerm.segment<3>(6) = I_inv * Utils::skew(sphere_joint_location) * wrench.tail(3) + wrench.head(3);
 }
 
 void ConvexMPC::FormulateQP(int* mpc_contact_table)
@@ -197,5 +232,47 @@ void ConvexMPC::FormulateQP(int* mpc_contact_table)
             ub(4 + i*10 + leg*5) = mpc_contact_table[index++];
        }
     }
+
+    HessianMat = B_qp.transpose() * _Q_qp * B_qp + _R_qp;
+    gradientVec = B_qp.transpose() * _Q_qp * (A_qp * x0 - xd_trajectory + N_qp * ExternalTerm);
     
 }
+
+void ConvexMPC::SolveMPC()
+{
+    drake::solvers::MathematicalProgram prog;
+    drake::solvers::MosekSolver mosek_solver;
+
+    auto U = prog.NewContinuousVariables<NUM_U * MPC_HORIZON>();
+    
+    auto qp_cost = prog.AddQuadraticCost(HessianMat, gradientVec, U);
+    
+    // auto linear_constraint = prog.AddLinearConstraint(ConstriantMat, lb, ub, U);
+    
+    if(mosek_solver.available()) {
+        drake::solvers::MathematicalProgramResult prog_result;
+        mosek_solver.Solve(prog, {}, {}, &prog_result);
+        if(qp_cost.evaluator()->is_convex()) drake::log()->info("convex!");
+
+        if (prog_result.is_success()) {
+            drake::log()->info("congras!");
+            U_all = prog_result.GetSolution();
+            result_mat.block<3, 1>(0, 0) = U_all.segment<3>(0);
+            result_mat.block<3, 1>(0, 1) = U_all.segment<3>(3);
+            next_result_vec = U_all;
+            const drake::solvers::MosekSolverDetails& mosek_solver_details =
+                prog_result.get_solver_details<drake::solvers::MosekSolver>();
+            drake::log()->info("optimizer time: " + std::to_string(mosek_solver_details.optimizer_time));
+        }
+        else {
+            drake::log()->warn("fail to find a result...");
+        }
+    }
+    else{
+        drake::log()->warn("mosek solver is not available !");
+    }
+    
+
+}
+
+
