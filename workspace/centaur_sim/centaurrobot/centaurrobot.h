@@ -24,7 +24,7 @@ public:
     
     {
         
-        walking = new CentuarGaitPattern(0.5, ctrl_states.gait_resolution, 10, Eigen::Vector2f(0.5, 0.5), Eigen::Vector2f(0.0, 0.5)); 
+        walking = new CentuarGaitPattern(0.5, ctrl_states.gait_resolution, 10, Eigen::Vector2f(0.6, 0.6), Eigen::Vector2f(0.0, 0.5)); 
         standing = new CentuarGaitPattern(0.5, ctrl_states.gait_resolution, 10, Eigen::Vector2f(1.0, 1.0), Eigen::Vector2f(0.0, 0.5)); 
         controller = new CentaurControl(ctrl_states.ctrl_params_const);
     }

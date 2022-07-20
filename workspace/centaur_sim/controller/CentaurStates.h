@@ -170,6 +170,7 @@ class CentaurStates {
 
     Eigen::Matrix<double, 3, 2> foot_pos_world;
     Eigen::Matrix<double, 3, 2> foot_pos_rel;
+    Eigen::Matrix<double, 3, 2> foot_pos_abs; // from CoM to foot expressed in the world frame
 
     // Others
     Eigen::Matrix<double, 6, 1> external_wrench;

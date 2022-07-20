@@ -75,8 +75,8 @@ private:
         if((ct->ctrl_states.t - ct->ctrl_states.k * ct->ctrl_states.control_dt) > ct->ctrl_states.control_dt)
         {
             ct->ctrl_states.k++;
-            ct->standing->update_gait_pattern(ct->ctrl_states);
-            if(ct->ctrl_states.k % 10 == 0)
+            ct->walking->update_gait_pattern(ct->ctrl_states);
+            if(ct->ctrl_states.k == 1 || ct->ctrl_states.k % 10 == 0)
                 ct->controller->ComputeGoundReactionForce(ct->ctrl_states);
 
         }
@@ -116,6 +116,9 @@ private:
         const multibody::BodyFrame<T>& RightFootFrame = _control_model.GetBodyByName("right_foot").body_frame();
         ct->ctrl_states.foot_pos_rel.block<3, 1>(0, 1) = RightFootFrame.CalcPose(*_plant_context, FloatingBodyFrame).translation();
     
+        ct->ctrl_states.foot_pos_abs.block<3, 1>(0, 0) = ct->ctrl_states.root_rot_mat * ct->ctrl_states.foot_pos_rel.block<3, 1>(0, 0);
+        ct->ctrl_states.foot_pos_abs.block<3, 1>(0, 1) = ct->ctrl_states.root_rot_mat * ct->ctrl_states.foot_pos_rel.block<3, 1>(0, 1);
+
         ct->ctrl_states.foot_pos_world.block<3, 1>(0, 0) = ct->ctrl_states.root_pos + ct->ctrl_states.root_rot_mat * ct->ctrl_states.foot_pos_rel.block<3, 1>(0, 0);
         ct->ctrl_states.foot_pos_world.block<3, 1>(0, 1) = ct->ctrl_states.root_pos + ct->ctrl_states.root_rot_mat * ct->ctrl_states.foot_pos_rel.block<3, 1>(0, 1);
         

@@ -51,7 +51,7 @@ Eigen::Matrix<double, 3, 2> CentaurControl::ComputeGoundReactionForce(CentaurSta
     mpc_solver->Update_Bd_ExternTerm(state.mass,
                                      state.inertiaMat, 
                                      state.root_euler, 
-                                     state.foot_pos_world,
+                                     state.foot_pos_abs,
                                      state.external_wrench,
                                      state.sphere_joint_location);
 

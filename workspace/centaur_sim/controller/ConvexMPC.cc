@@ -26,6 +26,37 @@ ConvexMPC::ConvexMPC(int mpc_horizon,
     DRAKE_DEMAND(this->_u_dim == NUM_U);
 
 
+    // Step # 0:
+    // zeros all the matrix
+    // THIS PART IS ESSENTIAL!!!
+    x0.setZero();
+    xd_trajectory.setZero();
+    gravity.setZero();
+
+    for (int i = 0; i < MPC_HORIZON + 1; i++) {
+        A_power[i].setZero();
+    }
+
+    for (int i = 0; i < MPC_HORIZON + 1; i++) {
+        A_powerB[i].setZero();
+    }
+
+    A_qp.setZero();
+    B_d.setZero();
+    ExternalTerm.setZero();
+    B_qp.setZero();
+    N_qp.setZero();
+    _Q_qp.setZero();
+    _R_qp.setZero();
+    HessianMat.setZero();
+    gradientVec.setZero();
+    ConstriantMat.setZero();// two legs
+    lb.setZero();
+    ub.setZero();
+    U_all.setZero();
+    result_mat.setZero();
+    next_result_vec.setZero();
+
 
     // Step # 1:
     // construct Q_qp & R_qp for quadratic program
@@ -39,10 +70,12 @@ ConvexMPC::ConvexMPC(int mpc_horizon,
         r_weights_mpc.segment<NUM_U>(NUM_U * i) = r_weights;
     }
 
+    
     for (int i = 0; i < NUM_STATE * MPC_HORIZON; i++) {
         _Q_qp(i, i) =  q_weights_mpc(i);
     }
 
+    
     for (int i = 0; i < NUM_U * MPC_HORIZON; i++) {
         _R_qp(i, i) =  r_weights_mpc(i);
     }
@@ -50,7 +83,8 @@ ConvexMPC::ConvexMPC(int mpc_horizon,
     drake::log()->info("num of states = " + std::to_string(_state_dim));
     drake::log()->info("Q_qp rows = " + std::to_string(_Q_qp.rows()) + ", Q_qp cols = " + std::to_string(_Q_qp.cols()));
     drake::log()->info("R_qp rows = " + std::to_string(_R_qp.rows()) + ", R_qp cols = " + std::to_string(_R_qp.cols()));
-
+    
+    
     // Step # 2:
     // construct A_qp matrix (invarient part)
     Eigen::Matrix3d eye3; eye3.setIdentity();
@@ -59,7 +93,7 @@ ConvexMPC::ConvexMPC(int mpc_horizon,
     for (int i = 0; i < MPC_HORIZON; i++)
     {
         // discrete-time
-        A_power[i + 1].block<3, 3>(3, 9) = eye3 * i * _dt;
+        A_power[i + 1].block<3, 3>(3, 9) = eye3 * (i+1) * _dt;
         A_power[i + 1] += eye12;
 
         A_qp.block<NUM_STATE, NUM_STATE>(i * NUM_STATE, 0) = A_power[i + 1];
@@ -74,9 +108,10 @@ ConvexMPC::ConvexMPC(int mpc_horizon,
 
     // Step # 5:
     // Extern term
-    this->gravity << 0, 0, -9.81;
-    ExternalTerm.segment<3>(9) = this->gravity;
+    gravity << 0, 0, -9.81;
 
+    drake::log()->info("ExternalTerm  = ");
+    drake::log()->info(ExternalTerm.transpose());
     // Step # 6:
     // construct linear contraint matrix C
     for (int i = 0; i < 2 * MPC_HORIZON; i++) 
@@ -132,16 +167,29 @@ void ConvexMPC::Update_Xd_Trajectory(CentaurStates& state)
     for (int i = 0; i < MPC_HORIZON; i++)
     {
         xd_trajectory.segment<3>(6 + i * NUM_STATE) << state.root_ang_vel_d_world;
+
         xd_trajectory.segment<3>(9 + i * NUM_STATE) << state.root_lin_vel_d_world;
     }
-    
     // position
     for (int i = 0; i < MPC_HORIZON; i++)
     {
-        xd_trajectory.segment<3>(0 + i * NUM_STATE) << state.root_pos_d + state.root_lin_vel_d_world * (i * _dt);
-        xd_trajectory.segment<3>(0 + i * NUM_STATE) << state.root_euler_d;
+        xd_trajectory.segment<3>(0 + i * NUM_STATE) = state.root_euler_d;
+   
+        xd_trajectory.segment<3>(3 + i * NUM_STATE) = state.root_pos_d + state.root_lin_vel_d_world * (i * _dt);
         // TODO(haoyun) what's proper desired euler angle?
     }
+
+    // xd_trajectory.segment<3>(0 + 0 * NUM_STATE) = state.root_pos_d;
+    // drake::log()->info("height  = ");
+    // drake::log()->info(state.root_pos_d);
+    // drake::log()->info(xd_trajectory.segment<12>(12 * i).transpose());
+    //         for (int i = 0; i < 10; i++)
+    // {
+    //    drake::log()->info("xd  = " + std::to_string(i));
+    //    drake::log()->info(xd_trajectory.segment<12>(12 * i).transpose());
+    // }
+
+    
     
     
 }
@@ -150,17 +198,17 @@ void ConvexMPC::Update_Aqp_Nqp(Eigen::Vector3d euler)
 {
     Eigen::Matrix3d R_yaw_T;
     double yaw = euler(2);
-    R_yaw_T << cos(yaw), sin(yaw), 0,
-            -sin(yaw), cos(yaw), 0,
-            0, 0, 1;
+    R_yaw_T << cos(yaw), sin(yaw), 0.0,
+            -sin(yaw), cos(yaw), 0.0,
+            0.0, 0.0, 1.0;
     
-    for (int i = 0; i < _mpc_horizon; i++)  {
+    for (int i = 0; i < MPC_HORIZON; i++)  {
 
         // power = 1, 2, 3, ..., 10
         int power = i + 1;
-        A_power[power].block<3, 3>(i * NUM_STATE, 6) = R_yaw_T * power * _dt;
+        A_power[power].block<3, 3>(0, 6) = R_yaw_T * power * _dt;
 
-        A_qp.block<NUM_STATE, NUM_STATE>(i * NUM_STATE, i) = A_power[power];
+        A_qp.block<NUM_STATE, NUM_STATE>(i * NUM_STATE, 0) = A_power[power];
 
         if(i > 0) // i = 1, 2, ..., 9
         {
@@ -169,12 +217,14 @@ void ConvexMPC::Update_Aqp_Nqp(Eigen::Vector3d euler)
                 N_qp.block<NUM_STATE, NUM_STATE>(preview * NUM_STATE, 0) + A_power[i];
         }
     }
+    // drake::log()->info("A_power 8  = ");
+    // drake::log()->info(A_power[8]);
 
 }
 
 /**
  * @description: calculate B_d matrix
- * @note: foot positions are already expreesd in the world frame
+ * @note: foot positions are w.r.t body frame expressed in world frame(aka foot_pos_abs)
  * @return {*}
  */
 void ConvexMPC::Update_Bd_ExternTerm(double mass,
@@ -190,14 +240,32 @@ void ConvexMPC::Update_Bd_ExternTerm(double mass,
             0, 0, 1;
     inertia_in_world = R * inertia * R.transpose();
     I_inv = Utils::pseudo_inverse(inertia_in_world); // improve robustness
-
-    for (int i = 0; i < 2; i++) // two legs
+    // I_inv = inertia_in_world.inverse();
+    for (int leg = 0; leg < 2; leg++) // two legs
     {
-        B_d.block<3, 3>(6, i * NUM_U) = I_inv * Utils::skew(foot_pos.block<3, 1>(0, i)) * this->_dt;
-        B_d.block<3, 3>(9, i * NUM_U) = (1 / mass) * Eigen::Matrix3d::Identity() * this->_dt;
+        B_d.block<3, 3>(6, leg * NUM_U / 2) = I_inv * Utils::skew(foot_pos.block<3, 1>(0, leg)) * this->_dt;
+        B_d.block<3, 3>(9, leg * NUM_U / 2) = (1 / mass) * Eigen::Matrix3d::Identity() * this->_dt;
     }
 
+
+    // drake::log()->info("inertia I_inv = ");
+    // for (int i = 0; i < I_inv.rows(); i++)
+    // {
+    //     drake::log()->info(I_inv.block<1, 3>(i, 0));
+    // }
+
+
+    
+    // drake::log()->info("r1  = ");
+    // drake::log()->info(foot_pos.block<3, 1>(0, 0).transpose());
+
+    // drake::log()->info("r2  = ");
+    // drake::log()->info(foot_pos.block<3, 1>(0, 1).transpose());
+
+    
     ExternalTerm.segment<3>(6) = I_inv * Utils::skew(sphere_joint_location) * wrench.tail(3) + wrench.head(3);
+    ExternalTerm.segment<3>(9) = wrench.tail(3) / mass + gravity; 
+
 }
 
 void ConvexMPC::FormulateQP(int* mpc_contact_table)
@@ -229,13 +297,23 @@ void ConvexMPC::FormulateQP(int* mpc_contact_table)
        for (int leg = 0; leg < 2; leg++) // two legs
        {
             // does not need to change lb because f_min = 0
-            ub(4 + i*10 + leg*5) = mpc_contact_table[index++];
+            ub(4 + i*10 + leg*5) = mpc_contact_table[index++] * 300.0;
        }
     }
 
     HessianMat = B_qp.transpose() * _Q_qp * B_qp + _R_qp;
     gradientVec = B_qp.transpose() * _Q_qp * (A_qp * x0 - xd_trajectory + N_qp * ExternalTerm);
     
+    // drake::log()->info(std::to_string(mpc_contact_table[0*2 + 0]) + ", "
+    //     + std::to_string(mpc_contact_table[1*2 + 0]) + ", "
+    //     + std::to_string(mpc_contact_table[2*2 + 0]) + ", "
+    //     + std::to_string(mpc_contact_table[3*2 + 0]) + ", "
+    //     + std::to_string(mpc_contact_table[4*2 + 0]) + ", "
+    //     + std::to_string(mpc_contact_table[5*2 + 0]) + ", "
+    //     + std::to_string(mpc_contact_table[6*2 + 0]) + ", "
+    //     + std::to_string(mpc_contact_table[7*2 + 0]) + ", "
+    //     + std::to_string(mpc_contact_table[8*2 + 0]) + ", "
+    //     + std::to_string(mpc_contact_table[9*2 + 0]) + ", ");
 }
 
 void ConvexMPC::SolveMPC()
@@ -246,19 +324,32 @@ void ConvexMPC::SolveMPC()
     auto U = prog.NewContinuousVariables<NUM_U * MPC_HORIZON>();
     
     auto qp_cost = prog.AddQuadraticCost(HessianMat, gradientVec, U);
+    // prog.AddLinearCost(gradientVec, 0.0, U);
+    // drake::log()->info(_Q_qp);
+    auto linear_constraint = prog.AddLinearConstraint(ConstriantMat, lb, ub, U);
+
+
     
-    // auto linear_constraint = prog.AddLinearConstraint(ConstriantMat, lb, ub, U);
+    
+
+    // drake::log()->info("BD =");
+    // for (int i = 0; i < B_d.rows(); i++) {
+    //     drake::log()->info(B_d.block<1, 6>(i, 0));
+    // }
+    // drake::log()->info("-------------------");
     
     if(mosek_solver.available()) {
         drake::solvers::MathematicalProgramResult prog_result;
-        mosek_solver.Solve(prog, {}, {}, &prog_result);
-        if(qp_cost.evaluator()->is_convex()) drake::log()->info("convex!");
+        mosek_solver.Solve(prog, next_result_vec, {}, &prog_result);
+        // if(qp_cost.evaluator()->is_convex()) drake::log()->info("convex!");
 
         if (prog_result.is_success()) {
-            drake::log()->info("congras!");
+            // drake::log()->info("congras!");
             U_all = prog_result.GetSolution();
             result_mat.block<3, 1>(0, 0) = U_all.segment<3>(0);
             result_mat.block<3, 1>(0, 1) = U_all.segment<3>(3);
+            drake::log()->info(result_mat.block<3, 1>(0, 0).transpose());
+            drake::log()->info(result_mat.block<3, 1>(0, 1).transpose());
             next_result_vec = U_all;
             const drake::solvers::MosekSolverDetails& mosek_solver_details =
                 prog_result.get_solver_details<drake::solvers::MosekSolver>();

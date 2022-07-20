@@ -7,4 +7,4 @@ Ixy: 0.0
 Ixz: 0.0
 Iyz: 0.0
 
-sphere_joint_location: [0, 0, 0.216]
+sphere_joint_location: [0.216, 0, 0]

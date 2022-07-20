@@ -10,6 +10,7 @@
  */
 #pragma once
 
+#include <drake/common/text_logging.h>
 #include <drake/solvers/mathematical_program.h>
 #include <drake/solvers/solver_interface.h>
 #include <drake/solvers/mosek_solver.h>
