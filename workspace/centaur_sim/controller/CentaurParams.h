@@ -24,9 +24,12 @@
 #define NUM_U 6
 
 #define FOOT_SWING_CLEARANCE1 0.0f
-#define FOOT_SWING_CLEARANCE2 0.4f
+#define FOOT_SWING_CLEARANCE2 0.3f
 
-#define FOOT_DELTA_X_LIMIT 0.25
-#define FOOT_DELTA_Y_LIMIT 0.25
+#define FOOT_DELTA_X_LIMIT 0.25f
+#define FOOT_DELTA_Y_LIMIT 0.25f
+
+
+
 
 #endif //CT_PARAMS_H

@@ -78,7 +78,7 @@ private:
             ct->walking->update_gait_pattern(ct->ctrl_states);
             // ct->standing->update_gait_pattern(ct->ctrl_states);
             ct->controller->GenerateSwingTrajectory(ct->ctrl_states);
-
+            ct->controller->InverseKinematics(ct->ctrl_states);
             if(ct->ctrl_states.k == 1 || ct->ctrl_states.k % ct->ctrl_states.nIterationsPerMPC == 0) {
                 ct->controller->ComputeGoundReactionForce(ct->ctrl_states);
             }
@@ -134,8 +134,41 @@ private:
         ct->ctrl_states.foot_pos_world.block<3, 1>(0, 0) = ct->ctrl_states.root_pos + ct->ctrl_states.root_rot_mat * ct->ctrl_states.foot_pos_rel.block<3, 1>(0, 0);
         ct->ctrl_states.foot_pos_world.block<3, 1>(0, 1) = ct->ctrl_states.root_pos + ct->ctrl_states.root_rot_mat * ct->ctrl_states.foot_pos_rel.block<3, 1>(0, 1);
         
-        // if(ct->ctrl_states.t < 0.1)
-        //     drake::log()->info(ct->ctrl_states.foot_pos_world);
+
+        MatrixX<double> J_BF_left(3, _control_model.num_positions());
+        _control_model.CalcJacobianTranslationalVelocity(*_plant_context,
+                                                         multibody::JacobianWrtVariable::kQDot,
+                                                         LeftFootFrame,
+                                                         Vector3<double>::Zero(),
+                                                         FloatingBodyFrame,
+                                                         FloatingBodyFrame,
+                                                         &J_BF_left);
+                                                        
+        ct->ctrl_states.JacobianFoot[0] = J_BF_left.block<3, 3>(0, 7);
+
+        MatrixX<double> J_BF_right(3, _control_model.num_positions());
+        _control_model.CalcJacobianTranslationalVelocity(*_plant_context,
+                                                         multibody::JacobianWrtVariable::kQDot,
+                                                         RightFootFrame,
+                                                         Vector3<double>::Zero(),
+                                                         FloatingBodyFrame,
+                                                         FloatingBodyFrame,
+                                                         &J_BF_right);
+                                                
+        ct->ctrl_states.JacobianFoot[1] = J_BF_right.block<3, 3>(0, 7);
+                                                        
+        Eigen::Matrix<double, 13, 1> qvec;
+        qvec = _control_model.GetPositions(*_plant_context);
+        ct->ctrl_states.q << qvec.tail(6);
+
+        Eigen::Matrix<double, 12, 1> qdot_vec = _control_model.GetVelocities(*_plant_context);
+        ct->ctrl_states.qdot = qdot_vec.segment<6>(6);
+
+
+        // if(context.get_time() < 0.001) {
+        //     drake::log()->info("ct->ctrl_states.q = ");
+        //     drake::log()->info(ct->ctrl_states.q);
+        // }
         
 
     }

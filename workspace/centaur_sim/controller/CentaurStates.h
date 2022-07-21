@@ -40,6 +40,10 @@ struct control_params_constant {
     // swing
     std::vector<double> default_foot_pos_under_hip;
 
+    // ik
+    int max_iter;
+    double ik_eps;
+
 
     template <typename Archive>
         void Serialize(Archive* a) {
@@ -51,6 +55,8 @@ struct control_params_constant {
         a->Visit(DRAKE_NVP(r_weights));
         a->Visit(DRAKE_NVP(mu));
         a->Visit(DRAKE_NVP(default_foot_pos_under_hip));
+        a->Visit(DRAKE_NVP(max_iter));
+        a->Visit(DRAKE_NVP(ik_eps));
         
     }
 };
@@ -124,6 +130,10 @@ class CentaurStates {
             robot_params_const.left_hip_location.at(0) + ctrl_params_const.default_foot_pos_under_hip.at(0),
             FILP_DIR * robot_params_const.left_hip_location.at(1) + ctrl_params_const.default_foot_pos_under_hip.at(1),
             robot_params_const.left_hip_location.at(2) + ctrl_params_const.default_foot_pos_under_hip.at(2);
+
+        // ik
+        this->max_iter = ctrl_params_const.max_iter;
+        this->ik_eps = ctrl_params_const.ik_eps;
 
 
         this->k = 0;
@@ -199,7 +209,25 @@ class CentaurStates {
     Eigen::Matrix<double, 3, 2> foot_pos_cmd_rel;    // command
     Eigen::Matrix<double, 3, 2> foot_pos_cmd_abs;
     Eigen::Matrix<double, 3, 2> foot_pos_cmd_world;
+
+    Eigen::Matrix<double, 3, 2> foot_vel_cmd_rel;    // command
+    Eigen::Matrix<double, 3, 2> foot_vel_cmd_abs;
+    Eigen::Matrix<double, 3, 2> foot_vel_cmd_world;
     
+    Eigen::Matrix<double, 3, 2> foot_force_cmd_rel;    // command
+    Eigen::Matrix<double, 3, 2> foot_force_cmd_abs;
+    Eigen::Matrix<double, 3, 2> foot_force_cmd_world;
+
+    Eigen::Matrix<double, 3, 3> JacobianFoot[2];
+
+    // motors
+    Eigen::Matrix<double, 6, 1> q, qdot, q_cmd, qdot_cmd;
+
+    // ik
+    int max_iter;
+    double ik_eps;
+
+
 
     // Others
     Eigen::Matrix<double, 6, 1> external_wrench;

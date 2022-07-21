@@ -7,9 +7,9 @@ gait_resolution: 120  # divide gait phase into # portions
 # MPC info
 nIterationsPerMPC: 50
 mpc_horizon: 10
-q_weights: [10.0, 10.0, 10.0,    # Roll Pitch Yaw
-            0.0, 0.0, 30.0,    # Posx Posy Posz
-            10.0, 10.0, 10.0,    # corresponding derivative
+q_weights: [20.0, 20.0, 20.0,    # Roll Pitch Yaw
+            0.0, 0.0, 50.0,    # Posx Posy Posz
+            6.0, 6.0, 6.0,    # corresponding derivative
             0.0, 0.0, 10.0 ]
 
 r_weights: [1.0, 1.0, .5,
@@ -20,3 +20,7 @@ mu: 0.4
 
 # Swing foot
 default_foot_pos_under_hip: [0, 0, -0.9]
+
+# kinematics
+max_iter: 100
+ik_eps: 0.005

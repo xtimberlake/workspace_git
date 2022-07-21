@@ -31,7 +31,13 @@ CentaurControl::CentaurControl(const control_params_constant ctrl_params) {
     this->mu = ctrl_params.mu;
     mpc_solver = new ConvexMPC(this->mpc_horizon, this->mpc_dt, this->mpc_q_weights, this->mpc_r_weights, this->mu);
 
+    FirstTimeSwing = true;
 
+    for (int leg = 0; leg < 2; leg++) {
+        swingtrajectory[leg].setHeight(FOOT_SWING_CLEARANCE2);
+    }
+    
+    
 }
 
 Eigen::Matrix<double, 3, 2> CentaurControl::ComputeGoundReactionForce(CentaurStates& state)
@@ -93,7 +99,65 @@ void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
 
     }
     
-    // Step 2: generate trajectory using Bezier curve given gait scheduler
+    // Step 2: generate trajectory(in world) using Bezier curve given gait scheduler
+    if(FirstTimeSwing) {
+        for (int leg = 0; leg < 2; leg++) {
+            swingtrajectory[leg].setInitialPosition(state.foot_pos_world.block<3, 1>(0, leg));
+            swingtrajectory[leg].setFinalPosition(state.foothold_dest_world.block<3, 1>(0, leg));
+            state.foot_pos_cmd_world.block<3, 1>(0, leg) = state.foot_pos_world.block<3, 1>(0, leg);
+            state.foot_vel_cmd_world.block<3, 1>(0, leg).setZero();
+        }
+        FirstTimeSwing = false;
+    }
+    else {
+        for (int leg = 0; leg < 2; leg++)
+        {
+            if (state.plan_contacts_phase(leg) > .99) {
+                // stance
+                swingtrajectory[leg].setInitialPosition(state.foot_pos_world.block<3, 1>(0, leg));
+                state.foot_pos_cmd_world.block<3, 1>(0, leg) = state.foot_pos_world.block<3, 1>(0, leg);
+                state.foot_vel_cmd_world.block<3, 1>(0, leg).setZero();
 
+
+            }
+            else {
+                // swing
+                swingtrajectory[leg].setFinalPosition(state.foothold_dest_world.block<3, 1>(0, leg));
+                swingtrajectory[leg].computeSwingTrajectoryBezier(state.plan_swings_phase(leg), state.gait_period * (1 - state.stance_duration(leg)));
+                state.foot_pos_cmd_world.block<3, 1>(0, leg) = swingtrajectory[leg].getPosition();
+                state.foot_vel_cmd_world.block<3, 1>(0, leg) = swingtrajectory[leg].getVelocity();
+
+                state.foot_force_cmd_world.block<3, 1>(0, leg).setZero();
+                state.foot_force_cmd_abs.block<3, 1>(0, leg).setZero();
+                state.foot_force_cmd_rel.block<3, 1>(0, leg).setZero();
+            }
+        }
+    }
+
+    // expressed in the CoM's frame
+    for (int leg = 0; leg < 2; leg++)
+    {
+        state.foot_pos_cmd_abs.block<3, 1>(0, leg) = state.foot_pos_cmd_world.block<3, 1>(0, leg) - state.root_pos;
+        state.foot_pos_cmd_rel.block<3, 1>(0, leg) = state.root_rot_mat.transpose() * state.foot_pos_cmd_abs.block<3, 1>(0, leg);
+
+        state.foot_vel_cmd_abs.block<3, 1>(0, leg) = state.foot_vel_cmd_world.block<3, 1>(0, leg) - state.root_pos;
+        state.foot_vel_cmd_rel.block<3, 1>(0, leg) = state.root_rot_mat_z.transpose() * state.foot_vel_cmd_abs.block<3, 1>(0, leg);
+    }
+    
+}
+
+void CentaurControl::InverseKinematics(CentaurStates& state)
+{
+    
+    for (int leg = 0; leg < 2; leg++) {
+        state.qdot_cmd.segment<3>(leg * 3) = Utils::pseudo_inverse(state.JacobianFoot[leg]) * state.foot_vel_cmd_rel.block<3, 1>(0, leg);
+    }
+
+    Eigen::Matrix<double, 3, 2> foot_pos_err;
+    for (int leg = 0; leg < 2; leg++)
+    {
+        foot_pos_err.block<3, 1>(0, leg) = state.foot_pos_cmd_rel.block<3, 1>(0, leg) - state.foot_pos_rel.block<3, 1>(0, leg);
+        state.q_cmd.segment<3>(leg * 3) = state.q.segment<3>(leg * 3) + state.control_dt * Utils::pseudo_inverse(state.JacobianFoot[leg]) * foot_pos_err.block<3, 1>(0, leg);
+    }
 
 }

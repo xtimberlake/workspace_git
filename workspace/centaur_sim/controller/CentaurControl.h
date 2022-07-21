@@ -13,6 +13,7 @@
 #include "drake/workspace/centaur_sim/controller/CentaurStates.h"
 #include "drake/workspace/centaur_sim/controller/ConvexMPC.h"
 #include "drake/workspace/centaur_sim/controller/CentaurParams.h"
+#include "drake/workspace/centaur_sim/Utils/Utils.h"
 #include <type_traits>
 
 class CentaurStates;
@@ -22,6 +23,7 @@ class CentaurControl
 public:
     CentaurControl(const control_params_constant ctrl_params);
     void GenerateSwingTrajectory(CentaurStates& state);
+    void InverseKinematics(CentaurStates& state);
     Eigen::Matrix<double, 3, 2> ComputeGoundReactionForce(CentaurStates& state);
     
     // variables:
@@ -31,8 +33,12 @@ public:
     int mpc_horizon;
     double mpc_dt;
     double mu;
+    
     Eigen::Matrix<double, NUM_STATE, 1> mpc_q_weights;
     Eigen::Matrix<double, NUM_U, 1> mpc_r_weights;
 
+    // swing
+    FootSwingTrajectory<double>  swingtrajectory[2];
+    bool FirstTimeSwing;
 };
 

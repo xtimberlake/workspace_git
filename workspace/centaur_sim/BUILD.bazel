@@ -82,6 +82,7 @@ drake_cc_library(
         "centaurrobot/centaurrobot.cc",
         "controller/ConvexMPC.cc",
         "Utils/Utils.cc",
+        "controller/LegController.cc",
     ],
     hdrs = [
         "centaur_controller.h",
@@ -92,6 +93,7 @@ drake_cc_library(
         "controller/ConvexMPC.h",
         "controller/CentaurParams.h",
         "Utils/Utils.h",
+        "controller/LegController.h",
     ],
     data = [
         "centaur_control_model.sdf",
