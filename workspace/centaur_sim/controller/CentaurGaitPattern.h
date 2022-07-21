@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-17 11:26:19
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-18 09:07:45
+ * @LastEditTime: 2022-07-21 19:20:57
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurGaitPattern.h
  * @Description: 
  * 
@@ -36,8 +36,7 @@ private:
     
 public:
     CentuarGaitPattern(double gait_period,
-                        double gait_resolution,
-                        int nMPC_per_period, 
+                        const control_params_constant ctrl_params,
                         Eigen::Vector2f stance_duration,
                         Eigen::Vector2f offset);
 

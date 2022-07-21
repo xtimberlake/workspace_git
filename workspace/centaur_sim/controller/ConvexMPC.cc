@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-18 09:28:36
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-20 19:42:44
+ * @LastEditTime: 2022-07-21 20:56:09
  * @FilePath: /drake/workspace/centaur_sim/controller/ConvexMPC.cc
  * @Description: 
  * 
@@ -11,7 +11,7 @@
 #include "drake/workspace/centaur_sim/controller/ConvexMPC.h"
 
 ConvexMPC::ConvexMPC(int mpc_horizon,
-                     double dt,
+                     double mpc_dt,
                      Eigen::VectorXd q_weights, 
                      Eigen::VectorXd r_weights,
                      double mu)
@@ -19,7 +19,7 @@ ConvexMPC::ConvexMPC(int mpc_horizon,
     this->_mpc_horizon = mpc_horizon;
     this->_state_dim = q_weights.rows();
     this->_u_dim = r_weights.rows();
-    this->_dt = dt;
+    this->_mpc_dt = mpc_dt;
 
     DRAKE_DEMAND(this->_mpc_horizon == MPC_HORIZON);
     DRAKE_DEMAND(this->_state_dim == NUM_STATE);
@@ -93,10 +93,11 @@ ConvexMPC::ConvexMPC(int mpc_horizon,
     for (int i = 0; i < MPC_HORIZON; i++)
     {
         // discrete-time
-        A_power[i + 1].block<3, 3>(3, 9) = eye3 * (i+1) * _dt;
-        A_power[i + 1] += eye12;
+        int power = i + 1;
+        A_power[power].block<3, 3>(3, 9) = eye3 * power * _mpc_dt;
+        A_power[power] += eye12;
 
-        A_qp.block<NUM_STATE, NUM_STATE>(i * NUM_STATE, 0) = A_power[i + 1];
+        A_qp.block<NUM_STATE, NUM_STATE>(i * NUM_STATE, 0) = A_power[power];
     }
 
     // Step # 3:
@@ -110,8 +111,6 @@ ConvexMPC::ConvexMPC(int mpc_horizon,
     // Extern term
     gravity << 0, 0, -9.81;
 
-    drake::log()->info("ExternalTerm  = ");
-    drake::log()->info(ExternalTerm.transpose());
     // Step # 6:
     // construct linear contraint matrix C
     for (int i = 0; i < 2 * MPC_HORIZON; i++) 
@@ -175,15 +174,11 @@ void ConvexMPC::Update_Xd_Trajectory(CentaurStates& state)
     {
         xd_trajectory.segment<3>(0 + i * NUM_STATE) = state.root_euler_d;
    
-        xd_trajectory.segment<3>(3 + i * NUM_STATE) = state.root_pos_d + state.root_lin_vel_d_world * (i * _dt);
+        xd_trajectory.segment<3>(3 + i * NUM_STATE) = state.root_pos_d + state.root_lin_vel_d_world * (i * _mpc_dt);
         // TODO(haoyun) what's proper desired euler angle?
     }
 
-    // xd_trajectory.segment<3>(0 + 0 * NUM_STATE) = state.root_pos_d;
-    // drake::log()->info("height  = ");
-    // drake::log()->info(state.root_pos_d);
-    // drake::log()->info(xd_trajectory.segment<12>(12 * i).transpose());
-    //         for (int i = 0; i < 10; i++)
+    // for (int i = 0; i < 10; i++)
     // {
     //    drake::log()->info("xd  = " + std::to_string(i));
     //    drake::log()->info(xd_trajectory.segment<12>(12 * i).transpose());
@@ -206,7 +201,7 @@ void ConvexMPC::Update_Aqp_Nqp(Eigen::Vector3d euler)
 
         // power = 1, 2, 3, ..., 10
         int power = i + 1;
-        A_power[power].block<3, 3>(0, 6) = R_yaw_T * power * _dt;
+        A_power[power].block<3, 3>(0, 6) = R_yaw_T * power * _mpc_dt;
 
         A_qp.block<NUM_STATE, NUM_STATE>(i * NUM_STATE, 0) = A_power[power];
 
@@ -217,8 +212,6 @@ void ConvexMPC::Update_Aqp_Nqp(Eigen::Vector3d euler)
                 N_qp.block<NUM_STATE, NUM_STATE>(preview * NUM_STATE, 0) + A_power[i];
         }
     }
-    // drake::log()->info("A_power 8  = ");
-    // drake::log()->info(A_power[8]);
 
 }
 
@@ -243,8 +236,8 @@ void ConvexMPC::Update_Bd_ExternTerm(double mass,
     // I_inv = inertia_in_world.inverse();
     for (int leg = 0; leg < 2; leg++) // two legs
     {
-        B_d.block<3, 3>(6, leg * NUM_U / 2) = I_inv * Utils::skew(foot_pos.block<3, 1>(0, leg)) * this->_dt;
-        B_d.block<3, 3>(9, leg * NUM_U / 2) = (1 / mass) * Eigen::Matrix3d::Identity() * this->_dt;
+        B_d.block<3, 3>(6, leg * NUM_U / 2) = I_inv * Utils::skew(foot_pos.block<3, 1>(0, leg)) * this->_mpc_dt;
+        B_d.block<3, 3>(9, leg * NUM_U / 2) = (1 / mass) * Eigen::Matrix3d::Identity() * this->_mpc_dt;
     }
 
 
@@ -253,18 +246,23 @@ void ConvexMPC::Update_Bd_ExternTerm(double mass,
     // {
     //     drake::log()->info(I_inv.block<1, 3>(i, 0));
     // }
-
-
     
     // drake::log()->info("r1  = ");
     // drake::log()->info(foot_pos.block<3, 1>(0, 0).transpose());
+
+    // drake::log()->info("skewr1  = ");
+    // drake::log()->info(Utils::skew(foot_pos.block<3, 1>(0, 0)));
 
     // drake::log()->info("r2  = ");
     // drake::log()->info(foot_pos.block<3, 1>(0, 1).transpose());
 
     
-    ExternalTerm.segment<3>(6) = I_inv * Utils::skew(sphere_joint_location) * wrench.tail(3) + wrench.head(3);
+    ExternalTerm.segment<3>(6) = I_inv * Utils::skew(R * sphere_joint_location) * (R * wrench.tail(3)) + R * wrench.head(3);
     ExternalTerm.segment<3>(9) = wrench.tail(3) / mass + gravity; 
+
+    // ExternalTerm = this->_mpc_dt * ExternalTerm;
+    // drake::log()->info("ExternalTerm  = ");
+    // drake::log()->info(ExternalTerm.transpose());
 
 }
 
@@ -286,7 +284,6 @@ void ConvexMPC::FormulateQP(int* mpc_contact_table)
         }
         
     }
-    
     // Step 3: N_qp(done in 'Update_Aqp_Nqp' function)
 
     // Step 4: lower bound & upper bound
@@ -297,10 +294,13 @@ void ConvexMPC::FormulateQP(int* mpc_contact_table)
        for (int leg = 0; leg < 2; leg++) // two legs
        {
             // does not need to change lb because f_min = 0
+            
             ub(4 + i*10 + leg*5) = mpc_contact_table[index++] * 300.0;
+            
        }
     }
 
+    // drake::log()->info(lb);
     HessianMat = B_qp.transpose() * _Q_qp * B_qp + _R_qp;
     gradientVec = B_qp.transpose() * _Q_qp * (A_qp * x0 - xd_trajectory + N_qp * ExternalTerm);
     
@@ -328,9 +328,24 @@ void ConvexMPC::SolveMPC()
     // drake::log()->info(_Q_qp);
     auto linear_constraint = prog.AddLinearConstraint(ConstriantMat, lb, ub, U);
 
+    // for (int i = 0; i < 10; i++)
+    // {
+    //    drake::log()->info("xd  = " + std::to_string(i));
+    //    drake::log()->info(xd_trajectory.segment<12>(12 * i).transpose());
+    // }
 
+    // drake::log()->info("A_qp =");
+    // for (int i = 0; i < A_qp.rows(); i++) {
+    //     drake::log()->info(A_qp.block<1, 12>(i, 0));
+        
+    // }
     
-    
+    // drake::log()->info("N_qp =");
+    // for (int i = 0; i < N_qp.rows(); i++) {
+    //     drake::log()->info(N_qp.block<1, 12>(i, 0));
+        
+    // }
+
 
     // drake::log()->info("BD =");
     // for (int i = 0; i < B_d.rows(); i++) {

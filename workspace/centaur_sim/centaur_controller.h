@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-14 12:43:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-20 15:10:21
+ * @LastEditTime: 2022-07-21 19:21:37
  * @FilePath: /drake/workspace/centaur_sim/centaur_controller.h
  * @Description: controller block for drake simulation
  * 
@@ -76,8 +76,13 @@ private:
         {
             ct->ctrl_states.k++;
             ct->walking->update_gait_pattern(ct->ctrl_states);
-            if(ct->ctrl_states.k == 1 || ct->ctrl_states.k % 10 == 0)
+            // ct->standing->update_gait_pattern(ct->ctrl_states);
+            ct->controller->GenerateSwingTrajectory(ct->ctrl_states);
+
+            if(ct->ctrl_states.k == 1 || ct->ctrl_states.k % ct->ctrl_states.nIterationsPerMPC == 0) {
                 ct->controller->ComputeGoundReactionForce(ct->ctrl_states);
+            }
+                
 
         }
         
@@ -108,9 +113,16 @@ private:
         ct->ctrl_states.root_ang_vel = FloatingBodyFrame.CalcSpatialVelocityInWorld(*_plant_context).rotational();
         ct->ctrl_states.root_lin_vel = FloatingBodyFrame.CalcSpatialVelocityInWorld(*_plant_context).translational();
         ct->ctrl_states.root_rot_mat = FloatingBodyFrame.CalcRotationMatrixInWorld(*_plant_context).matrix();
-        ct->ctrl_states.root_rot_mat_z = FloatingBodyFrame.CalcRotationMatrixInWorld(*_plant_context).matrix().transpose();
         ct->ctrl_states.root_euler = math::RollPitchYaw<T>(FloatingBodyFrame.CalcRotationMatrixInWorld(*_plant_context)).vector();
         
+        double sin_yaw, cos_yaw;
+        sin_yaw = sin(ct->ctrl_states.root_euler[2]);
+        cos_yaw = cos(ct->ctrl_states.root_euler[2]);
+
+        ct->ctrl_states.root_rot_mat_z << cos_yaw, -sin_yaw, 0,
+                                          sin_yaw, cos_yaw, 0,
+                                          0, 0, 1;
+
         const multibody::BodyFrame<T>& LeftFootFrame = _control_model.GetBodyByName("left_foot").body_frame();
         ct->ctrl_states.foot_pos_rel.block<3, 1>(0, 0) = LeftFootFrame.CalcPose(*_plant_context, FloatingBodyFrame).translation();
         const multibody::BodyFrame<T>& RightFootFrame = _control_model.GetBodyByName("right_foot").body_frame();

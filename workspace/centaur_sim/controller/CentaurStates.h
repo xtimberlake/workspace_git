@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:30:49
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-20 14:30:02
+ * @LastEditTime: 2022-07-21 17:40:26
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurStates.h
  * @Description: define all the states that used in controller; mainly 
  *                adapted from https://github.com/ShuoYangRobotics/A1-QP-MPC-Controller
@@ -31,22 +31,26 @@ struct control_params_constant {
     double gait_resolution;
 
     // mpc
-    int nMPC_per_period;
+    int nIterationsPerMPC;
     int mpc_horizon;
     std::vector<double> q_weights;
     std::vector<double> r_weights;
     double mu;
+
+    // swing
+    std::vector<double> default_foot_pos_under_hip;
 
 
     template <typename Archive>
         void Serialize(Archive* a) {
         a->Visit(DRAKE_NVP(control_dt));
         a->Visit(DRAKE_NVP(gait_resolution));
-        a->Visit(DRAKE_NVP(nMPC_per_period));
+        a->Visit(DRAKE_NVP(nIterationsPerMPC));
         a->Visit(DRAKE_NVP(mpc_horizon));
         a->Visit(DRAKE_NVP(q_weights));
         a->Visit(DRAKE_NVP(r_weights));
         a->Visit(DRAKE_NVP(mu));
+        a->Visit(DRAKE_NVP(default_foot_pos_under_hip));
         
     }
 };
@@ -57,6 +61,7 @@ struct robot_params_constant {
     double Ixx, Iyy, Izz, Ixy, Ixz, Iyz;
     double mass;
     std::vector<double> sphere_joint_location;
+    std::vector<double> left_hip_location;
 
 
     template <typename Archive>
@@ -69,6 +74,7 @@ struct robot_params_constant {
         a->Visit(DRAKE_NVP(Ixz));
         a->Visit(DRAKE_NVP(Iyz));
         a->Visit(DRAKE_NVP(sphere_joint_location));
+        a->Visit(DRAKE_NVP(left_hip_location));
         
     }
 };
@@ -81,7 +87,7 @@ class CentaurStates {
         this->ctrl_params_const = drake::yaml::LoadYamlFile<control_params_constant>(
           drake::FindResourceOrThrow("drake/workspace/centaur_sim/config/centaur_sim_control_params.yaml"));
         this->control_dt = ctrl_params_const.control_dt;
-        this->nMPC_per_period = ctrl_params_const.nMPC_per_period;
+        this->nIterationsPerMPC = ctrl_params_const.nIterationsPerMPC;
         this->gait_resolution = ctrl_params_const.gait_resolution;
         DRAKE_DEMAND(ctrl_params_const.mpc_horizon == MPC_HORIZON);
         this->mpc_horizon = ctrl_params_const.mpc_horizon;
@@ -108,6 +114,17 @@ class CentaurStates {
             this->sphere_joint_location(i) = robot_params_const.sphere_joint_location.at(i);
         }
 
+        // swing
+        this->default_foot_pos_rel.block<3, 1>(0, 0) <<
+            robot_params_const.left_hip_location.at(0) + ctrl_params_const.default_foot_pos_under_hip.at(0),
+            robot_params_const.left_hip_location.at(1) + ctrl_params_const.default_foot_pos_under_hip.at(1),
+            robot_params_const.left_hip_location.at(2) + ctrl_params_const.default_foot_pos_under_hip.at(2);
+
+        this->default_foot_pos_rel.block<3, 1>(0, 1) <<
+            robot_params_const.left_hip_location.at(0) + ctrl_params_const.default_foot_pos_under_hip.at(0),
+            FILP_DIR * robot_params_const.left_hip_location.at(1) + ctrl_params_const.default_foot_pos_under_hip.at(1),
+            robot_params_const.left_hip_location.at(2) + ctrl_params_const.default_foot_pos_under_hip.at(2);
+
 
         this->k = 0;
 
@@ -133,10 +150,12 @@ class CentaurStates {
     uint64_t k;
 
     // gait
-    int nMPC_per_period;
+    int nIterationsPerMPC;
     double gait_resolution;
     Eigen::Vector2f plan_contacts_phase;
     Eigen::Vector2f plan_swings_phase;
+    double gait_period; //symmetric gait
+    Eigen::Vector2f stance_duration;
 
 
     // mpc
@@ -171,6 +190,16 @@ class CentaurStates {
     Eigen::Matrix<double, 3, 2> foot_pos_world;
     Eigen::Matrix<double, 3, 2> foot_pos_rel;
     Eigen::Matrix<double, 3, 2> foot_pos_abs; // from CoM to foot expressed in the world frame
+
+    Eigen::Matrix<double, 3, 2> default_foot_pos_rel;
+    Eigen::Matrix<double, 3, 2> foothold_dest_rel;    // destination
+    Eigen::Matrix<double, 3, 2> foothold_dest_abs;
+    Eigen::Matrix<double, 3, 2> foothold_dest_world;
+
+    Eigen::Matrix<double, 3, 2> foot_pos_cmd_rel;    // command
+    Eigen::Matrix<double, 3, 2> foot_pos_cmd_abs;
+    Eigen::Matrix<double, 3, 2> foot_pos_cmd_world;
+    
 
     // Others
     Eigen::Matrix<double, 6, 1> external_wrench;

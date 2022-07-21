@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:31:28
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-20 14:14:42
+ * @LastEditTime: 2022-07-21 10:52:34
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurControl.h
  * @Description: centaur root controller
  * 
@@ -21,6 +21,7 @@ class CentaurControl
 {
 public:
     CentaurControl(const control_params_constant ctrl_params);
+    void GenerateSwingTrajectory(CentaurStates& state);
     Eigen::Matrix<double, 3, 2> ComputeGoundReactionForce(CentaurStates& state);
     
     // variables:

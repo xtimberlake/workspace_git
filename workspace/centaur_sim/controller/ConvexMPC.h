@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-18 09:28:44
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-20 19:41:20
+ * @LastEditTime: 2022-07-21 19:09:38
  * @FilePath: /drake/workspace/centaur_sim/controller/ConvexMPC.h
  * @Description: mpc matrix transformation and qp sovler
  * 
@@ -22,7 +22,7 @@
 
 class ConvexMPC {
 public:
-    ConvexMPC(int mpc_horizon, double dt, Eigen::VectorXd q_weights, Eigen::VectorXd r_weights, double mu);
+    ConvexMPC(int mpc_horizon, double mpc_dt, Eigen::VectorXd q_weights, Eigen::VectorXd r_weights, double mu);
     void Update_Xd_Trajectory(CentaurStates& state);
     void Update_Aqp_Nqp(Eigen::Vector3d euler);
     void Update_Bd_ExternTerm(double mass,
@@ -37,7 +37,7 @@ public:
     int _state_dim;
     int _u_dim;
     int _mpc_horizon;
-    double _dt;
+    double _mpc_dt;
 
     Eigen::Matrix<double, NUM_STATE, 1> x0;
     Eigen::Matrix<double, NUM_STATE * MPC_HORIZON, 1> xd_trajectory;
