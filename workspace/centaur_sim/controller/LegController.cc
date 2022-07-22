@@ -15,8 +15,8 @@ LegController::LegController()
     this->_kp_stance << 5.0, 2, 2;
     this->_kd_stance << 5.0, 2, 2;
 
-    this->_kp_swing << 100.0, 50, 50;
-    this->_kd_swing << 300.0, 100, 100;
+    this->_kp_swing << 100.0, 100, 50;
+    this->_kd_swing << 200.0, 200, 100;
 }
 
 Eigen::Matrix<double, 6, 1> LegController::joint_impedance_control(CentaurStates& state){

@@ -76,7 +76,7 @@ private:
         {
             ct->ctrl_states.k++;
 
-            if(ct->ctrl_states.t < 0.5) {
+            if(ct->ctrl_states.t < 2) {
                 ct->standing->update_gait_pattern(ct->ctrl_states);
             }
             else {
@@ -87,7 +87,7 @@ private:
             // drake::log()->info("stance left = " + std::to_string(ct->ctrl_states.plan_contacts_phase[0]) + "  right = " +  std::to_string(ct->ctrl_states.plan_contacts_phase[1]));
              
             ct->controller->GenerateSwingTrajectory(ct->ctrl_states);
-            // ct->ctrl_states.foot_pos_cmd_rel.block<3, 1>(0, leg)
+            // drake::log()->info(ct->ctrl_states.foot_pos_world.transpose());
             if(ct->ctrl_states.k == 1 || ct->ctrl_states.k % ct->ctrl_states.nIterationsPerMPC == 0) {
                 ct->controller->ComputeGoundReactionForce(ct->ctrl_states);
             }
@@ -144,6 +144,10 @@ private:
         ct->ctrl_states.foot_pos_world.block<3, 1>(0, 0) = ct->ctrl_states.root_pos + ct->ctrl_states.root_rot_mat * ct->ctrl_states.foot_pos_rel.block<3, 1>(0, 0);
         ct->ctrl_states.foot_pos_world.block<3, 1>(0, 1) = ct->ctrl_states.root_pos + ct->ctrl_states.root_rot_mat * ct->ctrl_states.foot_pos_rel.block<3, 1>(0, 1);
         
+        // Eigen::Vector3d temp;
+        // temp = LeftFootFrame.CalcPoseInWorld(*_plant_context).translation();
+        // drake::log()->info("real:" );
+        // drake::log()->info(temp);
 
         MatrixX<double> J_BF_left(3, _control_model.num_positions());
         _control_model.CalcJacobianTranslationalVelocity(*_plant_context,

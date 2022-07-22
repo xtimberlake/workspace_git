@@ -29,7 +29,7 @@
 #include "drake/workspace/centaur_sim/extract_data.h"
 #include "drake/workspace/centaur_sim/centaur_controller.h"
 
-DEFINE_double(simulation_sec, 4.0,
+DEFINE_double(simulation_sec, 10.0,
               "Number of seconds to simulate.");
 DEFINE_double(sim_dt, 5e-4,
               "The time step to use for MultibodyPlant model"
@@ -127,13 +127,17 @@ namespace centaur_sim {
             diagram->GetMutableSubsystemContext(*plant,
                                                 &simulator.get_mutable_context());
                                     
+        double backward = 0.05;
+        double ramp, increment_angle;
+        ramp = std::sqrt(0.9 * 0.9 + backward * backward);
+        increment_angle = acos((.9*.9 + ramp*ramp - backward*backward) /(2 * .9 * ramp));
         VectorX<double> initial_state(plant->num_positions() + plant->num_velocities());
         // initial_state.setZero();
         initial_state <<
         // 1, 0, 0, 0,
         0, 0, 0,
-        0, acos((0.9 * 0.9 + 0.58 * 0.58 - 0.455 * 0.455) / (2 * 0.9 * 0.58)), acos((-0.9 * 0.9 + 0.58 * 0.58 + 0.455 * 0.455) / (2 * 0.455 * 0.58)) - M_PI,
-        0, acos((0.9 * 0.9 + 0.58 * 0.58 - 0.455 * 0.455) / (2 * 0.9 * 0.58)), acos((-0.9 * 0.9 + 0.58 * 0.58 + 0.455 * 0.455) / (2 * 0.455 * 0.58)) - M_PI;
+        0, increment_angle + acos((ramp * ramp + 0.58 * 0.58 - 0.455 * 0.455) / (2 * ramp * 0.58)), acos((-ramp * ramp + 0.58 * 0.58 + 0.455 * 0.455) / (2 * 0.455 * 0.58)) - M_PI,
+        0, increment_angle + acos((ramp * ramp + 0.58 * 0.58 - 0.455 * 0.455) / (2 * ramp * 0.58)), acos((-ramp * ramp + 0.58 * 0.58 + 0.455 * 0.455) / (2 * 0.455 * 0.58)) - M_PI;
 
         plant_context.SetDiscreteState(initial_state);  
         // plant_context.SetContinuousState(initial_state);  

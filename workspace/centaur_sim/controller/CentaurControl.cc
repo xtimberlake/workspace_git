@@ -84,20 +84,22 @@ void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
     // Step 1: update foot_pos_dest_rel
     // Raibert Heuristic, calculate foothold position
     state.foothold_dest_rel = state.default_foot_pos_rel;
-    Eigen::Vector3d lin_vel_rel = state.root_rot_mat_z.transpose() * state.root_lin_vel;
-    
+    // Eigen::Vector3d lin_vel_rel = state.root_rot_mat_z.transpose() * state.root_lin_vel;
+    Eigen::Vector3d lin_vel_rel = state.root_rot_mat.transpose() * state.root_lin_vel;
+    // drake::log()->info("rel vel:" );
+    // drake::log()->info(lin_vel_rel.transpose());
     for (int leg = 0; leg < 2; leg++) // two legs
     {
         double delta_x =
-                std::sqrt(std::abs(state.default_foot_pos_rel(2)) / 9.8) * (lin_vel_rel(0) - state.root_lin_vel_d(0)) +
+                std::sqrt(std::abs(state.default_foot_pos_rel(2)) / 9.81) * (lin_vel_rel(0) - state.root_lin_vel_d(0)) +
                 (state.gait_period * (1 - state.stance_duration(leg))) / 2.0 * state.root_lin_vel_d(0);
         
         double delta_y =
-                std::sqrt(std::abs(state.default_foot_pos_rel(2)) / 9.8) * (lin_vel_rel(1) - state.root_lin_vel_d(1)) +
+                std::sqrt(std::abs(state.default_foot_pos_rel(2)) / 9.81) * (lin_vel_rel(1) - state.root_lin_vel_d(1)) +
                 (state.gait_period * (1 - state.stance_duration(leg)))  / 2.0 * state.root_lin_vel_d(1);
 
         delta_x = (delta_x>FOOT_DELTA_X_LIMIT)?(FOOT_DELTA_X_LIMIT):((delta_x<-FOOT_DELTA_X_LIMIT)?(-FOOT_DELTA_X_LIMIT):delta_x);
-        delta_y = (delta_y>FOOT_DELTA_X_LIMIT)?(FOOT_DELTA_X_LIMIT):((delta_y<-FOOT_DELTA_X_LIMIT)?(-FOOT_DELTA_X_LIMIT):delta_y);
+        delta_y = (delta_y>FOOT_DELTA_Y_LIMIT)?(FOOT_DELTA_Y_LIMIT):((delta_y<-FOOT_DELTA_Y_LIMIT)?(-FOOT_DELTA_Y_LIMIT):delta_y);
         
         state.foothold_dest_rel(0, leg) += delta_x;
         state.foothold_dest_rel(1, leg) += delta_y;
@@ -106,6 +108,9 @@ void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
         state.foothold_dest_world.block<3, 1>(0, leg) = state.foothold_dest_abs.block<3, 1>(0, leg) + state.root_pos;
 
     }
+    // drake::log()->info("right modified pos:" );
+    // drake::log()->info(state.foothold_dest_rel.block<3, 1>(0, 1).transpose());
+    // drake::log()->info("--------------" );
     
     // Step 2: generate trajectory(in world) using Bezier curve given gait scheduler
     if(FirstTimeSwing) {

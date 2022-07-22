@@ -364,8 +364,10 @@ void ConvexMPC::SolveMPC()
             result_mat.block<3, 1>(0, 0) = U_all.segment<3>(0);
             result_mat.block<3, 1>(0, 1) = U_all.segment<3>(3);
             // drake::log()->info(U_all.transpose());
-            drake::log()->info(result_mat.block<3, 1>(0, 0).transpose());
-            drake::log()->info(result_mat.block<3, 1>(0, 1).transpose());
+            // drake::log()->info("mpc force :");
+            drake::log()->info(U_all.segment<6>(0).transpose());
+            // drake::log()->info(result_mat.block<3, 1>(0, 0).transpose());
+            // drake::log()->info(result_mat.block<3, 1>(0, 1).transpose());
             next_result_vec = U_all;
             // const drake::solvers::MosekSolverDetails& mosek_solver_details =
             //     prog_result.get_solver_details<drake::solvers::MosekSolver>();
