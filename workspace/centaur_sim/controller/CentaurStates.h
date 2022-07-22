@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:30:49
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-21 17:40:26
+ * @LastEditTime: 2022-07-22 10:18:43
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurStates.h
  * @Description: define all the states that used in controller; mainly 
  *                adapted from https://github.com/ShuoYangRobotics/A1-QP-MPC-Controller
@@ -201,6 +201,9 @@ class CentaurStates {
     Eigen::Matrix<double, 3, 2> foot_pos_rel;
     Eigen::Matrix<double, 3, 2> foot_pos_abs; // from CoM to foot expressed in the world frame
 
+    Eigen::Matrix<double, 3, 2> foot_vel_world;
+    Eigen::Matrix<double, 3, 2> foot_vel_rel;
+
     Eigen::Matrix<double, 3, 2> default_foot_pos_rel;
     Eigen::Matrix<double, 3, 2> foothold_dest_rel;    // destination
     Eigen::Matrix<double, 3, 2> foothold_dest_abs;
@@ -211,21 +214,22 @@ class CentaurStates {
     Eigen::Matrix<double, 3, 2> foot_pos_cmd_world;
 
     Eigen::Matrix<double, 3, 2> foot_vel_cmd_rel;    // command
-    Eigen::Matrix<double, 3, 2> foot_vel_cmd_abs;
     Eigen::Matrix<double, 3, 2> foot_vel_cmd_world;
     
     Eigen::Matrix<double, 3, 2> foot_force_cmd_rel;    // command
-    Eigen::Matrix<double, 3, 2> foot_force_cmd_abs;
     Eigen::Matrix<double, 3, 2> foot_force_cmd_world;
 
     Eigen::Matrix<double, 3, 3> JacobianFoot[2];
 
     // motors
-    Eigen::Matrix<double, 6, 1> q, qdot, q_cmd, qdot_cmd;
+    Eigen::Matrix<double, 6, 1> q, qdot, q_cmd, qdot_cmd, tao_ff;
 
     // ik
     int max_iter;
     double ik_eps;
+
+    Eigen::Matrix<double, 3, 2> foot_force_kin;
+
 
 
 

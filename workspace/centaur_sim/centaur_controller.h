@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-14 12:43:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-21 19:21:37
+ * @LastEditTime: 2022-07-22 10:43:40
  * @FilePath: /drake/workspace/centaur_sim/centaur_controller.h
  * @Description: controller block for drake simulation
  * 
@@ -78,12 +78,12 @@ private:
             ct->walking->update_gait_pattern(ct->ctrl_states);
             // ct->standing->update_gait_pattern(ct->ctrl_states);
             ct->controller->GenerateSwingTrajectory(ct->ctrl_states);
-            ct->controller->InverseKinematics(ct->ctrl_states);
             if(ct->ctrl_states.k == 1 || ct->ctrl_states.k % ct->ctrl_states.nIterationsPerMPC == 0) {
                 ct->controller->ComputeGoundReactionForce(ct->ctrl_states);
             }
-                
-
+            // ct->controller->InverseKinematics(ct->ctrl_states);
+            output_torques = ct->legcontroller->task_impedance_control(ct->ctrl_states);   
+            // drake::log()->info(output_torques.transpose());
         }
         
        
@@ -157,6 +157,7 @@ private:
                                                 
         ct->ctrl_states.JacobianFoot[1] = J_BF_right.block<3, 3>(0, 7);
                                                         
+ 
         Eigen::Matrix<double, 13, 1> qvec;
         qvec = _control_model.GetPositions(*_plant_context);
         ct->ctrl_states.q << qvec.tail(6);
@@ -164,7 +165,11 @@ private:
         Eigen::Matrix<double, 12, 1> qdot_vec = _control_model.GetVelocities(*_plant_context);
         ct->ctrl_states.qdot = qdot_vec.segment<6>(6);
 
+        ct->ctrl_states.foot_vel_rel.block<3, 1>(0, 0) = ct->ctrl_states.JacobianFoot[0] * ct->ctrl_states.qdot.segment<3>(0);
+        ct->ctrl_states.foot_vel_rel.block<3, 1>(0, 1) = ct->ctrl_states.JacobianFoot[1] * ct->ctrl_states.qdot.segment<3>(3);
 
+        ct->ctrl_states.foot_vel_world.block<3, 1>(0, 0) = ct->ctrl_states.root_rot_mat_z * ct->ctrl_states.foot_vel_rel.block<3, 1>(0, 0);
+        ct->ctrl_states.foot_vel_world.block<3, 1>(0, 1) = ct->ctrl_states.root_rot_mat_z * ct->ctrl_states.foot_vel_rel.block<3, 1>(0, 1);
         // if(context.get_time() < 0.001) {
         //     drake::log()->info("ct->ctrl_states.q = ");
         //     drake::log()->info(ct->ctrl_states.q);

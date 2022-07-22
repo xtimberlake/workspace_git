@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:31:07
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-21 21:00:03
+ * @LastEditTime: 2022-07-22 10:10:23
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurControl.cc
  * @Description: 
  * 
@@ -68,6 +68,13 @@ Eigen::Matrix<double, 3, 2> CentaurControl::ComputeGoundReactionForce(CentaurSta
 
     mpc_solver->SolveMPC();
 
+    state.foot_force_cmd_world = mpc_solver->result_mat;
+    state.foot_force_cmd_rel.block<3, 1>(0, 0) = state.root_rot_mat_z.transpose() * state.foot_force_cmd_world.block<3, 1>(0, 0);
+    state.foot_force_cmd_rel.block<3, 1>(0, 1) = state.root_rot_mat_z.transpose() * state.foot_force_cmd_world.block<3, 1>(0, 1);
+
+    state.tao_ff.segment<3>(0) = -state.JacobianFoot[0] * state.foot_force_cmd_rel.block<3, 1>(0, 0);
+    state.tao_ff.segment<3>(3) = -state.JacobianFoot[1] * state.foot_force_cmd_rel.block<3, 1>(0, 1);
+
     return mpc_solver->result_mat;
 }
 
@@ -128,7 +135,6 @@ void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
                 state.foot_vel_cmd_world.block<3, 1>(0, leg) = swingtrajectory[leg].getVelocity();
 
                 state.foot_force_cmd_world.block<3, 1>(0, leg).setZero();
-                state.foot_force_cmd_abs.block<3, 1>(0, leg).setZero();
                 state.foot_force_cmd_rel.block<3, 1>(0, leg).setZero();
             }
         }
@@ -140,8 +146,7 @@ void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
         state.foot_pos_cmd_abs.block<3, 1>(0, leg) = state.foot_pos_cmd_world.block<3, 1>(0, leg) - state.root_pos;
         state.foot_pos_cmd_rel.block<3, 1>(0, leg) = state.root_rot_mat.transpose() * state.foot_pos_cmd_abs.block<3, 1>(0, leg);
 
-        state.foot_vel_cmd_abs.block<3, 1>(0, leg) = state.foot_vel_cmd_world.block<3, 1>(0, leg) - state.root_pos;
-        state.foot_vel_cmd_rel.block<3, 1>(0, leg) = state.root_rot_mat_z.transpose() * state.foot_vel_cmd_abs.block<3, 1>(0, leg);
+        state.foot_vel_cmd_rel.block<3, 1>(0, leg) = state.root_rot_mat_z.transpose() * state.foot_vel_cmd_world.block<3, 1>(0, leg);
     }
     
 }
