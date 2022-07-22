@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-18 14:20:26
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-21 19:34:35
+ * @LastEditTime: 2022-07-22 20:32:06
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurParams.h
  * @Description: define some const
  * 
@@ -24,7 +24,7 @@
 #define NUM_U 6
 
 #define FOOT_SWING_CLEARANCE1 0.0f
-#define FOOT_SWING_CLEARANCE2 0.3f
+#define FOOT_SWING_CLEARANCE2 0.2f
 
 #define FOOT_DELTA_X_LIMIT 0.25f
 #define FOOT_DELTA_Y_LIMIT 0.25f

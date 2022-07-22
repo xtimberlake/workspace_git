@@ -21,10 +21,10 @@
   </link>
 
   <frame name='ball_joint_frame' attached_to='ground'> 
-    <pose relative_to='ground'>0.216 0 0.9005 0 0 0</pose>
+    <pose relative_to='ground'>0.216 0 0.905 0 0 0</pose>
   </frame>
 
-  <joint name='ball_joint' type='ball'>
+  <joint name='ball_joint' type='fixed'>
     <pose relative_to='ball_joint_frame'>0 0 0 0 0 0</pose>
     <parent>ground</parent>
     <child>floating_base</child>

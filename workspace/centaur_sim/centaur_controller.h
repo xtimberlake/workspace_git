@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-14 12:43:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-22 10:43:40
+ * @LastEditTime: 2022-07-22 20:28:39
  * @FilePath: /drake/workspace/centaur_sim/centaur_controller.h
  * @Description: controller block for drake simulation
  * 
@@ -75,15 +75,25 @@ private:
         if((ct->ctrl_states.t - ct->ctrl_states.k * ct->ctrl_states.control_dt) > ct->ctrl_states.control_dt)
         {
             ct->ctrl_states.k++;
-            ct->walking->update_gait_pattern(ct->ctrl_states);
-            // ct->standing->update_gait_pattern(ct->ctrl_states);
+
+            if(ct->ctrl_states.t < 0.5) {
+                ct->standing->update_gait_pattern(ct->ctrl_states);
+            }
+            else {
+                ct->walking->update_gait_pattern(ct->ctrl_states);
+            }
+
+            // drake::log()->info("swing left = " + std::to_string(ct->ctrl_states.plan_swings_phase[0]) + "  right = " +  std::to_string(ct->ctrl_states.plan_swings_phase[1]));
+            // drake::log()->info("stance left = " + std::to_string(ct->ctrl_states.plan_contacts_phase[0]) + "  right = " +  std::to_string(ct->ctrl_states.plan_contacts_phase[1]));
+             
             ct->controller->GenerateSwingTrajectory(ct->ctrl_states);
+            // ct->ctrl_states.foot_pos_cmd_rel.block<3, 1>(0, leg)
             if(ct->ctrl_states.k == 1 || ct->ctrl_states.k % ct->ctrl_states.nIterationsPerMPC == 0) {
                 ct->controller->ComputeGoundReactionForce(ct->ctrl_states);
             }
-            // ct->controller->InverseKinematics(ct->ctrl_states);
             output_torques = ct->legcontroller->task_impedance_control(ct->ctrl_states);   
             // drake::log()->info(output_torques.transpose());
+            
         }
         
        
@@ -155,7 +165,7 @@ private:
                                                          FloatingBodyFrame,
                                                          &J_BF_right);
                                                 
-        ct->ctrl_states.JacobianFoot[1] = J_BF_right.block<3, 3>(0, 7);
+        ct->ctrl_states.JacobianFoot[1] = J_BF_right.block<3, 3>(0, 10);
                                                         
  
         Eigen::Matrix<double, 13, 1> qvec;

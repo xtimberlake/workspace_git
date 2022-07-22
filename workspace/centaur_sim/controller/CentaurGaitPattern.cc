@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-17 11:21:35
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-21 19:20:37
+ * @LastEditTime: 2022-07-22 19:45:07
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurGaitPattern.cc
  * @Description: 
  * 
@@ -82,6 +82,7 @@ void CentuarGaitPattern::update_gait_pattern(CentaurStates& state)
         }
 
     }
+    
     // drake::log()->info("left :" + std::to_string(state.mpc_contact_table[0*2 + 0]) + ", "
     //     + std::to_string(state.mpc_contact_table[1*2 + 0]) + ", "
     //     + std::to_string(state.mpc_contact_table[2*2 + 0]) + ", "

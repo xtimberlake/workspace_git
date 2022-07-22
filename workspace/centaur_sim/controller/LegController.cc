@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-22 08:44:58
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-22 10:44:57
+ * @LastEditTime: 2022-07-22 20:32:38
  * @FilePath: /drake/workspace/centaur_sim/controller/LegController.cc
  * @Description: 
  * 
@@ -15,8 +15,8 @@ LegController::LegController()
     this->_kp_stance << 5.0, 2, 2;
     this->_kd_stance << 5.0, 2, 2;
 
-    this->_kp_swing << 100.0, 100, 100;
-    this->_kd_swing << 20.0, 10, 10;
+    this->_kp_swing << 100.0, 50, 50;
+    this->_kd_swing << 300.0, 100, 100;
 }
 
 Eigen::Matrix<double, 6, 1> LegController::joint_impedance_control(CentaurStates& state){
@@ -49,15 +49,16 @@ Eigen::Matrix<double, 6, 1> LegController::task_impedance_control(CentaurStates&
 
     for (int leg = 0; leg < 2; leg++)
     {
-        if (state.plan_contacts_phase(leg) > .99) {
+        if (state.plan_contacts_phase(leg) > 0) {
             torques.segment<3>(3 * leg) = state.tao_ff.segment<3>(3 * leg);
         }
         else {
 
-            pos_error = state.foot_pos_cmd_rel.block<3, 1>(0, leg * 3) - state.foot_pos_rel.block<3, 1>(0, leg * 3);
-            vel_error = state.foot_vel_cmd_rel.block<3, 1>(0, leg * 3) - state.foot_vel_rel.block<3, 1>(0, leg * 3);
-            state.foot_force_kin.block<3, 1>(0, 0 * leg) = _kp_swing.cwiseProduct(pos_error) + _kd_swing.cwiseProduct(vel_error);
-            torques.segment<3>(3 * leg) = state.JacobianFoot[leg].transpose() * state.foot_force_kin.block<3, 1>(0, 0 * leg);
+            pos_error = state.foot_pos_cmd_rel.block<3, 1>(0, leg) - state.foot_pos_rel.block<3, 1>(0, leg);
+            vel_error = state.foot_vel_cmd_rel.block<3, 1>(0, leg) - state.foot_vel_rel.block<3, 1>(0, leg);
+            state.foot_force_kin.block<3, 1>(0, leg) = _kp_swing.cwiseProduct(pos_error) + _kd_swing.cwiseProduct(vel_error);
+            // drake::log()->info(state.foot_force_kin);
+            torques.segment<3>(3 * leg) = state.JacobianFoot[leg].lu().solve(state.foot_force_kin.block<3, 1>(0, leg));
         }
     }
 

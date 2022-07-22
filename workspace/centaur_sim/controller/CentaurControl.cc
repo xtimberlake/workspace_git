@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:31:07
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-22 10:10:23
+ * @LastEditTime: 2022-07-22 20:30:51
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurControl.cc
  * @Description: 
  * 
@@ -72,8 +72,9 @@ Eigen::Matrix<double, 3, 2> CentaurControl::ComputeGoundReactionForce(CentaurSta
     state.foot_force_cmd_rel.block<3, 1>(0, 0) = state.root_rot_mat_z.transpose() * state.foot_force_cmd_world.block<3, 1>(0, 0);
     state.foot_force_cmd_rel.block<3, 1>(0, 1) = state.root_rot_mat_z.transpose() * state.foot_force_cmd_world.block<3, 1>(0, 1);
 
-    state.tao_ff.segment<3>(0) = -state.JacobianFoot[0] * state.foot_force_cmd_rel.block<3, 1>(0, 0);
-    state.tao_ff.segment<3>(3) = -state.JacobianFoot[1] * state.foot_force_cmd_rel.block<3, 1>(0, 1);
+    state.tao_ff.segment<3>(0) = -state.JacobianFoot[0].transpose() * state.foot_force_cmd_rel.block<3, 1>(0, 0);
+    state.tao_ff.segment<3>(3) = -state.JacobianFoot[1].transpose() * state.foot_force_cmd_rel.block<3, 1>(0, 1);
+
 
     return mpc_solver->result_mat;
 }
@@ -119,10 +120,11 @@ void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
     else {
         for (int leg = 0; leg < 2; leg++)
         {
-            if (state.plan_contacts_phase(leg) > .99) {
+            if (state.plan_contacts_phase(leg) > 0) {
                 // stance
                 swingtrajectory[leg].setInitialPosition(state.foot_pos_world.block<3, 1>(0, leg));
                 state.foot_pos_cmd_world.block<3, 1>(0, leg) = state.foot_pos_world.block<3, 1>(0, leg);
+                // state.foot_pos_cmd_world.block<3, 1>(0, leg) = state.foothold_dest_world.block<3, 1>(0, leg);
                 state.foot_vel_cmd_world.block<3, 1>(0, leg).setZero();
 
 
@@ -133,9 +135,7 @@ void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
                 swingtrajectory[leg].computeSwingTrajectoryBezier(state.plan_swings_phase(leg), state.gait_period * (1 - state.stance_duration(leg)));
                 state.foot_pos_cmd_world.block<3, 1>(0, leg) = swingtrajectory[leg].getPosition();
                 state.foot_vel_cmd_world.block<3, 1>(0, leg) = swingtrajectory[leg].getVelocity();
-
-                state.foot_force_cmd_world.block<3, 1>(0, leg).setZero();
-                state.foot_force_cmd_rel.block<3, 1>(0, leg).setZero();
+              
             }
         }
     }

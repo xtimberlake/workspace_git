@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-18 09:28:36
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-22 09:05:50
+ * @LastEditTime: 2022-07-22 20:23:35
  * @FilePath: /drake/workspace/centaur_sim/controller/ConvexMPC.cc
  * @Description: 
  * 
@@ -363,12 +363,13 @@ void ConvexMPC::SolveMPC()
             U_all = prog_result.GetSolution();
             result_mat.block<3, 1>(0, 0) = U_all.segment<3>(0);
             result_mat.block<3, 1>(0, 1) = U_all.segment<3>(3);
+            // drake::log()->info(U_all.transpose());
             drake::log()->info(result_mat.block<3, 1>(0, 0).transpose());
             drake::log()->info(result_mat.block<3, 1>(0, 1).transpose());
             next_result_vec = U_all;
-            const drake::solvers::MosekSolverDetails& mosek_solver_details =
-                prog_result.get_solver_details<drake::solvers::MosekSolver>();
-            drake::log()->info("optimizer time: " + std::to_string(mosek_solver_details.optimizer_time));
+            // const drake::solvers::MosekSolverDetails& mosek_solver_details =
+            //     prog_result.get_solver_details<drake::solvers::MosekSolver>();
+            // drake::log()->info("optimizer time: " + std::to_string(mosek_solver_details.optimizer_time));
         }
         else {
             drake::log()->warn("fail to find a result...");

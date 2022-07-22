@@ -1,0 +1,55 @@
+load(
+    "@drake//tools/skylark:drake_cc.bzl",
+    "drake_cc_library",
+    "drake_cc_binary",
+)
+
+drake_cc_library(
+    name = "fixed_centaur_sim_lib",
+    srcs = [
+        "Utils/Utils.cc",
+    ],
+    hdrs = [
+        "fixed_centaur_sim.h",
+        "kinematicscontroller.h",
+        "Utils/Utils.h",
+    ],
+    deps = [
+        "//multibody/plant",
+        "//multibody/parsing",
+    ],
+
+)
+
+drake_cc_binary(
+    name = "fixed_centaur_sim",
+    srcs = ["fixed_centaur_sim.cc"],
+    
+    data = [
+        "sdf/fixed_centaur.sdf",
+        "sdf/fixed_centaur_control_model.sdf",
+
+    ],
+    deps = [
+        ":fixed_centaur_sim_lib",
+        "//common:add_text_logging_gflags",
+        "//common:find_resource",
+        "//common/proto:call_python",
+        "//systems/framework:diagram_builder",
+        "//systems/primitives:constant_vector_source",
+        "//systems/primitives:vector_log_sink",
+        "//systems/analysis:simulator",
+        "//geometry:scene_graph",
+        "//geometry:drake_visualizer",
+        "//multibody/plant",
+        "//multibody/parsing",
+        "//lcm",
+        "//systems/lcm",
+        "//solvers:mathematical_program",
+        "//solvers:mathematical_program_result",
+        "//solvers:mosek_solver",
+        "//solvers",
+        "//common/yaml",
+        "@gflags",
+    ],
+)
