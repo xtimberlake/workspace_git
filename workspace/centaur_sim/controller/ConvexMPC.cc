@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-18 09:28:36
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-22 20:23:35
+ * @LastEditTime: 2022-07-23 10:12:17
  * @FilePath: /drake/workspace/centaur_sim/controller/ConvexMPC.cc
  * @Description: 
  * 
@@ -365,7 +365,7 @@ void ConvexMPC::SolveMPC()
             result_mat.block<3, 1>(0, 1) = U_all.segment<3>(3);
             // drake::log()->info(U_all.transpose());
             // drake::log()->info("mpc force :");
-            drake::log()->info(U_all.segment<6>(0).transpose());
+            // drake::log()->info(U_all.segment<6>(0).transpose());
             // drake::log()->info(result_mat.block<3, 1>(0, 0).transpose());
             // drake::log()->info(result_mat.block<3, 1>(0, 1).transpose());
             next_result_vec = U_all;

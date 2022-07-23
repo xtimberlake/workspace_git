@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 16:07:26
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-22 09:09:49
+ * @LastEditTime: 2022-07-23 11:22:03
  * @FilePath: /drake/workspace/centaur_sim/centaurrobot/centaurrobot.h
  * @Description: define centaur robot handle
  * 
@@ -25,9 +25,14 @@ public:
     
     {
         
-        walking = new CentuarGaitPattern(0.5, ctrl_states.ctrl_params_const, Eigen::Vector2f(0.5, 0.5), Eigen::Vector2f(0.0, 0.5)); 
         standing = new CentuarGaitPattern(0.5, ctrl_states.ctrl_params_const, Eigen::Vector2f(1.0, 1.0), Eigen::Vector2f(0.0, 0.5)); 
+        walking = new CentuarGaitPattern(0.5, ctrl_states.ctrl_params_const, Eigen::Vector2f(0.5, 0.5), Eigen::Vector2f(0.0, 0.5)); 
+        // jumping = new CentuarGaitPattern(0.5, ctrl_states.ctrl_params_const, Eigen::Vector2f(0.7, 0.7), Eigen::Vector2f(0.0, 0.0)); 
+        // galloping = new CentuarGaitPattern(0.5, ctrl_states.ctrl_params_const, Eigen::Vector2f(0.5, 0.5), Eigen::Vector2f(0.0, 0.25)); 
+
         controller = new CentaurControl(ctrl_states.ctrl_params_const);
+        
+
         legcontroller = new LegController();
 
     }
@@ -38,6 +43,9 @@ public:
     LegController* legcontroller;
     CentuarGaitPattern* walking;
     CentuarGaitPattern* standing;
+    // CentuarGaitPattern* jumping;
+    // CentuarGaitPattern* galloping;
+
 
 };
 

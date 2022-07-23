@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-14 12:43:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-22 20:28:39
+ * @LastEditTime: 2022-07-23 11:22:26
  * @FilePath: /drake/workspace/centaur_sim/centaur_controller.h
  * @Description: controller block for drake simulation
  * 
@@ -76,7 +76,7 @@ private:
         {
             ct->ctrl_states.k++;
 
-            if(ct->ctrl_states.t < 2) {
+            if(ct->ctrl_states.t < 0.5) {
                 ct->standing->update_gait_pattern(ct->ctrl_states);
             }
             else {
