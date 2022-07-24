@@ -29,7 +29,7 @@
 #include "drake/workspace/centaur_sim/extract_data.h"
 #include "drake/workspace/centaur_sim/centaur_controller.h"
 
-DEFINE_double(simulation_sec, 120.0,
+DEFINE_double(simulation_sec, 10.0,
               "Number of seconds to simulate.");
 DEFINE_double(sim_dt, 5e-4,
               "The time step to use for MultibodyPlant model"
@@ -206,13 +206,22 @@ namespace centaur_sim {
         // simulator.AdvanceTo(0.003);
 
         // data post processing
-        // Plot the results (launch ./bazel-bin/common/proto/call_python_client_cli to see the plots).
+        // Plot the results (launch ./bazel-bin/common/proto:call_python_client_cli to see the plots).
         const auto& log = states_logger->FindLog(simulator.get_context());
+        Eigen::VectorXd desired_height(log.data().row(6).transpose().size());
+        for (long int i = 0; i < log.data().row(6).transpose().size(); i++)
+        {
+            desired_height[i] = 0.9;
+        }
+        
         common::CallPython("figure", 1);
         common::CallPython("clf");
         common::CallPython("plot", log.sample_times(),
                            log.data().row(6).transpose());
-        common::CallPython("legend", common::ToPythonTuple("left_z"));
+        common::CallPython("plot", log.sample_times(),
+                           desired_height);                   
+        common::CallPython("legend", common::ToPythonTuple("Centaur Height(m)"));
+        // common::CallPython("legend", common::ToPythonTuple("Desired Height(m)"));
         common::CallPython("axis", "tight");
         
         

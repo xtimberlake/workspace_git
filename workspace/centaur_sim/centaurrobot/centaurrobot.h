@@ -27,7 +27,7 @@ public:
         
         standing = new CentuarGaitPattern(0.5, ctrl_states.ctrl_params_const, Eigen::Vector2f(1.0, 1.0), Eigen::Vector2f(0.0, 0.5)); 
         walking = new CentuarGaitPattern(0.5, ctrl_states.ctrl_params_const, Eigen::Vector2f(0.5, 0.5), Eigen::Vector2f(0.0, 0.5)); 
-        // jumping = new CentuarGaitPattern(0.5, ctrl_states.ctrl_params_const, Eigen::Vector2f(0.7, 0.7), Eigen::Vector2f(0.0, 0.0)); 
+        jumping = new CentuarGaitPattern(0.5, ctrl_states.ctrl_params_const, Eigen::Vector2f(0.7, 0.7), Eigen::Vector2f(0.0, 0.0)); 
         // galloping = new CentuarGaitPattern(0.5, ctrl_states.ctrl_params_const, Eigen::Vector2f(0.5, 0.5), Eigen::Vector2f(0.0, 0.25)); 
 
         controller = new CentaurControl(ctrl_states.ctrl_params_const);
@@ -43,7 +43,7 @@ public:
     LegController* legcontroller;
     CentuarGaitPattern* walking;
     CentuarGaitPattern* standing;
-    // CentuarGaitPattern* jumping;
+    CentuarGaitPattern* jumping;
     // CentuarGaitPattern* galloping;
 
 

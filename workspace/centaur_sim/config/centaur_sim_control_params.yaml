@@ -11,7 +11,10 @@ q_weights: [20.0, 50.0, 100.0,    # Roll Pitch Yaw
             0.0, 0.0, 60.0,    # Posx Posy Posz
             6.0, 10.0, 10.0,    # corresponding derivative
             0.0, 0.0, 50.0 ]
-
+# q_weights: [20.0, 50.0, 50.0,    # Roll Pitch Yaw
+#             0.0, 0.0, 150.0,    # Posx Posy Posz
+#             6.0, 10.0, 10.0,    # corresponding derivative
+#             0.0, 0.0, 10.0 ]
 
 
 r_weights: [1.0, 1.0, .5,

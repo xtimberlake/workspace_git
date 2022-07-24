@@ -88,12 +88,15 @@ private:
              
             ct->controller->GenerateSwingTrajectory(ct->ctrl_states);
             // drake::log()->info(ct->ctrl_states.foot_pos_world.transpose());
-            if(ct->ctrl_states.k == 1 || ct->ctrl_states.k % ct->ctrl_states.nIterationsPerMPC == 0) {
+            if(ct->ctrl_states.k == 1 ||ct->ctrl_states.k % ct->ctrl_states.nIterationsPerMPC == 0) {
                 ct->controller->ComputeGoundReactionForce(ct->ctrl_states);
             }
             output_torques = ct->legcontroller->task_impedance_control(ct->ctrl_states);   
             // drake::log()->info(output_torques.transpose());
-            
+            // if(ct->ctrl_states.t < 1.0)
+            // {
+            //     output_torques.setZero();
+            // }
         }
         
        
