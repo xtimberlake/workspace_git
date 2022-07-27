@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-22 08:44:58
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-22 20:32:38
+ * @LastEditTime: 2022-07-27 22:17:24
  * @FilePath: /drake/workspace/centaur_sim/controller/LegController.cc
  * @Description: 
  * 
@@ -46,11 +46,21 @@ Eigen::Matrix<double, 6, 1> LegController::task_impedance_control(CentaurStates&
 
     Eigen::Matrix<double, 6, 1> torques;
     Eigen::Matrix<double, 3, 1> pos_error, vel_error;
-
+    float full_end = 0.2;
+    float start_rate = 0.2;
+    float decay_coeffienct;
     for (int leg = 0; leg < 2; leg++)
     {
         if (state.plan_contacts_phase(leg) > 0) {
-            torques.segment<3>(3 * leg) = state.tao_ff.segment<3>(3 * leg);
+            //soft landing
+            // torques.segment<3>(3 * leg) = state.tao_ff.segment<3>(3 * leg);
+            if(state.plan_contacts_phase(leg) >= full_end) {
+                torques.segment<3>(3 * leg) = state.tao_ff.segment<3>(3 * leg);
+            }
+            else {
+                decay_coeffienct = state.plan_contacts_phase(leg) / full_end * (1 - start_rate) + start_rate;
+                torques.segment<3>(3 * leg) = decay_coeffienct * state.tao_ff.segment<3>(3 * leg);
+            }
         }
         else {
 

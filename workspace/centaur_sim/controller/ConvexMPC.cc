@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-18 09:28:36
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-23 10:12:17
+ * @LastEditTime: 2022-07-27 20:39:59
  * @FilePath: /drake/workspace/centaur_sim/controller/ConvexMPC.cc
  * @Description: 
  * 

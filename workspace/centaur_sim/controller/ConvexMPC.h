@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-18 09:28:44
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-21 19:09:38
+ * @LastEditTime: 2022-07-27 20:40:07
  * @FilePath: /drake/workspace/centaur_sim/controller/ConvexMPC.h
  * @Description: mpc matrix transformation and qp sovler
  * 

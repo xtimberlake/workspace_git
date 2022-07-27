@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:31:07
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-23 10:02:35
+ * @LastEditTime: 2022-07-27 20:41:02
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurControl.cc
  * @Description: 
  * 
@@ -86,17 +86,18 @@ void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
     state.foothold_dest_rel = state.default_foot_pos_rel;
     // Eigen::Vector3d lin_vel_rel = state.root_rot_mat_z.transpose() * state.root_lin_vel;
     Eigen::Vector3d lin_vel_rel = state.root_rot_mat.transpose() * state.root_lin_vel;
+    // drake::log()->info(state.plan_contacts_phase.transpose());
     // drake::log()->info("rel vel:" );
     // drake::log()->info(lin_vel_rel.transpose());
     for (int leg = 0; leg < 2; leg++) // two legs
     {
         double delta_x =
                 
-                5 * std::sqrt(std::abs(state.default_foot_pos_rel(2)) / 9.81) * (lin_vel_rel(0) - state.root_lin_vel_d(0)) +
+                8 * std::sqrt(std::abs(state.default_foot_pos_rel(2)) / 9.81) * (lin_vel_rel(0) - state.root_lin_vel_d(0)) +
                 (state.gait_period * state.stance_duration(leg)) / 2.0 * state.root_lin_vel_d(0);
         
         double delta_y =
-                5 * std::sqrt(std::abs(state.default_foot_pos_rel(2)) / 9.81) * (lin_vel_rel(1) - state.root_lin_vel_d(1)) +
+                8 * std::sqrt(std::abs(state.default_foot_pos_rel(2)) / 9.81) * (lin_vel_rel(1) - state.root_lin_vel_d(1)) +
                 (state.gait_period * state.stance_duration(leg))  / 2.0 * state.root_lin_vel_d(1);
 
         delta_x = (delta_x>FOOT_DELTA_X_LIMIT)?(FOOT_DELTA_X_LIMIT):((delta_x<-FOOT_DELTA_X_LIMIT)?(-FOOT_DELTA_X_LIMIT):delta_x);
@@ -104,7 +105,7 @@ void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
         
         state.foothold_dest_rel(0, leg) += delta_x;
         state.foothold_dest_rel(1, leg) += delta_y;
-
+        
         state.foothold_dest_abs.block<3, 1>(0, leg) = state.root_rot_mat * state.foothold_dest_rel.block<3, 1>(0, leg);
         state.foothold_dest_world.block<3, 1>(0, leg) = state.foothold_dest_abs.block<3, 1>(0, leg) + state.root_pos;
 
