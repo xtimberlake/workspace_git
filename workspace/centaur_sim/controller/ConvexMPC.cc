@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-18 09:28:36
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-27 20:39:59
+ * @LastEditTime: 2022-08-01 15:03:38
  * @FilePath: /drake/workspace/centaur_sim/controller/ConvexMPC.cc
  * @Description: 
  * 
@@ -368,7 +368,8 @@ void ConvexMPC::SolveMPC()
             // drake::log()->info(U_all.segment<6>(0).transpose());
             // drake::log()->info(result_mat.block<3, 1>(0, 0).transpose());
             // drake::log()->info(result_mat.block<3, 1>(0, 1).transpose());
-            next_result_vec = U_all;
+            // // it takes 3-8ms to solve
+            // next_result_vec = U_all;
             // const drake::solvers::MosekSolverDetails& mosek_solver_details =
             //     prog_result.get_solver_details<drake::solvers::MosekSolver>();
             // drake::log()->info("optimizer time: " + std::to_string(mosek_solver_details.optimizer_time));

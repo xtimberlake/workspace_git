@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-22 08:44:58
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-27 22:17:24
+ * @LastEditTime: 2022-08-01 15:06:54
  * @FilePath: /drake/workspace/centaur_sim/controller/LegController.cc
  * @Description: 
  * 
@@ -58,7 +58,7 @@ Eigen::Matrix<double, 6, 1> LegController::task_impedance_control(CentaurStates&
                 torques.segment<3>(3 * leg) = state.tao_ff.segment<3>(3 * leg);
             }
             else {
-                decay_coeffienct = state.plan_contacts_phase(leg) / full_end * (1 - start_rate) + start_rate;
+                decay_coeffienct = (1 - start_rate) * sin(M_PI_2 * state.plan_contacts_phase(leg) / full_end)  + start_rate;
                 torques.segment<3>(3 * leg) = decay_coeffienct * state.tao_ff.segment<3>(3 * leg);
             }
         }

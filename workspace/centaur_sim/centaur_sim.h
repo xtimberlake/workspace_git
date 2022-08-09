@@ -96,6 +96,7 @@ namespace centaur_sim {
 
         auto states_logger = builder.AddSystem<systems::VectorLogSink<double>>(25);
 
+
         std::string control_model = 
             "drake/workspace/centaur_sim/centaur_control_model.sdf";
         auto centaur_controller = builder.AddSystem<workspace::centaur_sim::CentaurController<double>>(control_model);
@@ -116,6 +117,7 @@ namespace centaur_sim {
 
         builder.Connect(centaur_controller->GetOutputPort("actuated_torque"),
                         plant->get_actuation_input_port(centaur_model_index));
+
 
         auto diagram = builder.Build();
 
