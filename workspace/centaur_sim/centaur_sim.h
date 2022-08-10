@@ -30,7 +30,7 @@
 #include "drake/workspace/centaur_sim/extract_data.h"
 #include "drake/workspace/centaur_sim/centaur_controller.h"
 
-DEFINE_double(simulation_sec, 20.0,
+DEFINE_double(simulation_sec, 5.0,
               "Number of seconds to simulate.");
 DEFINE_double(sim_dt, 5e-4,
               "The time step to use for MultibodyPlant model"
@@ -99,6 +99,7 @@ namespace centaur_sim {
 
         auto zoh = builder.AddSystem<systems::ZeroOrderHold<double>>(FLAGS_sim_dt, 6);
 
+        auto interest_data_logger = builder.AddSystem<systems::VectorLogSink<double>>(18);
 
         std::string control_model = 
             "drake/workspace/centaur_sim/centaur_control_model.sdf";
@@ -114,6 +115,9 @@ namespace centaur_sim {
 
         builder.Connect(plant->get_reaction_forces_output_port(),
                         extract_data_block->GetInputPort("spatial_forces_in"));
+
+        builder.Connect(extract_data_block->GetOutputPort("log_data"),
+                        interest_data_logger->get_input_port());
 
         builder.Connect(extract_data_block->GetOutputPort("full_states"),
                         states_logger->get_input_port());
@@ -221,21 +225,47 @@ namespace centaur_sim {
         // simulator.AdvanceTo(0.003);
 
         // data post processing
-        // Plot the results (launch ./bazel-bin/common/proto:call_python_client_cli to see the plots).
-        const auto& log = states_logger->FindLog(simulator.get_context());
-        Eigen::VectorXd desired_height(log.data().row(6).transpose().size());
-        for (long int i = 0; i < log.data().row(6).transpose().size(); i++)
-        {
-            desired_height[i] = 0.9;
-        }
+        // Plot the results (launch "bazel run //common/proto:call_python_client_cli" to see the plots).
+        // const auto& log = states_logger->FindLog(simulator.get_context());
+        // Eigen::VectorXd desired_height(log.data().row(6).transpose().size());
+        // for (long int i = 0; i < log.data().row(6).transpose().size(); i++)
+        // {
+        //     desired_height[i] = 0.9;
+        // }
         
+        // common::CallPython("figure", 1);
+        // common::CallPython("clf");
+        // common::CallPython("plot", log.sample_times(),
+        //                    log.data().row(6).transpose());
+        // common::CallPython("plot", log.sample_times(),
+        //                    desired_height);                   
+        // common::CallPython("legend", common::ToPythonTuple("Centaur Height(m)"));
+        // // common::CallPython("legend", common::ToPythonTuple("Desired Height(m)"));
+        // common::CallPython("axis", "tight");
+
+        // interest_data_logger: 0euler, 3pos, 6omega, 9lin_vel, 12wrenches at the f/t sensor
+        const auto& log = interest_data_logger->FindLog(simulator.get_context());
         common::CallPython("figure", 1);
         common::CallPython("clf");
+
+        // Eigen::VectorXd desired_height(log.data().row(0).transpose().size());
+        // for (long int i = 0; i < log.data().row(0).transpose().size(); i++)
+        // {
+        //     desired_height[i] = 0.0;
+        // }
+        // common::CallPython("plot", log.sample_times(),
+        //                    desired_height);
+        
         common::CallPython("plot", log.sample_times(),
-                           log.data().row(6).transpose());
-        common::CallPython("plot", log.sample_times(),
-                           desired_height);                   
-        common::CallPython("legend", common::ToPythonTuple("Centaur Height(m)"));
+                           log.data().row(17).transpose());
+
+        // common::CallPython("plot", log.sample_times(),
+        //                    log.data().row(13).transpose());
+
+        // common::CallPython("plot", log.sample_times(),
+        //                    log.data().row(14).transpose());
+                           
+        common::CallPython("legend", common::ToPythonTuple("fz"/*, "my", "mz"*/));
         // common::CallPython("legend", common::ToPythonTuple("Desired Height(m)"));
         common::CallPython("axis", "tight");
         

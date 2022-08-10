@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-19 09:55:16
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-08-10 10:45:30
+ * @LastEditTime: 2022-08-10 20:02:56
  * @FilePath: /drake/workspace/centaur_sim/extract_data.h
  * @Description: 
  * 
@@ -14,6 +14,7 @@
 #include "drake/systems/framework/basic_vector.h"
 #include "drake/multibody/plant/multibody_plant.h"
 #include <drake/multibody/tree/multibody_tree.h>
+#include <iostream>
 
 namespace drake{
 namespace workspace{
@@ -29,11 +30,17 @@ public:
 
         _plant_context = _plant.CreateDefaultContext();
         this->DeclareVectorInputPort("sim_scene_states", 18);
-        this->DeclareAbstractInputPort("spatial_forces_in",
-            Value<std::vector<multibody::SpatialForce<double>>>());
+        std::cout<< (this->DeclareAbstractInputPort("spatial_forces_in",
+            Value<std::vector<drake::multibody::SpatialForce<double>>>()).get_index());
+        std::cout << "index is above" << std::endl;
+
         this->DeclareVectorOutputPort(
             "full_states", 25,
             &extractData::ExtractFullStates);
+
+        this->DeclareVectorOutputPort(
+            "log_data", 18,
+            &extractData::CalcLogData);
         
         
     }
@@ -58,10 +65,7 @@ private:
         _plant.SetPositionsAndVelocities(_plant_context.get(), scene_states);
 
         // Spatial forces
-        std::vector<multibody::SpatialForce<double>>& spatial_vec = 
-            this->GetInputPort("spatial_forces_in").Eval(context);
-
-        drake::log()->info(spatial_vec[0].size());
+        // TODO: what does ".template" mean?
         
         const multibody::Frame<T>& floating_base_farme = _plant.GetFrameByName("floating_base");
 
@@ -94,6 +98,45 @@ private:
         full_states.segment<6>(19) = qdot;
         
         output->set_value(full_states);
+    }
+
+    void CalcLogData(const systems::Context<T>& context,
+                           systems::BasicVector<T>* logoutput) const {
+
+        Eigen::VectorXd log_data(18);
+        log_data.setZero();
+        // Part 1: kinematics data
+        Eigen::VectorXd scene_states(18);
+        scene_states = this->GetInputPort("sim_scene_states").Eval(context);
+        _plant.SetPositionsAndVelocities(_plant_context.get(), scene_states);
+
+        const multibody::Frame<T>& floating_base_farme = _plant.GetFrameByName("floating_base");
+
+        // euler angle
+        Eigen::Vector3d euler = math::RollPitchYaw<T>(floating_base_farme.CalcRotationMatrixInWorld(*_plant_context)).vector();;
+        
+        // linear position in world
+        Eigen::Vector3d pos = floating_base_farme.CalcPoseInWorld(*_plant_context).translation();
+
+        // angular rate in world
+        Eigen::Vector3d omega = floating_base_farme.CalcAngularVelocity(*_plant_context,
+                                                        _plant.world_frame(),
+                                                        _plant.world_frame());
+        // linear velocity in world
+        Eigen::Vector3d linear_vel = floating_base_farme.CalcSpatialVelocityInWorld(*_plant_context).translational();
+
+        log_data.segment<3>(0) = euler;
+        log_data.segment<3>(3) = pos;
+        log_data.segment<3>(6) = omega;
+        log_data.segment<3>(9) = linear_vel;
+
+        // Part 2: forces data
+        const std::vector<drake::multibody::SpatialForce<double>>& spatial_vec =
+            this->GetInputPort("spatial_forces_in").template Eval<std::vector<drake::multibody::SpatialForce<double>>>(context);
+        Eigen::Matrix<double ,6, 1> wrenches = spatial_vec[2].get_coeffs();
+        log_data.segment<6>(12) = wrenches;
+
+        logoutput->set_value(log_data);
     }
 
 };
