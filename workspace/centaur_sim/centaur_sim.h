@@ -12,6 +12,7 @@
 #include <drake/systems/primitives/constant_vector_source.h>
 #include <drake/systems/analysis/simulator.h>
 #include <drake/systems/primitives/vector_log_sink.h>
+#include <drake/systems/primitives/zero_order_hold.h>
 #include <drake/geometry/scene_graph.h>
 #include <drake/geometry/drake_visualizer.h>
 #include <drake/multibody/plant/multibody_plant.h>
@@ -96,6 +97,8 @@ namespace centaur_sim {
 
         auto states_logger = builder.AddSystem<systems::VectorLogSink<double>>(25);
 
+        auto zoh = builder.AddSystem<systems::ZeroOrderHold<double>>(FLAGS_sim_dt, 6);
+
 
         std::string control_model = 
             "drake/workspace/centaur_sim/centaur_control_model.sdf";
@@ -107,7 +110,10 @@ namespace centaur_sim {
         //                 plant->get_actuation_input_port(centaur_model_index));
 
         builder.Connect(plant->get_state_output_port(),
-                        extract_data_block->get_input_port());
+                        extract_data_block->GetInputPort("sim_scene_states"));
+
+        builder.Connect(plant->get_reaction_forces_output_port(),
+                        extract_data_block->GetInputPort("spatial_forces_in"));
 
         builder.Connect(extract_data_block->GetOutputPort("full_states"),
                         states_logger->get_input_port());
@@ -115,8 +121,15 @@ namespace centaur_sim {
         builder.Connect(extract_data_block->GetOutputPort("full_states"),
                         centaur_controller->GetInputPort("full_states"));
 
+        // builder.Connect(centaur_controller->GetOutputPort("actuated_torque"),
+        //                 plant->get_actuation_input_port(centaur_model_index));
         builder.Connect(centaur_controller->GetOutputPort("actuated_torque"),
+                        zoh->get_input_port());
+        
+        builder.Connect(zoh->get_output_port(),
                         plant->get_actuation_input_port(centaur_model_index));
+
+
 
 
         auto diagram = builder.Build();

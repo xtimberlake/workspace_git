@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-19 09:55:16
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-19 10:18:24
+ * @LastEditTime: 2022-08-10 10:45:30
  * @FilePath: /drake/workspace/centaur_sim/extract_data.h
  * @Description: 
  * 
@@ -29,6 +29,8 @@ public:
 
         _plant_context = _plant.CreateDefaultContext();
         this->DeclareVectorInputPort("sim_scene_states", 18);
+        this->DeclareAbstractInputPort("spatial_forces_in",
+            Value<std::vector<multibody::SpatialForce<double>>>());
         this->DeclareVectorOutputPort(
             "full_states", 25,
             &extractData::ExtractFullStates);
@@ -54,6 +56,12 @@ private:
         Eigen::VectorXd scene_states(18);
         scene_states = this->GetInputPort("sim_scene_states").Eval(context);
         _plant.SetPositionsAndVelocities(_plant_context.get(), scene_states);
+
+        // Spatial forces
+        std::vector<multibody::SpatialForce<double>>& spatial_vec = 
+            this->GetInputPort("spatial_forces_in").Eval(context);
+
+        drake::log()->info(spatial_vec[0].size());
         
         const multibody::Frame<T>& floating_base_farme = _plant.GetFrameByName("floating_base");
 
