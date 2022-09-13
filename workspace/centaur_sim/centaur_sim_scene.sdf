@@ -52,7 +52,7 @@
 
   <joint name='ball_joint' type='ball'>
     <pose relative_to='ball_joint_frame'>0 0 0 0 0 0</pose>
-    <parent>ground</parent>
+    <parent>f_t_sensor_link</parent>
     <child>floating_base</child>
   </joint>
 

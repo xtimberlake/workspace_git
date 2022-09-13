@@ -99,7 +99,11 @@ namespace centaur_sim {
 
         auto zoh = builder.AddSystem<systems::ZeroOrderHold<double>>(FLAGS_sim_dt, 6);
 
+        auto zoh2 = builder.AddSystem<systems::ZeroOrderHold<double>>(FLAGS_sim_dt, 5);
+
         auto interest_data_logger = builder.AddSystem<systems::VectorLogSink<double>>(18);
+
+        auto controller_logger = builder.AddSystem<systems::VectorLogSink<double>>(5);
 
         std::string control_model = 
             "drake/workspace/centaur_sim/centaur_control_model.sdf";
@@ -127,11 +131,18 @@ namespace centaur_sim {
 
         // builder.Connect(centaur_controller->GetOutputPort("actuated_torque"),
         //                 plant->get_actuation_input_port(centaur_model_index));
+
         builder.Connect(centaur_controller->GetOutputPort("actuated_torque"),
                         zoh->get_input_port());
         
         builder.Connect(zoh->get_output_port(),
                         plant->get_actuation_input_port(centaur_model_index));
+
+        builder.Connect(centaur_controller->GetOutputPort("controller_log_data"),
+                        zoh2->get_input_port());
+
+        builder.Connect(zoh2->get_output_port(),
+                        controller_logger->get_input_port());
 
 
 
@@ -245,6 +256,8 @@ namespace centaur_sim {
 
         // interest_data_logger: 0euler, 3pos, 6omega, 9lin_vel, 12wrenches at the f/t sensor
         const auto& log = interest_data_logger->FindLog(simulator.get_context());
+        const auto& controller_log_data = controller_logger->FindLog(simulator.get_context());
+
         common::CallPython("figure", 1);
         common::CallPython("clf");
 
@@ -255,19 +268,40 @@ namespace centaur_sim {
         // }
         // common::CallPython("plot", log.sample_times(),
         //                    desired_height);
+        common::CallPython("subplot", 4, 1, 1);
+        common::CallPython("plot", controller_log_data.sample_times(),
+                           controller_log_data.data().row(1).transpose());
+        common::CallPython("legend", common::ToPythonTuple("left contact state"));
+
+
+
+        common::CallPython("subplot", 4, 1, 2);
+        common::CallPython("plot", log.sample_times(),
+                           log.data().row(15).transpose());
+        common::CallPython("plot", controller_log_data.sample_times(),
+                           controller_log_data.data().row(2).transpose());
+        common::CallPython("legend", common::ToPythonTuple("grf_x", "tgt_grf_x"));
+
+
         
+        common::CallPython("subplot", 4, 1, 3);
+        common::CallPython("plot", log.sample_times(),
+                           log.data().row(16).transpose());
+        common::CallPython("plot", controller_log_data.sample_times(),
+                           controller_log_data.data().row(3).transpose());
+        common::CallPython("legend", common::ToPythonTuple("grf_y", "tgt_grf_y"));
+
+
+
+        common::CallPython("subplot", 4, 1, 4);
         common::CallPython("plot", log.sample_times(),
                            log.data().row(17).transpose());
+        common::CallPython("plot", controller_log_data.sample_times(),
+                           controller_log_data.data().row(4).transpose());
+        common::CallPython("legend", common::ToPythonTuple("grf_z", "tgt_grf_z"));
 
-        // common::CallPython("plot", log.sample_times(),
-        //                    log.data().row(13).transpose());
 
-        // common::CallPython("plot", log.sample_times(),
-        //                    log.data().row(14).transpose());
-                           
-        common::CallPython("legend", common::ToPythonTuple("fz"/*, "my", "mz"*/));
-        // common::CallPython("legend", common::ToPythonTuple("Desired Height(m)"));
-        common::CallPython("axis", "tight");
+        // common::CallPython("axis", "tight");
         
         
         

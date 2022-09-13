@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-14 12:43:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-26 15:41:24
+ * @LastEditTime: 2022-09-13 17:13:44
  * @FilePath: /drake/workspace/centaur_sim/centaur_controller.h
  * @Description: controller block for drake simulation
  * 
@@ -54,6 +54,8 @@ public:
                                     _control_model.num_positions() + _control_model.num_velocities());
         this->DeclareVectorOutputPort("actuated_torque", 6,
                                     &CentaurController::CalcTorques);
+        this->DeclareVectorOutputPort("controller_log_data", 5,
+                                    &CentaurController::OutpotLog);
         
         
     }
@@ -102,6 +104,25 @@ private:
        
         output->set_value(output_torques);
     
+    }
+
+    void OutpotLog(const systems::Context<T>& context,
+                  systems::BasicVector<T>* output) const {
+
+            Eigen::VectorXd output_log_vector(5); output_log_vector.setZero();
+            /* 
+                0: time
+                1: left_contact_state
+                2: (left)grf_x
+                3: grf_y
+                4: grf_z
+            */
+            output_log_vector[0] = context.get_time();
+            output_log_vector[1] = ct->ctrl_states.plan_contacts_phase[0];
+            output_log_vector.segment<3>(2) = ct->ctrl_states.foot_force_cmd_rel.block<3, 1>(0, 0);
+
+            output->set_value(output_log_vector);
+
     }
 
     /**

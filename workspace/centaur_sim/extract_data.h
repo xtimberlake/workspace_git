@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-19 09:55:16
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-08-10 20:02:56
+ * @LastEditTime: 2022-09-13 17:22:05
  * @FilePath: /drake/workspace/centaur_sim/extract_data.h
  * @Description: 
  * 
@@ -131,9 +131,11 @@ private:
         log_data.segment<3>(9) = linear_vel;
 
         // Part 2: forces data
+        // spatial_vec include 12x6 wrenches(for each joint)
         const std::vector<drake::multibody::SpatialForce<double>>& spatial_vec =
             this->GetInputPort("spatial_forces_in").template Eval<std::vector<drake::multibody::SpatialForce<double>>>(context);
-        Eigen::Matrix<double ,6, 1> wrenches = spatial_vec[2].get_coeffs();
+        Eigen::Matrix<double ,6, 1> wrenches = spatial_vec[11].get_coeffs();
+        // std::cout << "spatial forces dimention = " << spatial_vec.size() << std::endl;
         log_data.segment<6>(12) = wrenches;
 
         logoutput->set_value(log_data);
