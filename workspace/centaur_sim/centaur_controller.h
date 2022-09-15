@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-14 12:43:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-09-13 17:13:44
+ * @LastEditTime: 2022-09-14 20:58:04
  * @FilePath: /drake/workspace/centaur_sim/centaur_controller.h
  * @Description: controller block for drake simulation
  * 
@@ -212,6 +212,11 @@ private:
         //     drake::log()->info("ct->ctrl_states.q = ");
         //     drake::log()->info(ct->ctrl_states.q);
         // }
+
+        // systems dynamics matrix
+        _control_model.CalcMassMatrix(*_plant_context, &ct->ctrl_states.Mq);
+        _control_model.CalcBiasTerm(*_plant_context, &ct->ctrl_states.Cv);
+        ct->ctrl_states.tau_g = _control_model.CalcGravityGeneralizedForces(*_plant_context);
         
 
     }

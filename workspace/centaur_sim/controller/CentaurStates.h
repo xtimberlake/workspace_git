@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:30:49
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-22 10:18:43
+ * @LastEditTime: 2022-09-14 20:55:17
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurStates.h
  * @Description: define all the states that used in controller; mainly 
  *                adapted from https://github.com/ShuoYangRobotics/A1-QP-MPC-Controller
@@ -230,7 +230,11 @@ class CentaurStates {
 
     Eigen::Matrix<double, 3, 2> foot_force_kin;
 
-
+    // system dynamics:
+    // M(q)v̇ + C(q, v)v = tau_g + tau + ∑ J_WBᵀ(q) Fapp_Bo_W
+    Eigen::Matrix<double, 12, 12> Mq;   // mass matrix
+    Eigen::Matrix<double, 12, 1> Cv;    // bias term
+    Eigen::Matrix<double, 12, 1> tau_g; // generalized forces due to gravity
 
 
     // Others
