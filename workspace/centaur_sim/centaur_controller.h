@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-14 12:43:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-09-14 20:58:04
+ * @LastEditTime: 2022-09-17 20:01:41
  * @FilePath: /drake/workspace/centaur_sim/centaur_controller.h
  * @Description: controller block for drake simulation
  * 
@@ -25,11 +25,15 @@
 #include "drake/workspace/centaur_sim/controller/CentaurGaitPattern.h"
 #include "drake/workspace/centaur_sim/controller/CentaurStates.h"
 #include "drake/workspace/centaur_sim/centaurrobot/centaurrobot.h"
+#include "drake/workspace/centaur_sim/controller/Task.hpp"
+#include "drake/workspace/centaur_sim/controller/WBIController.h"
 
 
 
 
 class centaurrobot;
+
+class WBIController;
 
 
 namespace drake{
@@ -75,30 +79,29 @@ private:
         update_states(context);
         
         if((ct->ctrl_states.t - ct->ctrl_states.k * ct->ctrl_states.control_dt) > ct->ctrl_states.control_dt)
-        {
+        {   
+            // running at 1 kHz
             ct->ctrl_states.k++;
 
-            if(ct->ctrl_states.t < 0.5) {
+            if(ct->ctrl_states.t < 0.5) { // start trotting in 0.5 seconds
                 ct->standing->update_gait_pattern(ct->ctrl_states);
             }
             else {
                 ct->walking->update_gait_pattern(ct->ctrl_states);
             }
 
-            // drake::log()->info("swing left = " + std::to_string(ct->ctrl_states.plan_swings_phase[0]) + "  right = " +  std::to_string(ct->ctrl_states.plan_swings_phase[1]));
-            // drake::log()->info("stance left = " + std::to_string(ct->ctrl_states.plan_contacts_phase[0]) + "  right = " +  std::to_string(ct->ctrl_states.plan_contacts_phase[1]));
-             
+            // swing
             ct->controller->GenerateSwingTrajectory(ct->ctrl_states);
-            // drake::log()->info(ct->ctrl_states.foot_pos_world.transpose());
+
+            // compute grfs at 100 Hz
             if(ct->ctrl_states.k == 1 ||ct->ctrl_states.k % ct->ctrl_states.nIterationsPerMPC == 0) {
                 ct->controller->ComputeGoundReactionForce(ct->ctrl_states);
             }
-            output_torques = ct->legcontroller->task_impedance_control(ct->ctrl_states);   
-            // drake::log()->info(output_torques.transpose());
-            // if(ct->ctrl_states.t < 1.0)
-            // {
-            //     output_torques.setZero();
-            // }
+
+            // calculate torques through Jacobian matrix
+            output_torques = ct->legcontroller->task_impedance_control(ct->ctrl_states);
+            ct->wbicontroller->run(ct->ctrl_states);
+
         }
         
        
@@ -173,27 +176,28 @@ private:
         // drake::log()->info("real:" );
         // drake::log()->info(temp);
 
-        MatrixX<double> J_BF_left(3, _control_model.num_positions());
+        MatrixX<double> J_BF_left(3, _control_model.num_velocities());
         _control_model.CalcJacobianTranslationalVelocity(*_plant_context,
-                                                         multibody::JacobianWrtVariable::kQDot,
+                                                         multibody::JacobianWrtVariable::kV,
                                                          LeftFootFrame,
                                                          Vector3<double>::Zero(),
-                                                         FloatingBodyFrame,
-                                                         FloatingBodyFrame,
+                                                         _control_model.world_frame(),
+                                                         _control_model.world_frame(),
                                                          &J_BF_left);
-                                                        
-        ct->ctrl_states.JacobianFoot[0] = J_BF_left.block<3, 3>(0, 7);
 
-        MatrixX<double> J_BF_right(3, _control_model.num_positions());
+        // expressed in the body frame                 
+        ct->ctrl_states.JacobianFoot[0] = ct->ctrl_states.root_rot_mat.transpose() * J_BF_left.block<3, 3>(0, 6);
+
+        MatrixX<double> J_BF_right(3, _control_model.num_velocities());
         _control_model.CalcJacobianTranslationalVelocity(*_plant_context,
-                                                         multibody::JacobianWrtVariable::kQDot,
+                                                         multibody::JacobianWrtVariable::kV,
                                                          RightFootFrame,
                                                          Vector3<double>::Zero(),
-                                                         FloatingBodyFrame,
-                                                         FloatingBodyFrame,
+                                                         _control_model.world_frame(),
+                                                         _control_model.world_frame(),
                                                          &J_BF_right);
-                                                
-        ct->ctrl_states.JacobianFoot[1] = J_BF_right.block<3, 3>(0, 10);
+                                                                       
+        ct->ctrl_states.JacobianFoot[1] = ct->ctrl_states.root_rot_mat.transpose() * J_BF_right.block<3, 3>(0, 9);
                                                         
  
         Eigen::Matrix<double, 13, 1> qvec;

@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-22 08:44:58
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-08-10 19:37:58
+ * @LastEditTime: 2022-09-16 17:04:52
  * @FilePath: /drake/workspace/centaur_sim/controller/LegController.cc
  * @Description: 
  * 
@@ -30,7 +30,7 @@ Eigen::Matrix<double, 6, 1> LegController::joint_impedance_control(CentaurStates
             torques.segment<3>(3 * leg) = 
                 _kp_stance.cwiseProduct(state.q_cmd.segment<3>(3 * leg) - state.q_cmd.segment<3>(3 * leg))
                 + _kd_stance.cwiseProduct(state.qdot_cmd.segment<3>(3 * leg) - state.qdot.segment<3>(3 * leg))
-                + state.tao_ff.segment<3>(3 * leg);
+                + state.tau_ff.segment<3>(3 * leg);
         }
         else {
            torques.segment<3>(3 * leg) = 
@@ -52,14 +52,18 @@ Eigen::Matrix<double, 6, 1> LegController::task_impedance_control(CentaurStates&
     for (int leg = 0; leg < 2; leg++)
     {
         if (state.plan_contacts_phase(leg) > 0) {
+
+            // (static) Jacobian mapping
+            state.tau_ff.segment<3>(3 * leg) = -state.JacobianFoot[leg].transpose() * state.foot_force_cmd_rel.block<3, 1>(0, leg);
+
+
             //soft landing
-            // torques.segment<3>(3 * leg) = state.tao_ff.segment<3>(3 * leg);
             if(state.plan_contacts_phase(leg) >= full_end) {
-                torques.segment<3>(3 * leg) = state.tao_ff.segment<3>(3 * leg);
+                torques.segment<3>(3 * leg) = state.tau_ff.segment<3>(3 * leg);
             }
             else {
                 decay_coeffienct = (1 - start_rate) * sin(M_PI_2 * state.plan_contacts_phase(leg) / full_end)  + start_rate;
-                torques.segment<3>(3 * leg) = decay_coeffienct * state.tao_ff.segment<3>(3 * leg);
+                torques.segment<3>(3 * leg) = decay_coeffienct * state.tau_ff.segment<3>(3 * leg);
             }
         }
         else {
@@ -71,6 +75,7 @@ Eigen::Matrix<double, 6, 1> LegController::task_impedance_control(CentaurStates&
             torques.segment<3>(3 * leg) = state.JacobianFoot[leg].lu().solve(state.foot_force_kin.block<3, 1>(0, leg));
         }
     }
+    state.tau = torques;
 
     return torques;
 }

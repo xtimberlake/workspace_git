@@ -83,6 +83,8 @@ drake_cc_library(
         "controller/ConvexMPC.cc",
         "Utils/Utils.cc",
         "controller/LegController.cc",
+        "controller/Tasks/TorsoPosTask.cc",
+        "controller/WBIController.cc",
     ],
     hdrs = [
         "centaur_controller.h",
@@ -94,6 +96,9 @@ drake_cc_library(
         "controller/CentaurParams.h",
         "Utils/Utils.h",
         "controller/LegController.h",
+        "controller/Task.hpp",
+        "controller/Tasks/TorsoPosTask.hpp",
+        "controller/WBIController.h",
     ],
     data = [
         "centaur_control_model.sdf",

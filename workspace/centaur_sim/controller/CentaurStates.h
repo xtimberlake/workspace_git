@@ -2,12 +2,12 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:30:49
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-09-14 20:55:17
+ * @LastEditTime: 2022-09-17 09:52:31
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurStates.h
  * @Description: define all the states that used in controller; mainly 
  *                adapted from https://github.com/ShuoYangRobotics/A1-QP-MPC-Controller
  * 
- * Copyright (c) 2022 by HAR-Lab, All Rights Reserved. 
+ * Copyright (c) 2022 by HARR-Lab, All Rights Reserved. 
  */
 
 
@@ -222,7 +222,8 @@ class CentaurStates {
     Eigen::Matrix<double, 3, 3> JacobianFoot[2];
 
     // motors
-    Eigen::Matrix<double, 6, 1> q, qdot, q_cmd, qdot_cmd, tao_ff;
+    Eigen::Matrix<double, 6, 1> q, qdot, q_cmd, qdot_cmd, tau_ff;
+    Eigen::Matrix<double, 6, 1> tau;
 
     // ik
     int max_iter;

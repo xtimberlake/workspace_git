@@ -2,11 +2,11 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 16:07:26
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-27 20:41:30
+ * @LastEditTime: 2022-09-17 20:01:59
  * @FilePath: /drake/workspace/centaur_sim/centaurrobot/centaurrobot.h
  * @Description: define centaur robot handle
  * 
- * Copyright (c) 2022 by HAR-Lab, All Rights Reserved. 
+ * Copyright (c) 2022 by HARR-Lab, All Rights Reserved. 
  */
 #pragma once
 
@@ -14,12 +14,11 @@
 #include "drake/workspace/centaur_sim/controller/CentaurControl.h"
 #include "drake/workspace/centaur_sim/controller/CentaurGaitPattern.h"
 #include "drake/workspace/centaur_sim/controller/LegController.h"
+#include "drake/workspace/centaur_sim/controller/WBIController.h"
 
 
 class centaurrobot
 {
-private:
-    /* data */
 public:
     centaurrobot() 
     
@@ -32,8 +31,10 @@ public:
 
         controller = new CentaurControl(ctrl_states.ctrl_params_const);
         
-
         legcontroller = new LegController();
+
+
+        
 
     }
 
@@ -41,6 +42,7 @@ public:
     CentaurStates ctrl_states;
     CentaurControl* controller;
     LegController* legcontroller;
+    WBIController* wbicontroller;
     CentuarGaitPattern* walking;
     CentuarGaitPattern* standing;
     // CentuarGaitPattern* jumping;
