@@ -26,7 +26,6 @@
 
 #include "drake/workspace/centaur_sim/planner.h"
 #include "drake/workspace/centaur_sim/staticInvController.h"
-#include "drake/workspace/centaur_sim/FloatingBaseModel.h"
 #include "drake/workspace/centaur_sim/extract_data.h"
 #include "drake/workspace/centaur_sim/centaur_controller.h"
 
@@ -157,17 +156,26 @@ namespace centaur_sim {
             diagram->GetMutableSubsystemContext(*plant,
                                                 &simulator.get_mutable_context());
                                     
-        double backward = 0.05;
+        double backward = 0.02f;
         double ramp, increment_angle;
         ramp = std::sqrt(0.9 * 0.9 + backward * backward);
         increment_angle = acos((.9*.9 + ramp*ramp - backward*backward) /(2 * .9 * ramp));
         VectorX<double> initial_state(plant->num_positions() + plant->num_velocities());
         // initial_state.setZero();
+        // initial_state <<
+        // // 1, 0, 0, 0,
+        // 0, 0, 0,
+        // 0, increment_angle + acos((ramp * ramp + 0.58 * 0.58 - 0.455 * 0.455) / (2 * ramp * 0.58)), acos((-ramp * ramp + 0.58 * 0.58 + 0.455 * 0.455) / (2 * 0.455 * 0.58)) - M_PI,
+        // 0, increment_angle + acos((ramp * ramp + 0.58 * 0.58 - 0.455 * 0.455) / (2 * ramp * 0.58)), acos((-ramp * ramp + 0.58 * 0.58 + 0.455 * 0.455) / (2 * 0.455 * 0.58)) - M_PI;
+
+        double thigh_length, shank_length;
+        thigh_length = 0.512;
+        shank_length = 0.48;
         initial_state <<
         // 1, 0, 0, 0,
         0, 0, 0,
-        0, increment_angle + acos((ramp * ramp + 0.58 * 0.58 - 0.455 * 0.455) / (2 * ramp * 0.58)), acos((-ramp * ramp + 0.58 * 0.58 + 0.455 * 0.455) / (2 * 0.455 * 0.58)) - M_PI,
-        0, increment_angle + acos((ramp * ramp + 0.58 * 0.58 - 0.455 * 0.455) / (2 * ramp * 0.58)), acos((-ramp * ramp + 0.58 * 0.58 + 0.455 * 0.455) / (2 * 0.455 * 0.58)) - M_PI;
+        0, increment_angle + acos((ramp * ramp + thigh_length * thigh_length - shank_length * shank_length) / (2 * ramp * thigh_length)), acos((-ramp * ramp + thigh_length * thigh_length + shank_length * shank_length) / (2 * shank_length * thigh_length)) - M_PI,
+        0, increment_angle + acos((ramp * ramp + thigh_length * thigh_length - shank_length * shank_length) / (2 * ramp * thigh_length)), acos((-ramp * ramp + thigh_length * thigh_length + shank_length * shank_length) / (2 * shank_length * thigh_length)) - M_PI;
 
         plant_context.SetDiscreteState(initial_state);  
         // plant_context.SetContinuousState(initial_state);  

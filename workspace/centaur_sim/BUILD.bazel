@@ -22,19 +22,19 @@ drake_cc_library(
 
 
 
-drake_cc_library(
-    name = "flaoting_base_model_lib",
-    srcs = ["FloatingBaseModel.cc"],
-    hdrs = ["FloatingBaseModel.h"],
-    deps = [
-        "//systems/framework:leaf_system",
-        "//systems/framework:vector",
-        "//systems/framework:witness_function",
-        "//common:find_resource",
-        "//multibody/plant",
-        "//multibody/parsing",
-    ],
-)
+# drake_cc_library(
+#     name = "flaoting_base_model_lib",
+#     srcs = ["FloatingBaseModel.cc"],
+#     hdrs = ["FloatingBaseModel.h"],
+#     deps = [
+#         "//systems/framework:leaf_system",
+#         "//systems/framework:vector",
+#         "//systems/framework:witness_function",
+#         "//common:find_resource",
+#         "//multibody/plant",
+#         "//multibody/parsing",
+#     ],
+# )
 
 drake_cc_library(
     name = "extract_data_lib",
@@ -85,6 +85,8 @@ drake_cc_library(
         "controller/LegController.cc",
         "controller/Tasks/TorsoPosTask.cc",
         "controller/WBIController.cc",
+        "dynamics/FloatingBaseModel.cpp",
+        "dynamics/CentaurModel.cpp",
     ],
     hdrs = [
         "centaur_controller.h",
@@ -95,10 +97,13 @@ drake_cc_library(
         "controller/ConvexMPC.h",
         "controller/CentaurParams.h",
         "Utils/Utils.h",
+        "Utils/cppTypes.h",
         "controller/LegController.h",
         "controller/Task.hpp",
         "controller/Tasks/TorsoPosTask.hpp",
         "controller/WBIController.h",
+        "dynamics/FloatingBaseModel.h",
+        "dynamics/CentaurModel.h",
     ],
     data = [
         "centaur_control_model.sdf",
@@ -142,8 +147,8 @@ drake_cc_binary(
         ":centaur_sim_lib",
         ":planner_lib",
         ":centaur_controller_lib",
-        ":flaoting_base_model_lib",
-        "extract_data_lib", 
+        # ":flaoting_base_model_lib",
+        ":extract_data_lib", 
         "//common:add_text_logging_gflags",
         "//common:find_resource",
         "//common/proto:call_python",
