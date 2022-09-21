@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 16:07:26
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-09-19 16:48:44
+ * @LastEditTime: 2022-09-21 15:18:25
  * @FilePath: /drake/workspace/centaur_sim/centaurrobot/centaurrobot.h
  * @Description: define centaur robot handle
  * 
@@ -16,6 +16,7 @@
 #include "drake/workspace/centaur_sim/controller/LegController.h"
 #include "drake/workspace/centaur_sim/controller/WBIController.h"
 #include "drake/workspace/centaur_sim/dynamics/FloatingBaseModel.h"
+#include "drake/workspace/centaur_sim/dynamics/CentaurModel.h"
 
 
 class centaurrobot
@@ -34,7 +35,7 @@ public:
         
         legcontroller = new LegController();
 
-        centaur_dynamics_model.addBase(Eigen::Matrix<double, 6, 6>::Zero(6, 6));
+        ctModel.buildModel();
         
 
     }
@@ -47,6 +48,7 @@ public:
     CentuarGaitPattern* walking;
     CentuarGaitPattern* standing;
     FloatingBaseModel centaur_dynamics_model;
+    CentaurModel ctModel;
     // CentuarGaitPattern* jumping;
     // CentuarGaitPattern* galloping;
 

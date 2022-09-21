@@ -119,7 +119,6 @@
     <visual name='visual'>
       <pose relative_to='left_abad_joint_frame'>-0.14 0.04 0 1.5707963267948966 0 0</pose>
       <geometry>
-        <!-- <mesh> <uri>/home/haoyun/Data/Code/drake/workspace/centaur_sim/centaur_description/meshes/dae/hip.dae</uri> </mesh> -->
         <cylinder> <length>0.127</length> <radius>0.084</radius> </cylinder>
       </geometry>
       <material>

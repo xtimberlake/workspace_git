@@ -104,6 +104,8 @@ drake_cc_library(
         "controller/WBIController.h",
         "dynamics/FloatingBaseModel.h",
         "dynamics/CentaurModel.h",
+        "dynamics/spatial.h",
+        "Utils/orientationTools.h",
     ],
     data = [
         "centaur_control_model.sdf",
