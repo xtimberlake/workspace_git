@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:31:07
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-09-16 17:01:33
+ * @LastEditTime: 2022-09-22 20:18:51
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurControl.cc
  * @Description: 
  * 
@@ -47,8 +47,8 @@ Eigen::Matrix<double, 3, 2> CentaurControl::ComputeGoundReactionForce(CentaurSta
     // initial state
     mpc_solver->x0 << state.root_euler[0], state.root_euler[1], state.root_euler[2],
                     state.root_pos[0], state.root_pos[1], state.root_pos[2],
-                    state.root_ang_vel[0], state.root_ang_vel[1], state.root_ang_vel[2],
-                    state.root_lin_vel[0], state.root_lin_vel[1], state.root_lin_vel[2];
+                    state.root_ang_vel_world[0], state.root_ang_vel_world[1], state.root_ang_vel_world[2],
+                    state.root_lin_vel_world[0], state.root_lin_vel_world[1], state.root_lin_vel_world[2];
 
     // drake::log()->info("x0 = ");
     // drake::log()->info(mpc_solver->x0.transpose());
@@ -86,7 +86,7 @@ void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
     // Raibert Heuristic, calculate foothold position
     state.foothold_dest_rel = state.default_foot_pos_rel;
     // Eigen::Vector3d lin_vel_rel = state.root_rot_mat_z.transpose() * state.root_lin_vel;
-    Eigen::Vector3d lin_vel_rel = state.root_rot_mat.transpose() * state.root_lin_vel;
+    Eigen::Vector3d lin_vel_rel = state.root_rot_mat.transpose() * state.root_lin_vel_world;
     // drake::log()->info(state.plan_contacts_phase.transpose());
     // drake::log()->info("rel vel:" );
     // drake::log()->info(lin_vel_rel.transpose());

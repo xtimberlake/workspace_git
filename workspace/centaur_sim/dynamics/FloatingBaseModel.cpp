@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-19 16:25:29
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-09-21 19:38:05
+ * @LastEditTime: 2022-09-22 21:12:25
  * @FilePath: /drake/workspace/centaur_sim/dynamics/FloatingBaseModel.cpp
  * @Description: 
  * 
@@ -55,7 +55,7 @@ void FloatingBaseModel::addDynamicsVars(int count) {
         "(base).\n");
    }
 
-   // Mat6<double> eye6 = Mat6<double>::Identity();
+   Mat6<double> eye6 = Mat6<double>::Identity();
    SVec<double> zero6 = SVec<double>::Zero();
    Mat6<double> zero66 = Mat6<double>::Zero();
    SpatialInertia<double> zeroInertia(zero66);
@@ -72,8 +72,8 @@ void FloatingBaseModel::addDynamicsVars(int count) {
       _ag.push_back(zero6);
       
    //  _IC.push_back(zeroInertia);
-   //  _Xup.push_back(eye6);
-   //  _Xa.push_back(eye6);
+      _Xup.push_back(eye6);
+      _Xa.push_back(eye6);
    }
 
   //TODOs: what dose this Jacobian matrix stand for?
@@ -119,7 +119,7 @@ void FloatingBaseModel::resizeSystemMatricies() {
  * @return The body's ID (can be used as the parent)
  */
 int FloatingBaseModel::addBody(const SpatialInertia<double>& inertia, int parent,
-              JointType jointType, spatial::CoordinateAxis jointAxis,
+              JointType jointType, ori::CoordinateAxis jointAxis,
               const Mat6<double>& Xtree) {
 
   if (static_cast<size_t> (parent) > _nDof) {
@@ -165,6 +165,56 @@ int FloatingBaseModel::addGroundContactPoint(int bodyID, const Vec3<double> &loc
 
   resizeSystemMatricies();
   return _nGroundContact++;
+  
+}
+
+/*!
+ * Forward kinematics of all bodies.  Computes _Xup (from up the tree) and _Xa
+ *(from absolute) Also computes _S (motion subspace or Screw asix), _v (spatial velocity in
+ *link coordinates), and _c (coriolis acceleration in link coordinates)
+ */
+
+void FloatingBaseModel::forwardKinematics() {
+  
+  if (_kinematicsUpToDate) return;
+  
+  // base transformation and twist
+  _Xup[5] = createSXform(ori::quaternionToRotationMatrix(_state.bodyOrientation),
+                         _state.bodyPosition);
+  _v[5] = _state.bodyVelocity;
+
+  // transforamtion and twist for each links(from ID=6 to 11)
+  for (size_t i = 6; i < _nDof; i++) {
+    
+    Mat6<double> XJ = jointXform(_jointTypes[i], _jointAxes[i], _state.q[i - 6]);
+    _Xup[i] = XJ * _Xtree[i];
+    _S[i] = jointMotionSubspace<double>(_jointTypes[i], _jointAxes[i]);
+    SVec<double> vJ = _S[i] * _state.qd[i - 6];
+    // total velocity of body i
+    _v[i] = _Xup[i] * _v[_parents[i]] + vJ;
+  }
+
+  // calculate from absolute transformations
+  // i.e., {i}^X_{world}
+  for (size_t i = 5; i < _nDof; i++) {
+    if (_parents[i] == 0) {
+      _Xa[i] = _Xup[i];  // floating base
+    } else {
+      _Xa[i] = _Xup[i] * _Xa[_parents[i]];
+    }
+  }
+  
+  // position and velocity of contact points(foot-ends) in the world frame
+  for (size_t j = 0; j < _nGroundContact; j++) {
+    size_t i_link = _gcParent.at(j);
+    Mat6<double> Xai = invertSXform(_Xa[i_link]);
+    SVec<double> vSpatial = Xai * _v[i_link];
+    
+    _pGC.at(j) = sXFormPoint(Xai, _gcLocation.at(j));
+    _vGC.at(j) = spatialToLinearVelocity(vSpatial, _pGC.at(j));
+  }
+  
+  _kinematicsUpToDate = true;
   
 }
 

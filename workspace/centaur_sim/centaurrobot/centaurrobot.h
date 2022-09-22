@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 16:07:26
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-09-21 15:18:25
+ * @LastEditTime: 2022-09-22 19:28:18
  * @FilePath: /drake/workspace/centaur_sim/centaurrobot/centaurrobot.h
  * @Description: define centaur robot handle
  * 
@@ -36,7 +36,6 @@ public:
         legcontroller = new LegController();
 
         ctModel.buildModel();
-        
 
     }
 

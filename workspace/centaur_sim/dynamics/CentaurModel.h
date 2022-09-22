@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-19 20:30:21
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-09-20 17:11:36
+ * @LastEditTime: 2022-09-22 19:28:48
  * @FilePath: /drake/workspace/centaur_sim/dynamics/CentaurModel.h
  * @Description: 
  * 
@@ -57,6 +57,6 @@ class CentaurModel {
     
 
     // floating base model parameters
-    FloatingBaseModel _model;
+    FloatingBaseModel _fb_model;
     
 };

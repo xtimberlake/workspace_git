@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:30:49
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-16 19:58:00
+ * @LastEditTime: 2022-09-22 20:20:26
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurControlStates.h
  * @Description: define all the states that used in controller, mainly 
  *                adapted from https://github.com/ShuoYangRobotics/A1-QP-MPC-Controller
@@ -66,8 +66,10 @@ class CentaurControlStates {
     Eigen::Vector3d root_euler;
     Eigen::Matrix3d root_rot_mat;
     Eigen::Matrix3d root_rot_mat_z;
-    Eigen::Vector3d root_lin_vel;
-    Eigen::Vector3d root_ang_vel;
+    Eigen::Vector3d root_lin_vel_world;
+    Eigen::Vector3d root_lin_vel_rel;
+    Eigen::Vector3d root_ang_vel_world;
+    Eigen::Vector3d root_ang_vel_rel;
     Eigen::Vector3d root_acc;
 
     Eigen::Vector3d root_pos_d;
