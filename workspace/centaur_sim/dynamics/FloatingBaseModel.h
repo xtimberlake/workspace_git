@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-19 16:25:38
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-09-22 19:26:12
+ * @LastEditTime: 2022-09-23 19:30:53
  * @FilePath: /drake/workspace/centaur_sim/dynamics/FloatingBaseModel.h
  * @Description: 
  * 
@@ -57,15 +57,17 @@ public:
     void addBase(const SpatialInertia<double>& inertia);
     void addDynamicsVars(int count);
     void resizeSystemMatricies();
-    int addBody(const SpatialInertia<double>& inertia, int parent,
+    int addBody(const std::string name, const SpatialInertia<double>& inertia, int parent,
               JointType jointType, ori::CoordinateAxis jointAxis,
               const Mat6<double>& Xtree);
+    void printModelTable();
     int addGroundContactPoint(int bodyID, const Vec3<double> &location);
     void forwardKinematics();
+    void biasAccelerations();
+    void contactJacobians();
 
     void setState(const FBModelState<double>& state) {
       _state = state;
-
       resetCalculationFlags();
     }
 
@@ -75,6 +77,8 @@ public:
     void resetCalculationFlags() {
       // _articulatedBodiesUpToDate = false;
       _kinematicsUpToDate = false;
+      _biasAccelerationsUpToDate = false;
+      // _compositeInertiasUpToDate = false;
       // _forcePropagatorsUpToDate = false;
       // _qddEffectsUpToDate = false;
       // _accelerationsUpToDate = false;
@@ -84,6 +88,7 @@ public:
     size_t _nDof = 0;
 
     std::vector<std::string> _bodyNames;
+    std::vector<int> _bodyID; // parent body's id
     std::vector<int> _parents; // parent body's id
     std::vector<JointType> _jointTypes; // The type of joint (prismatic or revolute)
     std::vector<ori::CoordinateAxis> _jointAxes; // The joint axis (X,Y,Z), in the parent's frame
@@ -94,7 +99,7 @@ public:
     // states-dependent variables
 
     vectorAligned<SVec<double>> _v,  _a, _avp, _c, _S, _fvp, _ag, _f;
-    // Spatial velocity, acceleration, ?, ?, screw asix, ?, gravity acc, wrench
+    // Spatial velocity, acceleration, velocity product acceleration, Coriolis accelerations, screw asix, ?, gravity acc, wrench
     vectorAligned<Mat6<double>> _Xup, _Xa, _Xai; // {i}^X_{i-1}, {i}^X_{world} and {world}^X_{i}
 
     vectorAligned<D6Mat<double>> _J;
@@ -114,6 +119,7 @@ public:
 
     // flag 
     bool _kinematicsUpToDate = false;
+    bool _biasAccelerationsUpToDate = false;
 
 };
 

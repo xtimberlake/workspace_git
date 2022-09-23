@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-19 20:29:47
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-09-22 21:42:24
+ * @LastEditTime: 2022-09-23 21:19:58
  * @FilePath: /drake/workspace/centaur_sim/dynamics/CentaurModel.cpp
  * @Description: build the dynamic model of Centaur robot
  * 
@@ -23,7 +23,6 @@ CentaurModel::CentaurModel() {
 
     // (left)abAd hip link
     _abAd_pos_from_torso << -0.048, 0.173, 0;
-    _abAd_pos_from_torso = -_abAd_pos_from_torso;
     _abAd_rot_from_torso = Mat3<double>::Identity();
     _abAd_link_length = 0.14;
     _abAd_rotational_inertia.diagonal() = Vec3<double>(0.0053, 0.0053, 0.006);
@@ -33,7 +32,6 @@ CentaurModel::CentaurModel() {
     
 
     _hip_pos_from_adAd << -_abAd_link_length, 0.04, 0;
-    _hip_pos_from_adAd = -_hip_pos_from_adAd;
     _hip_rot_from_adAd = Mat3<double>::Identity();
     _hip_link_length = 0.512;
     _hip_rotational_inertia.diagonal() = Vec3<double>(0.0141, 0.0141, 0.0001);
@@ -63,6 +61,10 @@ void CentaurModel::buildModel() {
     // note: this ID counts from zero
     const int baseID = 5;
     int bodyId = 5;
+    std::string adAd_link[2] = {"left abAD link", "right ab/ad link"};
+    std::string hip_link[2] = {"left hip link", "right hip link"};
+    std::string knee_link[2] = {"left knee link", "right knee link"};
+
     for (int i = 0; i < 2; i++)
     {
         // i = 0 for left, 1 for right
@@ -71,22 +73,22 @@ void CentaurModel::buildModel() {
         bodyId++; // 6, 9
         _abAd_pos_from_torso[1] = powf64(-1, i) * _abAd_pos_from_torso[1];
         _Xtree_abAd = spatial::createSXform(_abAd_rot_from_torso, _abAd_pos_from_torso);
-        _fb_model.addBody(_abAdInertia, baseID, JointType::Revolute,
+        _fb_model.addBody(adAd_link[i], _abAdInertia, baseID, JointType::Revolute,
                    ori::CoordinateAxis::X, _Xtree_abAd);
 
         // hip link
         bodyId++; // 7, 10
         _hip_pos_from_adAd[1] = powf64(-1, i) * _hip_pos_from_adAd[1];
         _Xtree_hip = spatial::createSXform(_hip_rot_from_adAd, _hip_pos_from_adAd);
-        _fb_model.addBody(_hipInertia, bodyId-1, JointType::Revolute,
+        _fb_model.addBody(hip_link[i], _hipInertia, bodyId-1, JointType::Revolute,
                     ori::CoordinateAxis::Y, _Xtree_hip);
 
         // knee link
         bodyId++; // 8, 11
-        _fb_model.addBody(_kneeInertia, bodyId-1, JointType::Revolute,
+        _fb_model.addBody(knee_link[i],_kneeInertia, bodyId-1, JointType::Revolute,
                     ori::CoordinateAxis::Y, _Xtree_knee);
         // add contact point at the foot-end
-        _fb_model.addGroundContactPoint(bodyId, Vec3<double>(0, 0, -_knee_link_length));
+        _fb_model.addGroundContactPoint(bodyId, Vec3<double>(0, 0, -_knee_link_length-0.01)); // 0.01 is the radiu of foot ball
     }
     
 

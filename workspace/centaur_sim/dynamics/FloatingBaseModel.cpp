@@ -2,11 +2,11 @@
  * @Author: haoyun 
  * @Date: 2022-09-19 16:25:29
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-09-22 21:12:25
+ * @LastEditTime: 2022-09-23 21:04:36
  * @FilePath: /drake/workspace/centaur_sim/dynamics/FloatingBaseModel.cpp
  * @Description: 
  * 
- * Copyright (c) 2022 by HAR-Lab, All Rights Reserved. 
+ * From MIT-Cheetah code
  */
 #include "drake/workspace/centaur_sim/dynamics/FloatingBaseModel.h"
 
@@ -18,6 +18,24 @@ FloatingBaseModel::FloatingBaseModel(/* args */)
 
 FloatingBaseModel::~FloatingBaseModel()
 {
+}
+
+
+void FloatingBaseModel::printModelTable() {
+  if (_nDof == 0) {
+    throw std::runtime_error("Please build the model before print!\n");
+  }
+  std::cout << "Total DoFs = " << _bodyID.size() << std::endl;
+  for (size_t i = 0; i < _nDof; i++)
+  {
+
+    std::cout << "link \#" << _bodyID.at(i) << ": "
+    << "     index = " << i << ","
+    << "     parent = " << _parents.at(i) << ","
+    << "     name = " << _bodyNames.at(i) << std::endl;
+  }
+  
+
 }
 
  void FloatingBaseModel::addBase(const SpatialInertia<double>& inertia) {
@@ -39,11 +57,13 @@ FloatingBaseModel::~FloatingBaseModel()
       _Xtree.push_back(eye6);
       _Ibody.push_back(zeroInertia);
       _bodyNames.push_back("N/A");
+      _bodyID.push_back(-1);
    }
 
    _jointTypes[5] = JointType::FloatingBase;
    _Ibody[5] = inertia;
    _bodyNames[5] = "Floating Base";
+   _bodyID[5] = 5;
 
    addDynamicsVars(6);
 }
@@ -118,7 +138,7 @@ void FloatingBaseModel::resizeSystemMatricies() {
  * @param Xtree  The coordinate transformation from parent to this body
  * @return The body's ID (can be used as the parent)
  */
-int FloatingBaseModel::addBody(const SpatialInertia<double>& inertia, int parent,
+int FloatingBaseModel::addBody(const std::string name, const SpatialInertia<double>& inertia, int parent,
               JointType jointType, ori::CoordinateAxis jointAxis,
               const Mat6<double>& Xtree) {
 
@@ -128,13 +148,15 @@ int FloatingBaseModel::addBody(const SpatialInertia<double>& inertia, int parent
         " nDofs: " + std::to_string(_nDof) + "\n");
   }
 
+  _bodyNames.push_back(name);
   _parents.push_back(parent);
   _jointTypes.push_back(jointType);
   _jointAxes.push_back(jointAxis);
   _Xtree.push_back(Xtree);
   _Ibody.push_back(inertia);
+  _bodyID.push_back(_nDof);
   _nDof++;
-
+  
   addDynamicsVars(1);
   
   return _nDof;
@@ -183,25 +205,31 @@ void FloatingBaseModel::forwardKinematics() {
                          _state.bodyPosition);
   _v[5] = _state.bodyVelocity;
 
+  
+
   // transforamtion and twist for each links(from ID=6 to 11)
   for (size_t i = 6; i < _nDof; i++) {
     
     Mat6<double> XJ = jointXform(_jointTypes[i], _jointAxes[i], _state.q[i - 6]);
+
     _Xup[i] = XJ * _Xtree[i];
+    
     _S[i] = jointMotionSubspace<double>(_jointTypes[i], _jointAxes[i]);
     SVec<double> vJ = _S[i] * _state.qd[i - 6];
     // total velocity of body i
     _v[i] = _Xup[i] * _v[_parents[i]] + vJ;
+    
+    // Q(haoyun): what's Coriolis Accelerations?
+    // A:[V]x S_i*qdot_i.
+    // recall acceleration propagation: A_i = X_up*A_{parent} + [V]x S_i*qdot_i + S_i*qddot.
+    _c[i] = motionCrossProduct(_v[i], vJ);
   }
 
   // calculate from absolute transformations
   // i.e., {i}^X_{world}
-  for (size_t i = 5; i < _nDof; i++) {
-    if (_parents[i] == 0) {
-      _Xa[i] = _Xup[i];  // floating base
-    } else {
+  _Xa[5] = _Xup[5]; 
+  for (size_t i = 6; i < _nDof; i++) {
       _Xa[i] = _Xup[i] * _Xa[_parents[i]];
-    }
   }
   
   // position and velocity of contact points(foot-ends) in the world frame
@@ -218,3 +246,61 @@ void FloatingBaseModel::forwardKinematics() {
   
 }
 
+/*!
+ * (Support Function) Computes velocity product accelerations of
+ * each link and rotor _avp, and _avprot
+ */
+void FloatingBaseModel::biasAccelerations() {
+  if (_biasAccelerationsUpToDate) return;
+  forwardKinematics();
+  // velocity product acceelration of base
+  _avp[5] << 0, 0, 0, 0, 0, 0;
+
+  // from base to tips
+  for (size_t i = 6; i < _nDof; i++) {
+    // Outward kinamtic propagtion
+    _avp[i] = _Xup[i] * _avp[_parents[i]] + _c[i];
+  }
+  _biasAccelerationsUpToDate = true;
+}
+
+/*!
+ * Compute the contact Jacobians (3xn matrices) for the velocity
+ * of each contact point expressed in absolute coordinates
+ */
+void FloatingBaseModel::contactJacobians() {
+  forwardKinematics();
+  biasAccelerations();
+
+  for (size_t k = 0; k < _nGroundContact; k++) {
+    _Jc[k].setZero();
+    _Jcdqd[k].setZero();
+
+    // // Skip it if we don't care about it
+    // if (!_compute_contact_info[k]) continue;
+
+    size_t i = _gcParent.at(k);
+
+    // Rotation to absolute coords
+    Mat3<double> Rai = _Xa[i].template block<3, 3>(0, 0).transpose();
+    Mat6<double> Xc = createSXform(Rai, _gcLocation.at(k));
+
+    // Bias acceleration
+    SVec<double> ac = Xc * _avp[i];
+    SVec<double> vc = Xc * _v[i];
+
+    // Correct to classical
+    _Jcdqd[k] = spatialToLinearAcceleration(ac, vc);
+
+    // rows for linear velcoity in the world
+    D3Mat<double> Xout = Xc.template bottomRows<3>();
+
+    // from tips to base
+    while (i > 5) {
+      _Jc[k].col(i) = Xout * _S[i];
+      Xout = Xout * _Xup[i];
+      i = _parents[i];
+    }
+    _Jc[k].template leftCols<6>() = Xout;
+  }
+}

@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-18 14:20:26
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-23 10:31:31
+ * @LastEditTime: 2022-09-23 21:18:13
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurParams.h
  * @Description: define some const
  * 

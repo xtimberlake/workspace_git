@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-20 11:18:45
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-09-22 15:10:05
+ * @LastEditTime: 2022-09-23 20:21:26
  * @FilePath: /drake/workspace/centaur_sim/dynamics/spatial.h
  * @Description: 
  * 
@@ -133,7 +133,11 @@ auto homogeneousToSXform(const Eigen::MatrixBase<T>& H) {
 }
 
 /*!
- * Create spatial coordinate transformation from rotation and translation
+ * Create spatial coordinate transformation from rotation and translation.
+ * See Featherstone book, Page20.
+ * @param R: rotation from {A} to {B} frame, namely {B}^R_{A}
+ * @param r: vector from OA to OB, experessed in the {A} frame, namely {A}^r_{AB}
+ * @return X: {B}^X_{A} 
  */
 template <typename T, typename T2>
 auto createSXform(const Eigen::MatrixBase<T>& R,

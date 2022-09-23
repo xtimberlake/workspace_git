@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 16:07:26
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-09-22 19:28:18
+ * @LastEditTime: 2022-09-23 10:05:48
  * @FilePath: /drake/workspace/centaur_sim/centaurrobot/centaurrobot.h
  * @Description: define centaur robot handle
  * 
@@ -35,7 +35,7 @@ public:
         
         legcontroller = new LegController();
 
-        ctModel.buildModel();
+        wbicontroller = new WBIController();
 
     }
 
@@ -47,7 +47,6 @@ public:
     CentuarGaitPattern* walking;
     CentuarGaitPattern* standing;
     FloatingBaseModel centaur_dynamics_model;
-    CentaurModel ctModel;
     // CentuarGaitPattern* jumping;
     // CentuarGaitPattern* galloping;
 

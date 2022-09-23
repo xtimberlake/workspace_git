@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-20 11:26:43
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-09-22 14:57:28
+ * @LastEditTime: 2022-09-23 20:56:13
  * @FilePath: /drake/workspace/centaur_sim/Utils/orientationTools.h
  * @Description: 
  * 
@@ -153,6 +153,7 @@ Quat<typename T::Scalar> rotationMatrixToQuaternion(
  * Convert a quaternion to a rotation matrix.  This matrix represents a
  * coordinate transformation into the frame which has the orientation specified
  * by the quaternion
+ * Note: the quaternion is ordered as (w, x, y, z)
  */
 template <typename T>
 Mat3<typename T::Scalar> quaternionToRotationMatrix(

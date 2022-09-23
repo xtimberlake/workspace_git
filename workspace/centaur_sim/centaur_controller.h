@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-14 12:43:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-09-22 21:50:33
+ * @LastEditTime: 2022-09-23 09:35:15
  * @FilePath: /drake/workspace/centaur_sim/centaur_controller.h
  * @Description: controller block for drake simulation
  * 
@@ -223,27 +223,8 @@ private:
         _control_model.CalcMassMatrix(*_plant_context, &ct->ctrl_states.Mq);
         _control_model.CalcBiasTerm(*_plant_context, &ct->ctrl_states.Cv);
         ct->ctrl_states.tau_g = _control_model.CalcGravityGeneralizedForces(*_plant_context);
-        
-
-        // floating base model states
-        FBModelState<double> fb_states;
-        fb_states.bodyOrientation = ct->ctrl_states.root_quat.coeffs();
-        fb_states.bodyPosition = ct->ctrl_states.root_pos; // Vec_from_world_to_base, expressed in world
-        fb_states.bodyVelocity.head(3) = ct->ctrl_states.root_ang_vel_rel;
-        fb_states.bodyVelocity.tail(3) = ct->ctrl_states.root_lin_vel_rel;
-        fb_states.q = ct->ctrl_states.q;
-        fb_states.qd = ct->ctrl_states.qdot;
-
-        ct->ctModel._fb_model.setState(fb_states);
-        ct->ctModel._fb_model.forwardKinematics();
-        
     
-        // std::cout << spatial::translationFromSXform(ct->ctModel._fb_model._Xa[8]).transpose() << std::endl;
-        // std::cout << ct->ctModel._fb_model._pGC.at(0).transpose() << std::endl;
-        // std::cout << "foot pos: " 
-        // << ct->ctModel._fb_model._pGC.at(0)[0] << "/" << ct->ctrl_states.foot_pos_world.block<3, 1>(0, 0)[0] << ", "
-        // << ct->ctModel._fb_model._pGC.at(0)[1] << "/" << ct->ctrl_states.foot_pos_world.block<3, 1>(0, 0)[1] << ", "
-        // << ct->ctModel._fb_model._pGC.at(0)[2] << "/" << ct->ctrl_states.foot_pos_world.block<3, 1>(0, 0)[2] << std::endl;
+        
     }
 };
 

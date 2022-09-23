@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-17 16:49:42
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-09-17 19:05:00
+ * @LastEditTime: 2022-09-23 10:12:35
  * @FilePath: /drake/workspace/centaur_sim/controller/Tasks/TorsoPosTask.hpp
  * @Description: 
  * 
@@ -11,7 +11,7 @@
 #pragma once
 
 #include "drake/workspace/centaur_sim/controller/Task.hpp"
-#include "drake/workspace/centaur_sim/controller/CentaurStates.h"
+
 
 template <typename T>
 class TorsoPosTask : public Task<T> 
