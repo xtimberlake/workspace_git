@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-16 17:07:22
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-09-23 10:31:36
+ * @LastEditTime: 2022-10-08 21:44:15
  * @FilePath: /drake/workspace/centaur_sim/controller/WBIController.h
  * @Description: Whole-body impulse controller
  * 
@@ -14,8 +14,8 @@
 #include "drake/workspace/centaur_sim/controller/CentaurStates.h"
 #include "drake/workspace/centaur_sim/dynamics/CentaurModel.h"
 
-template<typename T>
-class TorsoPosTask;
+// template<typename T>
+// class TorsoPosTask;
 
 class WBIController
 {
@@ -28,14 +28,13 @@ public:
     void kin_wbc();
     void dyn_wbc();
 
-    // TorsoPosTask<double> torso_pos_task;
-    Eigen::Matrix<double, 12, 12> Hq;   // mass matrix
-    Eigen::Matrix<double, 12, 1> Cv;    // nonlinear term
-    Eigen::Matrix<double, 12, 1> tau_grty; // due to generalized gravity 
-    Eigen::Matrix<double, 12, 1> tau_dist; // disturbance term
+    Task<double>* torso_pos_task;
+    Eigen::Matrix<double, 12, 12> _A, _Ainv;   // mass matrix
+    Eigen::Matrix<double, 12, 1> _coriolis;    // nonlinear term
+    Eigen::Matrix<double, 12, 1> _grav;        // due to generalized gravity 
+    Eigen::Matrix<double, 12, 1> tau_dist;     // disturbance term
 
     CentaurModel ctModel;
-    
 };
 
 

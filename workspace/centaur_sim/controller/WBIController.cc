@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-16 17:07:03
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-09-23 21:14:23
+ * @LastEditTime: 2022-10-08 21:36:23
  * @FilePath: /drake/workspace/centaur_sim/controller/WBIController.cc
  * @Description: 
  * 
@@ -16,6 +16,7 @@ WBIController::WBIController(/* args */) {
     ctModel.buildModel();
 
     ctModel._fb_model.printModelTable();
+    torso_pos_task = new TorsoPosTask<double>(&(ctModel._fb_model));
     
 }
 
@@ -55,15 +56,27 @@ void WBIController::update_model(CentaurStates& state) {
     // fb_states.bodyVelocity.setZero();
 
 
-    ctModel._fb_model.setState(fb_states);;
+    ctModel._fb_model.setState(fb_states);
     ctModel._fb_model.forwardKinematics();
+    ctModel._fb_model.contactJacobians();
+    ctModel._fb_model.massMatrix();
+    ctModel._fb_model.generalizedGravityForce();
+    ctModel._fb_model.generalizedCoriolisForce();
+    
+    
+    // The equations of motion can be expressed as:
+    // _A*qddot + _coriolis + _grav = tao + J^{T} * Fc
+    _A = ctModel._fb_model.getMassMatrix();
+    _grav = ctModel._fb_model.getGravityForce();
+    _coriolis = ctModel._fb_model.getCoriolisForce();
+    _Ainv = _A.inverse();
     
     // std::cout << spatial::translationFromSXform(this->ctModel._fb_model._Xa[8]).transpose() << std::endl;
     // std::cout << ctModel._fb_model._pGC.at(0).transpose() << std::endl;
-    std::cout << "foot pos: " 
-    << ctModel._fb_model._pGC.at(0)[0] << "/" << state.foot_pos_world.block<3, 1>(0, 0)[0] << ", "
-    << ctModel._fb_model._pGC.at(0)[1] << "/" << state.foot_pos_world.block<3, 1>(0, 0)[1] << ", "
-    << ctModel._fb_model._pGC.at(0)[2] << "/" << state.foot_pos_world.block<3, 1>(0, 0)[2] << std::endl;   
+    // std::cout << "foot pos: " 
+    // << ctModel._fb_model._pGC.at(0)[0] << "/" << state.foot_pos_world.block<3, 1>(0, 0)[0] << ", "
+    // << ctModel._fb_model._pGC.at(0)[1] << "/" << state.foot_pos_world.block<3, 1>(0, 0)[1] << ", "
+    // << ctModel._fb_model._pGC.at(0)[2] << "/" << state.foot_pos_world.block<3, 1>(0, 0)[2] << std::endl;   
 
 }
 

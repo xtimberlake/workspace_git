@@ -2,8 +2,8 @@
  * @Author: haoyun 
  * @Date: 2022-09-17 14:48:02
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-09-17 19:13:55
- * @FilePath: /drake/bazel-out/k8-opt/bin/workspace/centaur_sim/_virtual_includes/centaur_controller_lib/drake/workspace/centaur_sim/controller/Task.hpp
+ * @LastEditTime: 2022-10-08 21:57:44
+ * @FilePath: /drake/workspace/centaur_sim/controller/Task.hpp
  * @Description: A task is defined by a task Jacobian and
  *               the desired target states as function depen.
  *               That is, Task:= {Jt, delta_x_des, xdot_des, xddot_des}

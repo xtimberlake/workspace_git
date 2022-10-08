@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-19 16:25:29
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-09-23 21:04:36
+ * @LastEditTime: 2022-10-08 17:16:43
  * @FilePath: /drake/workspace/centaur_sim/dynamics/FloatingBaseModel.cpp
  * @Description: 
  * 
@@ -13,6 +13,7 @@
 using namespace spatial;
 
 FloatingBaseModel::FloatingBaseModel(/* args */)
+:_gravity(0, 0, -9.81)
 {
 }
 
@@ -29,7 +30,7 @@ void FloatingBaseModel::printModelTable() {
   for (size_t i = 0; i < _nDof; i++)
   {
 
-    std::cout << "link \#" << _bodyID.at(i) << ": "
+    std::cout << "link #" << _bodyID.at(i) << ": "
     << "     index = " << i << ","
     << "     parent = " << _parents.at(i) << ","
     << "     name = " << _bodyNames.at(i) << std::endl;
@@ -91,7 +92,7 @@ void FloatingBaseModel::addDynamicsVars(int count) {
       _fvp.push_back(zero6);
       _ag.push_back(zero6);
       
-   //  _IC.push_back(zeroInertia);
+      _IC.push_back(zeroInertia);
       _Xup.push_back(eye6);
       _Xa.push_back(eye6);
    }
@@ -303,4 +304,132 @@ void FloatingBaseModel::contactJacobians() {
     }
     _Jc[k].template leftCols<6>() = Xout;
   }
+}
+
+
+/*!
+ * (Support Function) Computes the composite rigid body inertia
+ * of each subtree _IC[i] contains body i, and the body/rotor
+ * inertias of all successors of body i.
+ * (key note: _IC[i] does not contain rotor i)
+ */
+void FloatingBaseModel::compositeInertias() {
+  if (_compositeInertiasUpToDate) return;
+  
+  forwardKinematics();
+  // initialize
+  for (size_t i = 5; i < _nDof; i++) {
+    _IC[i].setMatrix(_Ibody[i].getMatrix());
+  }
+  
+  // backward loop
+  for (size_t i = _nDof - 1; i > 5; i--) {
+    // Propagate inertia down the tree
+    _IC[_parents[i]].addMatrix(_Xup[i].transpose() * _IC[i].getMatrix() *
+                               _Xup[i]);
+
+  }
+  _compositeInertiasUpToDate = true;
+}
+
+
+/*!
+ * Computes the Mass Matrix (H) in the inverse dynamics formulation
+ * @return H (_nDof x _nDof matrix)
+ */
+DMat<double> FloatingBaseModel::massMatrix() {
+  compositeInertias();
+  _H.setZero();
+
+  // Top left corner is the locked inertia of the whole system
+  _H.template topLeftCorner<6, 6>() = _IC[5].getMatrix();
+  
+  for (size_t j = 6; j < _nDof; j++) {
+    // f = spatial force required for a unit qdd_j
+    SVec<double> f = _IC[j].getMatrix() * _S[j];
+    // SVec<T> frot = _Irot[j].getMatrix() * _Srot[j];
+
+    _H(j, j) = _S[j].dot(f) /* + _Srot[j].dot(frot) */;
+
+    // Propagate down the tree
+    f = _Xup[j].transpose() * f /* + _Xuprot[j].transpose() * frot */;
+    size_t i = _parents[j];
+    while (i > 5) {
+      // in here f is expressed in frame {i}
+      _H(i, j) = _S[i].dot(f);
+      _H(j, i) = _H(i, j);
+
+      // Propagate down the tree
+      f = _Xup[i].transpose() * f;
+      i = _parents[i];
+    }
+
+    // Force on floating base
+    _H.template block<6, 1>(0, j) = f;
+    _H.template block<1, 6>(j, 0) = f.adjoint();
+  }
+  return _H;
+}
+
+/*!
+ * Computes the generalized gravitational force (G) in the inverse dynamics
+ * @return G (_nDof x 1 vector)
+ */
+DVec<double> FloatingBaseModel::generalizedGravityForce() {
+  compositeInertias();
+
+  SVec<double> aGravity;
+  aGravity << 0, 0, 0, _gravity[0], _gravity[1], _gravity[2];
+  _ag[5] = _Xup[5] * aGravity;
+
+  // Gravity comp force is the same as force required to accelerate
+  // oppostite gravity
+  _G.template topRows<6>() = -_IC[5].getMatrix() * _ag[5];
+  for (size_t i = 6; i < _nDof; i++) {
+    _ag[i] = _Xup[i] * _ag[_parents[i]];
+    // _agrot[i] = _Xuprot[i] * _ag[_parents[i]];
+
+    // body and rotor
+    _G[i] = -_S[i].dot(_IC[i].getMatrix() * _ag[i]) /* -
+            _Srot[i].dot(_Irot[i].getMatrix() * _agrot[i]) */; 
+  }
+  return _G;
+}
+
+/*!
+ * Computes the generalized coriolis forces (Cqd) in the inverse dynamics
+ * @return Cqd (_nDof x 1 vector)
+ */
+DVec<double> FloatingBaseModel::generalizedCoriolisForce() {
+  biasAccelerations();
+
+  // Floating base force
+  Mat6<double> Ifb = _Ibody[5].getMatrix();
+  SVec<double> hfb = Ifb * _v[5];
+  _fvp[5] = Ifb * _avp[5] + forceCrossProduct(_v[5], hfb);
+
+  for (size_t i = 6; i < _nDof; i++) {
+    // Force on body i
+    Mat6<double> Ii = _Ibody[i].getMatrix();
+    SVec<double> hi = Ii * _v[i];
+    _fvp[i] = Ii * _avp[i] + forceCrossProduct(_v[i], hi);
+
+    // // Force on rotor i
+    // Mat6<double> Ir = _Irot[i].getMatrix();
+    // SVec<double> hr = Ir * _vrot[i];
+    // _fvprot[i] = Ir * _avprot[i] + forceCrossProduct(_vrot[i], hr);
+  }
+
+  for (size_t i = _nDof - 1; i > 5; i--) {
+    // Extract force along the joints
+    _Cqd[i] = _S[i].dot(_fvp[i]) /* + _Srot[i].dot(_fvprot[i]) */;
+
+    // Propage force down the tree
+    _fvp[_parents[i]] += _Xup[i].transpose() * _fvp[i];
+    // _fvp[_parents[i]] += _Xuprot[i].transpose() * _fvprot[i];
+  }
+
+  // Force on floating base
+  _Cqd.template topRows<6>() = _fvp[5];
+  return _Cqd;
 }

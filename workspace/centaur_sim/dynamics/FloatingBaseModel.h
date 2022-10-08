@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-19 16:25:38
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-09-23 19:30:53
+ * @LastEditTime: 2022-10-08 17:01:41
  * @FilePath: /drake/workspace/centaur_sim/dynamics/FloatingBaseModel.h
  * @Description: 
  * 
@@ -65,6 +65,11 @@ public:
     void forwardKinematics();
     void biasAccelerations();
     void contactJacobians();
+    void compositeInertias();
+    DMat<double> massMatrix();
+    DVec<double> generalizedGravityForce();
+    DVec<double> generalizedCoriolisForce();
+
 
     void setState(const FBModelState<double>& state) {
       _state = state;
@@ -78,7 +83,7 @@ public:
       // _articulatedBodiesUpToDate = false;
       _kinematicsUpToDate = false;
       _biasAccelerationsUpToDate = false;
-      // _compositeInertiasUpToDate = false;
+      _compositeInertiasUpToDate = false;
       // _forcePropagatorsUpToDate = false;
       // _qddEffectsUpToDate = false;
       // _accelerationsUpToDate = false;
@@ -95,7 +100,7 @@ public:
     std::vector<Eigen::Matrix<double, 6, 6>,
                 Eigen::aligned_allocator<Eigen::Matrix<double, 6, 6>>> _Xtree; // The coordinate transformation from parent to this body
     std::vector<SpatialInertia<double>> _Ibody; // Inertia Tensor expressed in the local(joint) frame
-
+    std::vector<SpatialInertia<double>> _IC;    // Inertia of composite rigid body  
     // states-dependent variables
 
     vectorAligned<SVec<double>> _v,  _a, _avp, _c, _S, _fvp, _ag, _f;
@@ -120,6 +125,24 @@ public:
     // flag 
     bool _kinematicsUpToDate = false;
     bool _biasAccelerationsUpToDate = false;
+    bool _compositeInertiasUpToDate = false;
+
+    Vec3<double> _gravity;
+
+  /*!
+   * Get the mass matrix for the system
+   */
+  const DMat<double>& getMassMatrix() const { return _H; }
+
+  /*!
+   * Get the gravity term (generalized forces)
+   */
+  const DVec<double>& getGravityForce() const { return _G; }
+
+  /*!
+   * Get the coriolis term (generalized forces)
+   */
+  const DVec<double>& getCoriolisForce() const { return _Cqd; }
 
 };
 
