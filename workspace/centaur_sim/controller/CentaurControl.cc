@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:31:07
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-09-22 20:18:51
+ * @LastEditTime: 2022-10-10 16:58:34
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurControl.cc
  * @Description: 
  * 
@@ -95,13 +95,13 @@ void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
         double swingTimeRemain = (1 - state.plan_swings_phase[leg]) * state.gait_period * (1 - state.stance_duration[leg]);
 
         double delta_x =
-                8 * std::sqrt(std::abs(state.default_foot_pos_rel(2)) / 9.81) * (lin_vel_rel(0) - state.root_lin_vel_d(0))
-                + (state.gait_period * state.stance_duration(leg)) / 2.0 * state.root_lin_vel_d(0)
+                8 * std::sqrt(std::abs(state.default_foot_pos_rel(2)) / 9.81) * (lin_vel_rel(0) - state.root_lin_vel_d_rel(0))
+                + (state.gait_period * state.stance_duration(leg)) / 2.0 * state.root_lin_vel_d_rel(0)
                 + swingTimeRemain * lin_vel_rel(0);
         
         double delta_y =
-                8 * std::sqrt(std::abs(state.default_foot_pos_rel(2)) / 9.81) * (lin_vel_rel(1) - state.root_lin_vel_d(1))
-                + (state.gait_period * state.stance_duration(leg))  / 2.0 * state.root_lin_vel_d(1)
+                8 * std::sqrt(std::abs(state.default_foot_pos_rel(2)) / 9.81) * (lin_vel_rel(1) - state.root_lin_vel_d_rel(1))
+                + (state.gait_period * state.stance_duration(leg))  / 2.0 * state.root_lin_vel_d_rel(1)
                 + swingTimeRemain * lin_vel_rel(1);
 
         delta_x = (delta_x>FOOT_DELTA_X_LIMIT)?(FOOT_DELTA_X_LIMIT):((delta_x<-FOOT_DELTA_X_LIMIT)?(-FOOT_DELTA_X_LIMIT):delta_x);

@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-19 20:30:21
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-09-22 19:28:48
+ * @LastEditTime: 2022-10-10 15:40:40
  * @FilePath: /drake/workspace/centaur_sim/dynamics/CentaurModel.h
  * @Description: 
  * 
@@ -10,6 +10,14 @@
  */
 #pragma once 
 #include "drake/workspace/centaur_sim/dynamics/FloatingBaseModel.h"
+
+namespace centaurParam {
+constexpr size_t num_act_joint = 6;
+constexpr size_t num_q = 13;
+constexpr size_t dim_config = 12;
+constexpr size_t num_leg = 2;
+constexpr size_t num_leg_joint = 3;
+}  // namespace centaur
 
 
 

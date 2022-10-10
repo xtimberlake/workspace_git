@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:30:49
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-09-22 20:19:36
+ * @LastEditTime: 2022-10-10 21:58:41
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurStates.h
  * @Description: define all the states that used in controller; mainly 
  *                adapted from https://github.com/ShuoYangRobotics/A1-QP-MPC-Controller
@@ -131,6 +131,9 @@ class CentaurStates {
             FILP_DIR * robot_params_const.left_hip_location.at(1) + ctrl_params_const.default_foot_pos_under_hip.at(1),
             robot_params_const.left_hip_location.at(2) + ctrl_params_const.default_foot_pos_under_hip.at(2);
 
+        foot_vel_cmd_rel.setZero();
+        foot_vel_cmd_world.setZero();
+
         // ik
         this->max_iter = ctrl_params_const.max_iter;
         this->ik_eps = ctrl_params_const.ik_eps;
@@ -141,10 +144,12 @@ class CentaurStates {
         // default desired states
         this->root_pos_d << 0.0, 0.0, 0.9;
         this->root_euler_d.setZero();
-        this->root_lin_vel_d.setZero();
+        this->root_lin_vel_d_rel.setZero();
         this->root_lin_vel_d_world.setZero();
-        this->root_ang_vel_d.setZero();
+        this->root_ang_vel_d_rel.setZero();
         this->root_ang_vel_d_world.setZero();
+        this->root_acc_d_rel.setZero();
+        this->root_acc_d_world.setZero();
       
         // Others:
         this->external_wrench << 0, 0, 0, 0, 0, 15;
@@ -194,10 +199,12 @@ class CentaurStates {
 
     Eigen::Vector3d root_pos_d;
     Eigen::Vector3d root_euler_d;
-    Eigen::Vector3d root_lin_vel_d;
+    Eigen::Vector3d root_lin_vel_d_rel;
     Eigen::Vector3d root_lin_vel_d_world;
-    Eigen::Vector3d root_ang_vel_d;
+    Eigen::Vector3d root_ang_vel_d_rel;
     Eigen::Vector3d root_ang_vel_d_world;
+    Eigen::Vector3d root_acc_d_rel;
+    Eigen::Vector3d root_acc_d_world;
 
     Eigen::Matrix<double, 3, 2> foot_pos_world;
     Eigen::Matrix<double, 3, 2> foot_pos_rel;
@@ -217,6 +224,9 @@ class CentaurStates {
 
     Eigen::Matrix<double, 3, 2> foot_vel_cmd_rel;    // command
     Eigen::Matrix<double, 3, 2> foot_vel_cmd_world;
+
+    Eigen::Matrix<double, 3, 2> foot_acc_cmd_rel;    // command
+    Eigen::Matrix<double, 3, 2> foot_acc_cmd_world;
     
     Eigen::Matrix<double, 3, 2> foot_force_cmd_rel;    // command
     Eigen::Matrix<double, 3, 2> foot_force_cmd_world;

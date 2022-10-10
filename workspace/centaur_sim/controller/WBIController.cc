@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-16 17:07:03
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-08 21:36:23
+ * @LastEditTime: 2022-10-10 22:32:04
  * @FilePath: /drake/workspace/centaur_sim/controller/WBIController.cc
  * @Description: 
  * 
@@ -13,10 +13,24 @@
 
 WBIController::WBIController(/* args */) {
 
-    ctModel.buildModel();
+    _quat_des.setZero();
+    _pBody_des.setZero();
+    for (int i = 0; i < 4; i++) {
+        _pFoot_des[i].setZero();
+    }
+    
+  
 
+    ctModel.buildModel();
     ctModel._fb_model.printModelTable();
-    torso_pos_task = new TorsoPosTask<double>(&(ctModel._fb_model));
+
+
+    _torso_pos_task = new TorsoPosTask<double>(&(ctModel._fb_model));
+
+    for (int i = 0; i < 2; i++) {
+        _foot_contact[i] = new SingleContact<double>(&(ctModel._fb_model), i); // foot contact
+        _foot_task[i] = new LinkPosTask<double>(&(ctModel._fb_model), i);
+    }
     
 }
 
@@ -27,7 +41,7 @@ WBIController::~WBIController(){ }
 void WBIController::run(CentaurStates& state)
 {
     update_model(state);
-    // this->ctModel->buildModel();
+    update_contact_task(state);
 
 }
 
@@ -36,8 +50,8 @@ void WBIController::update_model(CentaurStates& state) {
     
     state.tau_g.setZero();
     FBModelState<double> fb_states;
-    /* The quat's coeffs is ordered as (x, y, z, w), which
-       is different from MIT code*/
+    /* The quat's coeffs in Drake is ordered as (x, y, z, w), which
+       is different from MIT-Cheetah code*/
     fb_states.bodyOrientation[0] = state.root_quat.coeffs()[3];
     fb_states.bodyOrientation[1] = state.root_quat.coeffs()[0];
     fb_states.bodyOrientation[2] = state.root_quat.coeffs()[1];
@@ -80,10 +94,47 @@ void WBIController::update_model(CentaurStates& state) {
 
 }
 
+void WBIController::clean_up() {
+    _task_list.clear();
+    _contact_list.clear();
+}
+
+void WBIController::update_contact_task(CentaurStates& state) {
+
+    // wash out the previous setup
+    clean_up();
+    
+    // receice target position
+    _pBody_des = state.root_pos_d;
+    _quat_des = ori::rpyToQuat(state.root_euler_d);
+    _pFoot_des[0] = state.foot_pos_world.block<3, 1>(0, 0);
+    _pFoot_des[1] = state.foot_pos_world.block<3, 1>(0, 1);
+
+    // update desired variables for each tasks
+    // Vec3<double> zero_vec3; zero_vec3.setZero();
+    _torso_pos_task->_UpdateCommand(&_pBody_des, state.root_lin_vel_d_rel, state.root_acc_d_rel);
+    
+    // store in the task lists
+    _task_list.push_back(_torso_pos_task);
+    
+    for (size_t leg(0); leg < 2; leg++)
+    {
+        if (state.plan_contacts_phase[leg] > 0.) { // contact
+            _foot_contact[leg]->setRFDesired(state.foot_force_cmd_world.block<3, 1>(0, leg));
+            _foot_contact[leg]->UpdateContactSpec();
+            _contact_list.push_back(_foot_contact[leg]);
+
+        }else{ // swing foot task
+            _foot_task[leg]->_UpdateCommand(&_pFoot_des[leg],
+                                            state.foot_vel_cmd_world.block<3, 1>(0, leg),
+                                            state.foot_acc_cmd_world.block<3, 1>(0, leg));
 
 
-void WBIController::update_task_jacobian(CentaurStates& state) {
-    state.Cv[0] = 0;
+        }
+        
+    }
+    
+    
 }
 
 void WBIController::kin_wbc() {
