@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-10-10 17:19:10
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-10 17:59:58
+ * @LastEditTime: 2022-10-11 21:52:22
  * @FilePath: /drake/workspace/centaur_sim/controller/Tasks/LinkPosTask.hpp
  * @Description: 
  * 
@@ -41,7 +41,7 @@ class LinkPosTask : public Task<T> {
         Vec3<T> pos_cmd = *(static_cast<const Vec3<T>*>(pos_des));
         Vec3<T> link_pos;
         link_pos = robot_sys_->_pGC[link_idx_];
-
+        
         // X, Y, Z
         for (int i(0); i < 3; ++i) {
             TK::delta_x_des_[i] = _Kp_kin[i]* (pos_cmd[i] - link_pos[i]);

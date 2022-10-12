@@ -101,6 +101,7 @@ drake_cc_library(
         "controller/LegController.h",
         "controller/Task.hpp",
         "controller/Tasks/TorsoPosTask.hpp",
+        "controller/Tasks/TorsoOriTask.hpp",
         "controller/Tasks/LinkPosTask.hpp",
         "controller/ContactSet/ContactSpec.hpp",
         "controller/ContactSet/SingleContact.hpp",
@@ -109,6 +110,7 @@ drake_cc_library(
         "dynamics/CentaurModel.h",
         "dynamics/spatial.h",
         "Utils/orientationTools.h",
+        "Utils/pseudoInverse.h",
     ],
     data = [
         "centaur_control_model.sdf",

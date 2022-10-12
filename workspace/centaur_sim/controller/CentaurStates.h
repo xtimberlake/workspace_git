@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:30:49
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-10 21:58:41
+ * @LastEditTime: 2022-10-11 18:50:00
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurStates.h
  * @Description: define all the states that used in controller; mainly 
  *                adapted from https://github.com/ShuoYangRobotics/A1-QP-MPC-Controller
@@ -150,6 +150,8 @@ class CentaurStates {
         this->root_ang_vel_d_world.setZero();
         this->root_acc_d_rel.setZero();
         this->root_acc_d_world.setZero();
+        this->root_ang_acc_d_rel.setZero();
+        this->root_ang_acc_d_world.setZero();
       
         // Others:
         this->external_wrench << 0, 0, 0, 0, 0, 15;
@@ -205,6 +207,8 @@ class CentaurStates {
     Eigen::Vector3d root_ang_vel_d_world;
     Eigen::Vector3d root_acc_d_rel;
     Eigen::Vector3d root_acc_d_world;
+    Eigen::Vector3d root_ang_acc_d_rel;
+    Eigen::Vector3d root_ang_acc_d_world;
 
     Eigen::Matrix<double, 3, 2> foot_pos_world;
     Eigen::Matrix<double, 3, 2> foot_pos_rel;

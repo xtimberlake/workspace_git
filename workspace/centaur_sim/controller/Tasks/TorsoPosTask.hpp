@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-17 16:49:42
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-10 17:59:51
+ * @LastEditTime: 2022-10-11 21:52:11
  * @FilePath: /drake/workspace/centaur_sim/controller/Tasks/TorsoPosTask.hpp
  * @Description: 
  * 
@@ -70,6 +70,7 @@ public:
    bool _UpdateTaskJDotQdot() {
         return true;
    }
+   bool _AdditionalUpdate() { return true; }
 
     const FloatingBaseModel* _robot_sys;
     DVec<T> _Kp_kin;

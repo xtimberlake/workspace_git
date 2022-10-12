@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-18 09:28:36
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-08-01 15:03:38
+ * @LastEditTime: 2022-10-12 15:58:27
  * @FilePath: /drake/workspace/centaur_sim/controller/ConvexMPC.cc
  * @Description: 
  * 
@@ -134,7 +134,7 @@ ConvexMPC::ConvexMPC(int mpc_horizon,
     // lower bound and upper bound
     Eigen::VectorXd lb_one_horizon(5 * 2); // two loegs
     Eigen::VectorXd ub_one_horizon(5 * 2);
-    for (int i = 0; i < 2; ++i) // two loegs
+    for (int i = 0; i < 2; ++i) // two legs
     {
         lb_one_horizon.segment<5>(i * 5) << 0,
                 -std::numeric_limits<double>::infinity(),
