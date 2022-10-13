@@ -2,8 +2,8 @@
  * @Author: haoyun 
  * @Date: 2022-07-18 09:28:36
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-12 15:58:27
- * @FilePath: /drake/workspace/centaur_sim/controller/ConvexMPC.cc
+ * @LastEditTime: 2022-10-13 20:27:48
+ * @FilePath: /Cheetah-Software/home/haoyun/Data/Code/drake/workspace/centaur_sim/controller/ConvexMPC.cc
  * @Description: 
  * 
  * Copyright (c) 2022 by HAR-Lab, All Rights Reserved. 

@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-17 14:48:02
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-12 14:59:57
+ * @LastEditTime: 2022-10-13 19:21:35
  * @FilePath: /drake/workspace/centaur_sim/controller/Task.hpp
  * @Description: A task is defined by a task Jacobian and
  *               the desired target states as function dependent on configuration. 
@@ -56,6 +56,7 @@ public:
 
     void getCommand(DVec<T>& op_cmd) { op_cmd = op_cmd_; }
     void getTaskJacobian(DMat<T>& Jt) { Jt = Jt_; }
+    void getTaskJacobianDotQdot(DVec<T>& JtDotQdot) { JtDotQdot = JtDotQdot_; }
     const DVec<T>& getPosError() { return delta_x_des_; }
     const DVec<T>& getDesVel() { return xdot_des_; }
     const DVec<T>& getDesAcc() { return xddot_dest_; }

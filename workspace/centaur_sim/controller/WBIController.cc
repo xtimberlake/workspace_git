@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-16 17:07:03
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-12 20:48:35
+ * @LastEditTime: 2022-10-13 22:09:42
  * @FilePath: /drake/workspace/centaur_sim/controller/WBIController.cc
  * @Description: 
  * 
@@ -23,6 +23,18 @@ WBIController::WBIController(/* args */):
     num_act_joint_ = centaurParam::num_act_joint; // 6
     I_mtx =  DMat<double>::Identity(num_qdot_, num_qdot_); // 12x 12 Identity 
 
+    _dim_floating = 6;
+    _eye = DMat<double>::Identity(num_qdot_, num_qdot_);
+    _eye_floating = DMat<double>::Identity(_dim_floating, _dim_floating);
+
+    last_dim_decision_variables = 0;
+    
+    Sa_ = DMat<double>::Zero(num_act_joint_, num_qdot_);
+    Sv_ = DMat<double>::Zero(6, num_qdot_);
+
+    Sa_.block(0, 6, num_act_joint_, num_act_joint_).setIdentity();
+    Sv_.block(0, 0, 6, 6).setIdentity();
+
     _quat_des.setZero();
     _pBody_des.setZero();
     for (int i = 0; i < 4; i++) {
@@ -33,7 +45,7 @@ WBIController::WBIController(/* args */):
     _tau_ff.setZero();
     _des_jpos.setZero();
     _des_jvel.setZero();
-  
+    
 
     ctModel.buildModel();
     ctModel._fb_model.printModelTable();
@@ -55,10 +67,12 @@ WBIController::~WBIController(){ }
 
 void WBIController::run(CentaurStates& state)
 {
+    std::cout << "left contact = " << state.plan_contacts_phase[0] << ". ";
     update_model(state);
     update_contact_task(state);
     kin_wbc();
     dyn_wbc();
+
 }
 
 
@@ -163,10 +177,57 @@ void WBIController::dyn_wbc() {
     // resize G, g0, CE, ce0, CI, ci0
     _SetOptimizationSize();
     _SetCost();
+
+    // contact consistency
+    DVec<double> qddot_pre;
+    DMat<double> JcBar;
+    DMat<double> Npre;
+
+    if (_dim_rf > 0) {
+
+        // Step #1 Update contact information;
+        // i.e., _Jc, _JcDotQdot, _Uf, _Uf_ieq_vec, _Fr_des
+        _ContactBuilding();
+
+        // Step #2 Set inequality constraints
+        _SetInEqualityConstraint();
+
+        // Step #3 Build nullspace prejection
+        _WeightedInverse(_Jc, _Ainv, JcBar); // dynamics cosistent inverse
+        qddot_pre = JcBar * (-_JcDotQdot);   // xc_ddot = JcDotQdot * qdot + Jc * qddot; 
+                                             // this acc command qddot is used to achieve contact consistency
+        Npre = _eye - JcBar * _Jc; // iterative way to compute NullSpace projection
+
+    } else {
+        qddot_pre = DVec<double>::Zero(num_qdot_);
+        Npre = _eye;
+    }
     
+    // Task(s)
+    Task<double>* task;
+    DMat<double> Jt, JtBar, JtPre;
+    DVec<double> JtDotQdot, xddot;
+
+    for (size_t i(0); i < (_task_list).size(); ++i) {
+        task = (_task_list)[i];
+
+        task->getTaskJacobian(Jt);
+        task->getTaskJacobianDotQdot(JtDotQdot);
+        task->getCommand(xddot);
+
+        JtPre = Jt * Npre;
+        _WeightedInverse(JtPre, _Ainv, JtBar);
+
+        qddot_pre += JtBar * (xddot - JtDotQdot - Jt * qddot_pre);
+        Npre = Npre * (_eye - JtBar * JtPre);
+    }
+
+    // Set equality constraints
+    _SetEqualityConstraint(qddot_pre);
+    
+    _SolveQuadraticProgramming(z_star);
+    // std::cout << "xstar = " << xstar.transpose() << std::endl;
 }
-
-
 
 bool WBIController::kin_wbcFindConfiguration(const DVec<double>& curr_config,
                          const std::vector<Task<double>*>& task_list,
@@ -259,11 +320,15 @@ void WBIController::_SetOptimizationSize() {
 
   G.resize(_dim_opt, _dim_opt); G.setZero();
   g0.resize(_dim_opt); g0.setZero();
-  CE.resize(_dim_opt, _dim_eq_cstr); CE.setZero();
+  CE.resize(_dim_eq_cstr, _dim_opt); CE.setZero();
   ce0.resize(_dim_eq_cstr); ce0.setZero();
+  if (last_dim_decision_variables != _dim_opt) {
+    initial_guess_vec.resize(_dim_opt); initial_guess_vec.setZero();
+    last_dim_decision_variables = _dim_opt;
+  }
 
   if(_dim_rf > 0) { // at least have one contact
-    CI.resize(_dim_opt, _dim_Uf); CI.setZero();
+    CI.resize(_dim_Uf, _dim_opt); CI.setZero();
     ci0.resize(_dim_Uf); ci0.setZero();
     
     _Jc = DMat<double>::Zero(_dim_rf, num_qdot_);
@@ -274,17 +339,83 @@ void WBIController::_SetOptimizationSize() {
     _Uf_ieq_vec = DVec<double>::Zero(_dim_Uf);
 
   } else {
-    CI.resize(_dim_opt, 1); CI.setZero();
+    drake::log()->info("no contact!!");
+    CI.resize(1, _dim_opt); CI.setZero();
     ci0.resize(1); ci0.setZero();
   }
+
+//   std::cout << "qp dim:" << " G=(" << G.rows() << "," << G.cols() << ")"
+//   << " g0=(" << g0.rows() << "," << g0.cols() << ")" 
+//   << " CE=(" << CE.rows() << "," << CE.cols() << ")"
+//   << " ce0=(" << ce0.rows() << "," << ce0.cols() << ")"
+//   << " CI=(" << CI.rows() << "," << CI.cols() << ")"
+//   << " ci0=(" << ci0.rows() << "," << ci0.cols() << ")" << std::endl;
+
+    std::cout << "Jacobian dim:"
+    << " _Jc=(" << _Jc.rows() << "," << _Jc.cols() << ")"
+    << " _JcDotQdot=(" << _JcDotQdot.rows() << "," << _JcDotQdot.cols() << ")"
+    << " _Fr_des=(" << _Fr_des.rows() << "," << _Fr_des.cols() << ")"
+    << " _Uf=(" << _Uf.rows() << "," << _Uf.cols() << ")"
+    << " _Uf_ieq_vec=(" << _Uf_ieq_vec.rows() << "," << _Uf_ieq_vec.cols() << ")"
+    << std::endl;
   
 }
 void WBIController::_ContactBuilding() {
+  DMat<double> Uf;
+  DVec<double> Uf_ieq_vec;
+  // Initial
+  DMat<double> Jc; // temp contact Jacobian
+  DVec<double> JcDotQdot; // temp JdQd
+  size_t dim_accumul_rf, dim_accumul_uf;
+  (_contact_list)[0]->getContactJacobian(Jc);
+  (_contact_list)[0]->getJcDotQdot(JcDotQdot);
+  (_contact_list)[0]->getRFConstraintMtx(Uf);
+  (_contact_list)[0]->getRFConstraintVec(Uf_ieq_vec);
 
+  dim_accumul_rf = (_contact_list)[0]->getDim();
+  dim_accumul_uf = (_contact_list)[0]->getDimRFConstraint();
+
+  // append to the head of _Jc, _JcDotQdot, _Uf, _Uf_ieq_vec, _Fr_des
+  _Jc.block(0, 0, dim_accumul_rf, num_qdot_) = Jc;
+  _JcDotQdot.head(dim_accumul_rf) = JcDotQdot;
+  _Uf.block(0, 0, dim_accumul_uf, dim_accumul_rf) = Uf;
+  _Uf_ieq_vec.head(dim_accumul_uf) = Uf_ieq_vec;
+  _Fr_des.head(dim_accumul_rf) = (_contact_list)[0]->getRFDesired();
+
+  // if there are more than one contact
+  size_t dim_new_rf, dim_new_uf;
+
+  for (size_t i = 1; i < _contact_list.size(); i++) {
+    (_contact_list)[i]->getContactJacobian(Jc);
+    (_contact_list)[i]->getJcDotQdot(JcDotQdot);
+
+    dim_new_rf = (_contact_list)[i]->getDim();
+    dim_new_uf = (_contact_list)[i]->getDimRFConstraint();
+
+    // Jc append
+    _Jc.block(dim_accumul_rf, 0, dim_new_rf, num_qdot_) = Jc;
+
+    // JcDotQdot append
+    _JcDotQdot.segment(dim_accumul_rf, dim_new_rf) = JcDotQdot;
+
+    // Uf
+    (_contact_list)[i]->getRFConstraintMtx(Uf);
+    _Uf.block(dim_accumul_uf, dim_accumul_rf, dim_new_uf, dim_new_rf) = Uf;
+
+    // Uf inequality vector
+    (_contact_list)[i]->getRFConstraintVec(Uf_ieq_vec);
+    _Uf_ieq_vec.segment(dim_accumul_uf, dim_new_uf) = Uf_ieq_vec;
+
+    // Fr desired
+    _Fr_des.segment(dim_accumul_rf, dim_new_rf) =
+      (_contact_list)[i]->getRFDesired();
+    dim_accumul_rf += dim_new_rf;
+    dim_accumul_uf += dim_new_uf;
+  }
 
 }
 void WBIController::_SetCost() {
-    // Set Cost
+    // Set p.s.d. weight matrix
   size_t idx_offset(0);
   for (size_t i(0); i < _dim_floating; ++i) {
     G(i + idx_offset,i + idx_offset) = 0.1;
@@ -294,21 +425,84 @@ void WBIController::_SetCost() {
     G(i + idx_offset, i + idx_offset) = 1.0;
   }
 
-//   std::cout << G << std::endl;
-
 }
 void WBIController::_SetInEqualityConstraint() {
-
+    // friction pyramid + grf limits
+    CI.block(0, _dim_floating, _dim_Uf, _dim_rf) = _Uf;
+    ci0 = _Uf_ieq_vec - _Uf * _Fr_des;
 }
 
+void WBIController::_SetEqualityConstraint(const DVec<double>& qddot) {
+    // floating base dyn
+    // Sv * (A * qddot_cmd + _coriolis + _grav) = Sv * (Jc^{T} * Fr)
+    // where Sv is the select matrix that select the first 6 row of EoMs,
+    // qddot_cmd = qddot + delta_q_fb,
+    // Fr = Fr_des + delta_fr.
+    
+    if (_dim_rf > 0) {
+    CE.block(0, 0, _dim_eq_cstr, _dim_floating) =
+      _A.block(0, 0, _dim_floating, _dim_floating);
+    CE.block(0, _dim_floating, _dim_eq_cstr, _dim_rf) =
+      -Sv_ * _Jc.transpose();
+    ce0 = -Sv_ * (_A * qddot + _coriolis + _grav -
+        _Jc.transpose() * _Fr_des);
+    } else {
+        CE.block(0, 0, _dim_eq_cstr, _dim_floating) =
+        _A.block(0, 0, _dim_floating, _dim_floating);
+        ce0 = -Sv_ * (_A * qddot + _coriolis + _grav);
+    }
+}
 
-// Support functions
-void WBIController::_PseudoInverse(const DMat<double> J, DMat<double>& Jinv) {
-    pseudoInverse(J, 0.001, Jinv);
+double WBIController::_SolveQuadraticProgramming(Eigen::VectorXd& z) {
+    z = DVec<double>::Zero(_dim_opt);
+    double cost = 0.;
+    drake::solvers::MathematicalProgram prog;
+    drake::solvers::MosekSolver mosek_solver;
+    // optimal decision variables
+    // TODO: the dim of continuous variables must be a constant?
+    Eigen::Matrix<drake::symbolic::Variable, -1, 1> x_star;
+    switch (_dim_opt)
+    {
+    case 6: x_star = prog.NewContinuousVariables<6>(); break;
+    case 6 + 1*3: x_star = prog.NewContinuousVariables<9>(); break;
+    case 6 + 2*3: x_star = prog.NewContinuousVariables<12>(); break;
+    default:  drake::log()->warn("ERROR opt dim");
+        break;
+    }
+    
+    auto qp_cost = prog.AddQuadraticCost(G, g0, x_star);
+    
+    DVec<double> lb;
+    lb = DVec<double>::Ones(_dim_Uf) * -std::numeric_limits<double>::infinity();
+    DVec<double> ub;
+    ub = DVec<double>::Ones(_dim_Uf) * std::numeric_limits<double>::infinity();
+    // auto inEq_constraint = prog.AddLinearConstraint(CI, lb, ci0, x_star);
+    auto inEq_constraint = prog.AddLinearConstraint(CI, lb, ub, x_star);
+    
+    // auto eq_constraint = prog.AddLinearEqualityConstraint(CE, ce0, x_star);
+
+
+    if (mosek_solver.available()) {
+        drake::solvers::MathematicalProgramResult prog_result;
+        mosek_solver.Solve(prog, initial_guess_vec, {}, &prog_result);
+        if (prog_result.is_success()) {
+            // drake::log()->info("congras!");
+            z = prog_result.GetSolution();
+            initial_guess_vec = z;
+            // const drake::solvers::MosekSolverDetails& mosek_solver_details =
+            //     prog_result.get_solver_details<drake::solvers::MosekSolver>();
+            // drake::log()->info("optimizer time: " + std::to_string(mosek_solver_details.optimizer_time));
+        }
+        else {
+            drake::log()->warn("fail to find a result...");
+        }
+        
+    } else {
+        drake::log()->warn("mosek solver is not available !");
+    }
+
+    
+
+    return cost;
 }
-void WBIController::_BuildProjectionMatrix(const DMat<double>& J, DMat<double>& N) {
-    // the simplest method to build a projection matrix
-    DMat<double> J_pinv;
-    _PseudoInverse(J, J_pinv);
-    N = I_mtx - J_pinv * J;
-}
+

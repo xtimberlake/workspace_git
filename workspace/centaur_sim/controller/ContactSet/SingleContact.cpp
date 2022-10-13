@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-10-10 15:11:18
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-12 20:04:46
+ * @LastEditTime: 2022-10-13 21:58:59
  * @FilePath: /drake/workspace/centaur_sim/controller/ContactSet/SingleContact.cpp
  * @Description: 
  * 
@@ -14,7 +14,7 @@
 // [ Fx, Fy, Fz ]
 template <typename T>
 SingleContact<T>::SingleContact(const FloatingBaseModel* robot, int pt)
-    : ContactSpec<T>(3), _max_Fz(450.), _contact_pt(pt), _dim_U(6) {
+    : ContactSpec<T>(3), _max_Fz(1500.), _contact_pt(pt), _dim_U(6) {
   Contact::idx_Fz_ = 2;
   robot_sys_ = robot;
   Contact::Jc_ = DMat<T>(Contact::dim_contact_, centaurParam::dim_config/*cheetah::dim_config*/);

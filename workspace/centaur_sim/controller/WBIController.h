@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-16 17:07:22
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-12 20:33:33
+ * @LastEditTime: 2022-10-13 21:24:56
  * @FilePath: /drake/workspace/centaur_sim/controller/WBIController.h
  * @Description: Whole-body impulse controller
  * 
@@ -17,6 +17,7 @@
 #include "drake/workspace/centaur_sim/dynamics/CentaurModel.h"
 #include "drake/workspace/centaur_sim/controller/ContactSet/SingleContact.hpp"
 #include "drake/workspace/centaur_sim/Utils/pseudoInverse.h"
+#include "drake/workspace/centaur_sim/controller/ConvexMPC.h"
 
 // template<typename T>
 // class TorsoPosTask;
@@ -33,23 +34,38 @@ public:
     void dyn_wbc();
     void clean_up();
 
-    // support functions
     bool kin_wbcFindConfiguration(const DVec<double>& curr_config,
                          const std::vector<Task<double>*>& task_list,
                          const std::vector<ContactSpec<double>*>& contact_list,
                          DVec<double>& jpos_cmd, DVec<double>& jvel_cmd);
-    void _PseudoInverse(const DMat<double> J, DMat<double>& Jinv);
-    void _BuildProjectionMatrix(const DMat<double>& J, DMat<double>& N);
+    
 
     // dynamics-wbc optimization functions
     void _SetOptimizationSize();
     void _ContactBuilding();
     void _SetCost();
-    // void _SetEqualityConstraint(const DVec<double>& qddot);
-    void _SetInEqualityConstraint();
+    void _SetEqualityConstraint(const DVec<double>& qddot);
+    void _SetInEqualityConstraint();    
+    double _SolveQuadraticProgramming(Eigen::VectorXd& z);
     // void _GetSolution(const Dvec<double>& qddot, DVec<double>& cmd);
 
-
+    // support functions
+    void _PseudoInverse(const DMat<double> J, DMat<double>& Jinv) {
+        pseudoInverse(J, 0.001, Jinv);
+    }
+    void _BuildProjectionMatrix(const DMat<double>& J, DMat<double>& N) {
+        // the simplest method to build a projection matrix
+        DMat<double> J_pinv;
+        _PseudoInverse(J, J_pinv);
+        N = I_mtx - J_pinv * J;
+    }
+    void _WeightedInverse(const DMat<double>& J, const DMat<double>& Winv, DMat<double>& Jinv,
+                        double threshold = 0.0001) {
+        DMat<double> lambda(J * Winv * J.transpose());
+        DMat<double> lambda_inv;
+        pseudoInverse(lambda, threshold, lambda_inv);
+        Jinv = Winv * J.transpose() * lambda_inv;                    
+    }
 
 
     std::vector<Task<double> * > _task_list;
@@ -77,6 +93,7 @@ public:
     DVec<double> _tau_ff;
     DVec<double> _des_jpos;
     DVec<double> _des_jvel;
+    DVec<double> _f_mpc;
 
     CentaurModel ctModel;
 
@@ -106,6 +123,9 @@ public:
     DVec<double> ce0; // equality vector
     DMat<double> CI;  // inequality mapping matrix
     DVec<double> ci0; // inequality vector
+    DVec<double> z_star;
+    DVec<double> initial_guess_vec;
+    size_t last_dim_decision_variables;
 
     // contact Jacobian & JcDotQdot & friction pyramid constrants
     DMat<double> _Jc;
@@ -113,6 +133,14 @@ public:
     DVec<double> _Fr_des; // grfs computed from MPC
     DMat<double> _Uf;
     DVec<double> _Uf_ieq_vec;
+
+    // identity mtx
+    DMat<double> _eye;
+    DMat<double> _eye_floating;
+
+    // select mtx
+    DMat<double> Sa_;  // Actuated joint
+    DMat<double> Sv_;  // Virtual joint
 
 
 };
