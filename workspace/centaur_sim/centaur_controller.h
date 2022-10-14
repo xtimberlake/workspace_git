@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-14 12:43:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-09-23 09:35:15
+ * @LastEditTime: 2022-10-14 20:34:23
  * @FilePath: /drake/workspace/centaur_sim/centaur_controller.h
  * @Description: controller block for drake simulation
  * 
@@ -99,8 +99,16 @@ private:
             }
 
             // calculate torques through Jacobian matrix
-            output_torques = ct->legcontroller->task_impedance_control(ct->ctrl_states);
             ct->wbicontroller->run(ct->ctrl_states);
+
+            if(ct->ctrl_states.t < 0.5) { // start trotting in 0.5 seconds
+                output_torques = ct->legcontroller->task_impedance_control(ct->ctrl_states);
+            }
+            else {
+                // output_torques = ct->legcontroller->task_impedance_control(ct->ctrl_states);
+                output_torques = ct->legcontroller->wbc_low_level_control(ct->ctrl_states);
+            }
+            
 
         }
         

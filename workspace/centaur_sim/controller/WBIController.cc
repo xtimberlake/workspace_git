@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-16 17:07:03
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-13 22:09:42
+ * @LastEditTime: 2022-10-14 21:59:00
  * @FilePath: /drake/workspace/centaur_sim/controller/WBIController.cc
  * @Description: 
  * 
@@ -12,7 +12,7 @@
 
 
 WBIController::WBIController(/* args */):
-    _full_config(centaurParam::num_act_joint + 7),
+    _full_config(centaurParam::num_act_joint + 6),
     _tau_ff(centaurParam::num_act_joint),
     _des_jpos(centaurParam::num_act_joint),
     _des_jvel(centaurParam::num_act_joint) {
@@ -67,11 +67,12 @@ WBIController::~WBIController(){ }
 
 void WBIController::run(CentaurStates& state)
 {
-    std::cout << "left contact = " << state.plan_contacts_phase[0] << ". ";
+    // std::cout << "left contact = " << state.plan_contacts_phase[0] << "-----------" << std::endl;
     update_model(state);
     update_contact_task(state);
     kin_wbc();
     dyn_wbc();
+    update_command(state, _des_jpos, _des_jvel, _tau_ff);
 
 }
 
@@ -113,11 +114,10 @@ void WBIController::update_model(CentaurStates& state) {
     
     // Part 2: copy the configuration(only care about the joint configuration 
     // in kinamatics-WBC?)
-    for(size_t i(0); i<3; ++i){
-        for (size_t leg = 0; leg < 2; leg++) {
-            _full_config[3*leg + i + 6] = state.q[3*leg + i];
-        }
+    for (size_t i = 0; i < num_act_joint_; i++) {
+        _full_config[i + 6] = state.q[i]; 
     }
+    
     
 
 
@@ -151,6 +151,7 @@ void WBIController::update_contact_task(CentaurStates& state) {
     for (size_t leg(0); leg < 2; leg++)
     {
         if (state.plan_contacts_phase[leg] > 0.) { // contact
+            // NOTICE: the sign of GRF
             _foot_contact[leg]->setRFDesired(state.foot_force_cmd_world.block<3, 1>(0, leg));
             _foot_contact[leg]->UpdateContactSpec();
             _contact_list.push_back(_foot_contact[leg]);
@@ -215,6 +216,9 @@ void WBIController::dyn_wbc() {
         task->getTaskJacobianDotQdot(JtDotQdot);
         task->getCommand(xddot);
 
+        // std::cout << "xddot = (" << xddot.rows() << "," << xddot.cols() << ") = " << std::endl;
+        // std::cout << xddot.transpose() << std::endl;
+
         JtPre = Jt * Npre;
         _WeightedInverse(JtPre, _Ainv, JtBar);
 
@@ -226,7 +230,10 @@ void WBIController::dyn_wbc() {
     _SetEqualityConstraint(qddot_pre);
     
     _SolveQuadraticProgramming(z_star);
-    // std::cout << "xstar = " << xstar.transpose() << std::endl;
+    // std::cout << "original qddot = " << qddot_pre.head(6).transpose() << std::endl;
+    // std::cout << "xstar = " << z_star.transpose() << ",  Total cost = " << cost << std::endl;
+
+    _InverseDyn(qddot_pre, _tau_ff);
 }
 
 bool WBIController::kin_wbcFindConfiguration(const DVec<double>& curr_config,
@@ -351,13 +358,13 @@ void WBIController::_SetOptimizationSize() {
 //   << " CI=(" << CI.rows() << "," << CI.cols() << ")"
 //   << " ci0=(" << ci0.rows() << "," << ci0.cols() << ")" << std::endl;
 
-    std::cout << "Jacobian dim:"
-    << " _Jc=(" << _Jc.rows() << "," << _Jc.cols() << ")"
-    << " _JcDotQdot=(" << _JcDotQdot.rows() << "," << _JcDotQdot.cols() << ")"
-    << " _Fr_des=(" << _Fr_des.rows() << "," << _Fr_des.cols() << ")"
-    << " _Uf=(" << _Uf.rows() << "," << _Uf.cols() << ")"
-    << " _Uf_ieq_vec=(" << _Uf_ieq_vec.rows() << "," << _Uf_ieq_vec.cols() << ")"
-    << std::endl;
+    // std::cout << "Jacobian dim:"
+    // << " _Jc=(" << _Jc.rows() << "," << _Jc.cols() << ")"
+    // << " _JcDotQdot=(" << _JcDotQdot.rows() << "," << _JcDotQdot.cols() << ")"
+    // << " _Fr_des=(" << _Fr_des.rows() << "," << _Fr_des.cols() << ")"
+    // << " _Uf=(" << _Uf.rows() << "," << _Uf.cols() << ")"
+    // << " _Uf_ieq_vec=(" << _Uf_ieq_vec.rows() << "," << _Uf_ieq_vec.cols() << ")"
+    // << std::endl;
   
 }
 void WBIController::_ContactBuilding() {
@@ -417,9 +424,9 @@ void WBIController::_ContactBuilding() {
 void WBIController::_SetCost() {
     // Set p.s.d. weight matrix
   size_t idx_offset(0);
-  for (size_t i(0); i < _dim_floating; ++i) {
-    G(i + idx_offset,i + idx_offset) = 0.1;
-  }
+
+  G.block<6, 6>(0, 0).diagonal() << 0.1, 0.1, 0.1, 0.1, 0.1, 0.1;
+
   idx_offset += _dim_floating;
   for (size_t i(0); i < _dim_rf; ++i) {
     G(i + idx_offset, i + idx_offset) = 1.0;
@@ -427,15 +434,17 @@ void WBIController::_SetCost() {
 
 }
 void WBIController::_SetInEqualityConstraint() {
-    // friction pyramid + grf limits
+    // friction pyramid + normal grf limits
     CI.block(0, _dim_floating, _dim_Uf, _dim_rf) = _Uf;
     ci0 = _Uf_ieq_vec - _Uf * _Fr_des;
+    // std::cout << "_Fr_des = (" << _Fr_des.rows() << "," << _Fr_des.cols() << ") = " << std::endl;
+    // std::cout << _Fr_des.transpose() << std::endl;
 }
 
 void WBIController::_SetEqualityConstraint(const DVec<double>& qddot) {
     // floating base dyn
     // Sv * (A * qddot_cmd + _coriolis + _grav) = Sv * (Jc^{T} * Fr)
-    // where Sv is the select matrix that select the first 6 row of EoMs,
+    // where Sv is the select matrix that extract the first 6 rows of EoMs,
     // qddot_cmd = qddot + delta_q_fb,
     // Fr = Fr_des + delta_fr.
     
@@ -451,6 +460,9 @@ void WBIController::_SetEqualityConstraint(const DVec<double>& qddot) {
         _A.block(0, 0, _dim_floating, _dim_floating);
         ce0 = -Sv_ * (_A * qddot + _coriolis + _grav);
     }
+
+    // std::cout << "_Fr_des = (" << _Fr_des.rows() << "," << _Fr_des.cols() << ") = " << std::endl;
+    // std::cout << _Fr_des.transpose() << std::endl;
 }
 
 double WBIController::_SolveQuadraticProgramming(Eigen::VectorXd& z) {
@@ -459,7 +471,7 @@ double WBIController::_SolveQuadraticProgramming(Eigen::VectorXd& z) {
     drake::solvers::MathematicalProgram prog;
     drake::solvers::MosekSolver mosek_solver;
     // optimal decision variables
-    // TODO: the dim of continuous variables must be a constant?
+    // TODO: the dim of NewContinuousVariables must be a constant?
     Eigen::Matrix<drake::symbolic::Variable, -1, 1> x_star;
     switch (_dim_opt)
     {
@@ -471,16 +483,24 @@ double WBIController::_SolveQuadraticProgramming(Eigen::VectorXd& z) {
     }
     
     auto qp_cost = prog.AddQuadraticCost(G, g0, x_star);
+
+    // std::cout << "G = (" << G.rows() << "," << G.cols() << ") = " << std::endl;
+    // std::cout << G << std::endl;
     
-    DVec<double> lb;
-    lb = DVec<double>::Ones(_dim_Uf) * -std::numeric_limits<double>::infinity();
     DVec<double> ub;
     ub = DVec<double>::Ones(_dim_Uf) * std::numeric_limits<double>::infinity();
-    // auto inEq_constraint = prog.AddLinearConstraint(CI, lb, ci0, x_star);
-    auto inEq_constraint = prog.AddLinearConstraint(CI, lb, ub, x_star);
+    auto inEq_constraint = prog.AddLinearConstraint(CI, ci0, ub, x_star);
     
-    // auto eq_constraint = prog.AddLinearEqualityConstraint(CE, ce0, x_star);
-
+    
+    // auto inEq_constraint = prog.AddLinearConstraint(CI, lb, ub, x_star);
+    // std::cout << "CI = (" << CI.rows() << "," << CI.cols() << ") = " << std::endl;
+    // std::cout << CI << std::endl;
+    
+    auto eq_constraint = prog.AddLinearEqualityConstraint(CE, ce0, x_star);
+    // std::cout << "CE = (" << CE.rows() << "," << CE.cols() << ") = " << std::endl;
+    // std::cout << CE << std::endl;
+    // std::cout << "ce0 = (" << ce0.rows() << "," << ce0.cols() << ") = " << std::endl;
+    // std::cout << ce0 << std::endl;
 
     if (mosek_solver.available()) {
         drake::solvers::MathematicalProgramResult prog_result;
@@ -489,6 +509,7 @@ double WBIController::_SolveQuadraticProgramming(Eigen::VectorXd& z) {
             // drake::log()->info("congras!");
             z = prog_result.GetSolution();
             initial_guess_vec = z;
+            cost = prog_result.get_optimal_cost();
             // const drake::solvers::MosekSolverDetails& mosek_solver_details =
             //     prog_result.get_solver_details<drake::solvers::MosekSolver>();
             // drake::log()->info("optimizer time: " + std::to_string(mosek_solver_details.optimizer_time));
@@ -501,8 +522,42 @@ double WBIController::_SolveQuadraticProgramming(Eigen::VectorXd& z) {
         drake::log()->warn("mosek solver is not available !");
     }
 
-    
 
     return cost;
 }
 
+void WBIController::_InverseDyn(const DVec<double>& qddot_original, DVec<double>& tao_j) {
+
+    DVec<double> total_tau; // generalized torques
+    DVec<double> Fr; //final contact forces
+    DVec<double> qddot_cmd;
+
+    total_tau.resize(num_qdot_); total_tau.setZero();
+    Fr.resize(_dim_rf); Fr.setZero();
+    qddot_cmd.resize(num_qdot_); qddot_cmd.setZero();
+
+    for (size_t i(0); i < _dim_floating; ++i)
+        qddot_cmd[i] = qddot_original[i] + z_star[i];
+
+    if (_dim_rf > 0) {
+        for (size_t i(0); i < _dim_rf; ++i)
+            Fr[i] = z_star[i + _dim_floating] + _Fr_des[i];
+        total_tau = 
+            _A * qddot_original + _coriolis + _grav - _Jc.transpose() * Fr;
+    } else {
+        total_tau = _A * qddot_cmd + _coriolis + _grav;
+    }
+
+    // std::cout << "_A * qddot_cmd  = " << (total_tau).transpose() << std::endl;
+    // std::cout << "before fmpc = " << _Fr_des.transpose() << ". After wbc fr = " << Fr.transpose() << std::endl;
+
+    tao_j = total_tau.tail(num_act_joint_); 
+}
+
+void WBIController::update_command(CentaurStates& state, const DVec<double>& qj, const DVec<double>& qj_dot, const DVec<double>& tau) {
+
+    state.wbc_q_cmd = qj;
+    state.wbc_qdot_cmd = qj_dot;
+    state.wbc_tau_ff = tau;
+
+}

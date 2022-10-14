@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-10-10 17:19:10
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-11 21:52:22
+ * @LastEditTime: 2022-10-14 21:47:44
  * @FilePath: /drake/workspace/centaur_sim/controller/Tasks/LinkPosTask.hpp
  * @Description: 
  * 
@@ -24,8 +24,8 @@ class LinkPosTask : public Task<T> {
         Task<T>::Jt_.block(0, 3, 3, 3).setIdentity();
         Task<T>::JtDotQdot_ = DVec<T>::Zero(Task<T>::dim_task_);
         
-        _Kp_kin = DVec<T>::Constant(Task<T>::dim_task_, 100.0);
-        _Kp = DVec<T>::Constant(Task<T>::dim_task_, 5.0);
+        _Kp_kin = DVec<T>::Constant(Task<T>::dim_task_, 2.5);
+        _Kp = DVec<T>::Constant(Task<T>::dim_task_, 1.0);
         _Kd = DVec<T>::Constant(Task<T>::dim_task_, 1.0);
 
     }
@@ -41,13 +41,17 @@ class LinkPosTask : public Task<T> {
         Vec3<T> pos_cmd = *(static_cast<const Vec3<T>*>(pos_des));
         Vec3<T> link_pos;
         link_pos = robot_sys_->_pGC[link_idx_];
-        
+
         // X, Y, Z
         for (int i(0); i < 3; ++i) {
             TK::delta_x_des_[i] = _Kp_kin[i]* (pos_cmd[i] - link_pos[i]);
             TK::xdot_des_[i] = vel_des[i];
             TK::xddot_dest_[i] = acc_des[i];
         }
+
+        // std::cout << "which link = " << link_idx_  << "       ";
+        // std::cout << "xddot_dest_ = (" << TK::xddot_dest_.rows() << "," << TK::xddot_dest_.cols() << ") = " << std::endl;
+        // std::cout << TK::xddot_dest_.transpose() << std::endl;
 
         // Op acceleration command
         for (size_t i(0); i < TK::dim_task_; ++i) {

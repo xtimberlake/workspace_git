@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-17 16:49:42
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-11 21:52:16
+ * @LastEditTime: 2022-10-14 21:33:00
  * @FilePath: /drake/workspace/centaur_sim/controller/Tasks/TorsoOriTask.hpp
  * @Description: 
  * 
@@ -25,9 +25,9 @@ class TorsoOriTask : public Task<T>
         Task<T>::Jt_.block(0, 3, 3, 3).setIdentity();
         Task<T>::JtDotQdot_ = DVec<T>::Zero(Task<T>::dim_task_);
         
-        _Kp_kin = DVec<T>::Constant(Task<T>::dim_task_, 1.0);
-        _Kp = DVec<T>::Constant(Task<T>::dim_task_, 50.0);
-        _Kd = DVec<T>::Constant(Task<T>::dim_task_, 1.0);
+        _Kp_kin = DVec<T>::Constant(Task<T>::dim_task_, 0.0);
+        _Kp = DVec<T>::Constant(Task<T>::dim_task_, 0.0);
+        _Kd = DVec<T>::Constant(Task<T>::dim_task_, 0.0);
 
     }
     ~TorsoOriTask() {}

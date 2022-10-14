@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-16 17:07:22
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-13 21:24:56
+ * @LastEditTime: 2022-10-14 15:35:13
  * @FilePath: /drake/workspace/centaur_sim/controller/WBIController.h
  * @Description: Whole-body impulse controller
  * 
@@ -19,8 +19,11 @@
 #include "drake/workspace/centaur_sim/Utils/pseudoInverse.h"
 #include "drake/workspace/centaur_sim/controller/ConvexMPC.h"
 
-// template<typename T>
-// class TorsoPosTask;
+struct wbc_interface_data {
+    Eigen::Matrix<double, 6, 1> qj_cmd;
+    Eigen::Matrix<double, 6, 1> qjdot_cmd;
+    Eigen::Matrix<double, 6, 1> tau_ff;
+};
 
 class WBIController
 {
@@ -47,7 +50,8 @@ public:
     void _SetEqualityConstraint(const DVec<double>& qddot);
     void _SetInEqualityConstraint();    
     double _SolveQuadraticProgramming(Eigen::VectorXd& z);
-    // void _GetSolution(const Dvec<double>& qddot, DVec<double>& cmd);
+    void _InverseDyn(const DVec<double>& qddot_cmd, DVec<double>& tao_j);
+    void update_command(CentaurStates& state, const DVec<double>& qj, const DVec<double>& qj_dot, const DVec<double>& tau);
 
     // support functions
     void _PseudoInverse(const DMat<double> J, DMat<double>& Jinv) {
@@ -144,6 +148,9 @@ public:
 
 
 };
+
+
+
 
 
 

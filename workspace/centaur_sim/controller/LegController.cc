@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-22 08:44:58
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-09-16 17:04:52
+ * @LastEditTime: 2022-10-14 21:27:38
  * @FilePath: /drake/workspace/centaur_sim/controller/LegController.cc
  * @Description: 
  * 
@@ -17,6 +17,13 @@ LegController::LegController()
 
     this->_kp_swing << 100.0, 100, 50;
     this->_kd_swing << 200.0, 200, 100;
+
+    this->_kp_joint_stance << 3.0, 1.0, 1.0;
+    this->_kd_joint_stance << 1.0, 0.5, 0.5;
+
+    this->_kp_joint_swing << 250.0, 85.0, 85.0;
+    this->_kd_joint_swing << 35.0, 15.0, 15.0;
+
 }
 
 Eigen::Matrix<double, 6, 1> LegController::joint_impedance_control(CentaurStates& state){
@@ -26,15 +33,15 @@ Eigen::Matrix<double, 6, 1> LegController::joint_impedance_control(CentaurStates
 
     for (int leg = 0; leg < 2; leg++)
     {
-        if (state.plan_contacts_phase(leg) > .99) {
+        if (state.plan_contacts_phase(leg) > 0.0) {
             torques.segment<3>(3 * leg) = 
-                _kp_stance.cwiseProduct(state.q_cmd.segment<3>(3 * leg) - state.q_cmd.segment<3>(3 * leg))
+                _kp_stance.cwiseProduct(state.q_cmd.segment<3>(3 * leg) - state.q.segment<3>(3 * leg))
                 + _kd_stance.cwiseProduct(state.qdot_cmd.segment<3>(3 * leg) - state.qdot.segment<3>(3 * leg))
                 + state.tau_ff.segment<3>(3 * leg);
         }
         else {
            torques.segment<3>(3 * leg) = 
-                _kp_swing.cwiseProduct(state.q_cmd.segment<3>(3 * leg) - state.q_cmd.segment<3>(3 * leg))
+                _kp_swing.cwiseProduct(state.q_cmd.segment<3>(3 * leg) - state.q.segment<3>(3 * leg))
                 + _kd_swing.cwiseProduct(state.qdot_cmd.segment<3>(3 * leg) - state.qdot.segment<3>(3 * leg));
         }
     }
@@ -76,6 +83,27 @@ Eigen::Matrix<double, 6, 1> LegController::task_impedance_control(CentaurStates&
         }
     }
     state.tau = torques;
+
+    return torques;
+}
+
+Eigen::Matrix<double, 6, 1> LegController::wbc_low_level_control(CentaurStates& state){
+    Eigen::Matrix<double, 6, 1> torques; torques.setZero();
+
+    for (int leg = 0; leg < 2; leg++)
+    {
+        if (state.plan_contacts_phase(leg) > 0.0) {
+            torques.segment<3>(3 * leg) = 
+                _kp_joint_stance.cwiseProduct(state.wbc_q_cmd.segment<3>(3 * leg) - state.q.segment<3>(3 * leg))
+                + _kd_joint_stance.cwiseProduct(state.wbc_qdot_cmd.segment<3>(3 * leg) - state.qdot.segment<3>(3 * leg))
+                + state.wbc_tau_ff.segment<3>(3 * leg);
+        }
+        else {
+           torques.segment<3>(3 * leg) = 
+                _kp_joint_swing.cwiseProduct(state.wbc_q_cmd.segment<3>(3 * leg) - state.q.segment<3>(3 * leg))
+                + _kd_joint_swing.cwiseProduct(state.wbc_qdot_cmd.segment<3>(3 * leg) - state.qdot.segment<3>(3 * leg));
+        }
+    }
 
     return torques;
 }

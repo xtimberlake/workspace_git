@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:30:49
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-11 18:50:00
+ * @LastEditTime: 2022-10-14 15:41:35
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurStates.h
  * @Description: define all the states that used in controller; mainly 
  *                adapted from https://github.com/ShuoYangRobotics/A1-QP-MPC-Controller
@@ -133,6 +133,8 @@ class CentaurStates {
 
         foot_vel_cmd_rel.setZero();
         foot_vel_cmd_world.setZero();
+        foot_acc_cmd_rel.setZero();
+        foot_acc_cmd_world.setZero();
 
         // ik
         this->max_iter = ctrl_params_const.max_iter;
@@ -155,6 +157,10 @@ class CentaurStates {
       
         // Others:
         this->external_wrench << 0, 0, 0, 0, 0, 15;
+
+        wbc_q_cmd.setZero();
+        wbc_qdot_cmd.setZero();
+        wbc_tau_ff.setZero();
     }
 
     // variables
@@ -257,5 +263,7 @@ class CentaurStates {
     // Others
     Eigen::Matrix<double, 6, 1> external_wrench;
     
+    // wbc
+    Eigen::Matrix<double, 6, 1> wbc_q_cmd, wbc_qdot_cmd, wbc_tau_ff;
 
 };
