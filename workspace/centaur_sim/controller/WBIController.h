@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-16 17:07:22
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-14 15:35:13
+ * @LastEditTime: 2022-10-15 09:53:25
  * @FilePath: /drake/workspace/centaur_sim/controller/WBIController.h
  * @Description: Whole-body impulse controller
  * 
@@ -89,6 +89,7 @@ public:
     Eigen::Matrix<double, 12, 1> _grav;        // due to generalized gravity 
     Eigen::Matrix<double, 12, 1> tau_dist;     // disturbance term
 
+    // desired states for Orientation, Position, Foot-Position tasks (expressed in operatinal space)
     Quat<double> _quat_des;
     Vec3<double> _pBody_des;
     Vec3<double> _pFoot_des[4]; // why _pFoot_des[2] will occur error?

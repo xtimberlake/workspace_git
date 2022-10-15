@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-19 16:25:29
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-08 17:16:43
+ * @LastEditTime: 2022-10-15 19:33:43
  * @FilePath: /drake/workspace/centaur_sim/dynamics/FloatingBaseModel.cpp
  * @Description: 
  * 
@@ -36,6 +36,9 @@ void FloatingBaseModel::printModelTable() {
     << "     name = " << _bodyNames.at(i) << std::endl;
   }
   
+  std::cout << "There are " << _Jc.size() << " contact points in total." << std::endl;
+  
+
 
 }
 
@@ -97,7 +100,8 @@ void FloatingBaseModel::addDynamicsVars(int count) {
       _Xa.push_back(eye6);
    }
 
-  //TODOs: what dose this Jacobian matrix stand for?
+  // TODOs: what dose this Jacobian matrix stand for?
+  // Jacobian matrix for each link frame.
    _J.push_back(D6Mat<double>::Zero(6, _nDof));
    _Jdqd.push_back(SVec<double>::Zero());
    
@@ -216,7 +220,7 @@ void FloatingBaseModel::forwardKinematics() {
     _Xup[i] = XJ * _Xtree[i];
     
     _S[i] = jointMotionSubspace<double>(_jointTypes[i], _jointAxes[i]);
-    SVec<double> vJ = _S[i] * _state.qd[i - 6];
+    SVec<double> vJ = _S[i] * _state.qd[i - 6]; // Si * qi_dot
     // total velocity of body i
     _v[i] = _Xup[i] * _v[_parents[i]] + vJ;
     
@@ -248,13 +252,14 @@ void FloatingBaseModel::forwardKinematics() {
 }
 
 /*!
- * (Support Function) Computes velocity product accelerations of
+ * (Support Function) Computes "velocity product" accelerations of
  * each link and rotor _avp, and _avprot
  */
 void FloatingBaseModel::biasAccelerations() {
   if (_biasAccelerationsUpToDate) return;
   forwardKinematics();
-  // velocity product acceelration of base
+  // velocity product acceelration [V_i]x Si*qi_dot of base is zero because
+  // absolute coordinates is fixed.
   _avp[5] << 0, 0, 0, 0, 0, 0;
 
   // from base to tips
@@ -265,7 +270,7 @@ void FloatingBaseModel::biasAccelerations() {
   _biasAccelerationsUpToDate = true;
 }
 
-/*!
+/*! 
  * Compute the contact Jacobians (3xn matrices) for the velocity
  * of each contact point expressed in absolute coordinates
  */
@@ -424,7 +429,7 @@ DVec<double> FloatingBaseModel::generalizedCoriolisForce() {
     // Extract force along the joints
     _Cqd[i] = _S[i].dot(_fvp[i]) /* + _Srot[i].dot(_fvprot[i]) */;
 
-    // Propage force down the tree
+    // (back)Propage force down the tree
     _fvp[_parents[i]] += _Xup[i].transpose() * _fvp[i];
     // _fvp[_parents[i]] += _Xuprot[i].transpose() * _fvprot[i];
   }

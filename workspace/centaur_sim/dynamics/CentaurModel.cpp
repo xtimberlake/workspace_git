@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-19 20:29:47
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-09-23 21:19:58
+ * @LastEditTime: 2022-10-15 10:13:40
  * @FilePath: /drake/workspace/centaur_sim/dynamics/CentaurModel.cpp
  * @Description: build the dynamic model of Centaur robot
  * 
@@ -71,7 +71,7 @@ void CentaurModel::buildModel() {
 
         // abAd link
         bodyId++; // 6, 9
-        _abAd_pos_from_torso[1] = powf64(-1, i) * _abAd_pos_from_torso[1];
+        _abAd_pos_from_torso[1] = powf64(-1, i) * _abAd_pos_from_torso[1]; //flip along y axis
         _Xtree_abAd = spatial::createSXform(_abAd_rot_from_torso, _abAd_pos_from_torso);
         _fb_model.addBody(adAd_link[i], _abAdInertia, baseID, JointType::Revolute,
                    ori::CoordinateAxis::X, _Xtree_abAd);

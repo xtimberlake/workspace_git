@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-10-10 17:19:10
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-14 21:47:44
+ * @LastEditTime: 2022-10-15 21:18:07
  * @FilePath: /drake/workspace/centaur_sim/controller/Tasks/LinkPosTask.hpp
  * @Description: 
  * 
@@ -24,9 +24,13 @@ class LinkPosTask : public Task<T> {
         Task<T>::Jt_.block(0, 3, 3, 3).setIdentity();
         Task<T>::JtDotQdot_ = DVec<T>::Zero(Task<T>::dim_task_);
         
-        _Kp_kin = DVec<T>::Constant(Task<T>::dim_task_, 2.5);
-        _Kp = DVec<T>::Constant(Task<T>::dim_task_, 1.0);
-        _Kd = DVec<T>::Constant(Task<T>::dim_task_, 1.0);
+        _Kp_kin = DVec<T>::Zero(Task<T>::dim_task_);
+        _Kp = DVec<T>::Zero(Task<T>::dim_task_);
+        _Kd = DVec<T>::Zero(Task<T>::dim_task_);
+
+        _Kp_kin << 2.0, 2.0, 2.5;
+        _Kp << 0.1, 0.1, 0.1;
+        _Kd << 0.1, 0.1, 0.1;
 
     }
   ~LinkPosTask() {}

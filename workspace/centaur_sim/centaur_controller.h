@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-14 12:43:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-14 20:34:23
+ * @LastEditTime: 2022-10-15 19:42:52
  * @FilePath: /drake/workspace/centaur_sim/centaur_controller.h
  * @Description: controller block for drake simulation
  * 
@@ -195,7 +195,13 @@ private:
                                                          _control_model.world_frame(),
                                                          &J_BF_left);
 
-        // expressed in the body frame                 
+        // the floating base qdot is expressed in the base coodinates
+        J_BF_left.block<3, 3>(0, 0) = J_BF_left.block<3, 3>(0, 0) * ct->ctrl_states.root_rot_mat;
+        J_BF_left.block<3, 3>(0, 3) = J_BF_left.block<3, 3>(0, 3) * ct->ctrl_states.root_rot_mat;
+        // ct->ctrl_states.JacobianFoot[0] = J_BF_left.block<3, 3>(0, 6);
+        // std::cout << "ground true = " << std::endl << J_BF_left << std::endl;
+        
+        // // expressed in the body frame                 
         ct->ctrl_states.JacobianFoot[0] = ct->ctrl_states.root_rot_mat.transpose() * J_BF_left.block<3, 3>(0, 6);
 
         MatrixX<double> J_BF_right(3, _control_model.num_velocities());
@@ -206,22 +212,35 @@ private:
                                                          _control_model.world_frame(),
                                                          _control_model.world_frame(),
                                                          &J_BF_right);
-                                                                       
+
+        J_BF_right.block<3, 3>(0, 0) = J_BF_right.block<3, 3>(0, 0) * ct->ctrl_states.root_rot_mat;
+        J_BF_right.block<3, 3>(0, 3) = J_BF_right.block<3, 3>(0, 3) * ct->ctrl_states.root_rot_mat;
+        // ct->ctrl_states.JacobianFoot[1] = J_BF_right.block<3, 3>(0, 9);
         ct->ctrl_states.JacobianFoot[1] = ct->ctrl_states.root_rot_mat.transpose() * J_BF_right.block<3, 3>(0, 9);
                                                         
  
         Eigen::Matrix<double, 13, 1> qvec;
         qvec = _control_model.GetPositions(*_plant_context);
-        ct->ctrl_states.q << qvec.tail(6);
+        ct->ctrl_states.q << qvec.tail(6); // joint angle
 
         Eigen::Matrix<double, 12, 1> qdot_vec = _control_model.GetVelocities(*_plant_context);
-        ct->ctrl_states.qdot = qdot_vec.segment<6>(6);
+        ct->ctrl_states.qdot = qdot_vec.segment<6>(6); // joint velocity
 
         ct->ctrl_states.foot_vel_rel.block<3, 1>(0, 0) = ct->ctrl_states.JacobianFoot[0] * ct->ctrl_states.qdot.segment<3>(0);
         ct->ctrl_states.foot_vel_rel.block<3, 1>(0, 1) = ct->ctrl_states.JacobianFoot[1] * ct->ctrl_states.qdot.segment<3>(3);
 
-        ct->ctrl_states.foot_vel_world.block<3, 1>(0, 0) = ct->ctrl_states.root_rot_mat_z * ct->ctrl_states.foot_vel_rel.block<3, 1>(0, 0);
-        ct->ctrl_states.foot_vel_world.block<3, 1>(0, 1) = ct->ctrl_states.root_rot_mat_z * ct->ctrl_states.foot_vel_rel.block<3, 1>(0, 1);
+        // TODOs: how to 
+        ct->ctrl_states.foot_vel_world.block<3, 1>(0, 0) = ct->ctrl_states.root_rot_mat * ct->ctrl_states.foot_vel_rel.block<3, 1>(0, 0);
+        ct->ctrl_states.foot_vel_world.block<3, 1>(0, 1) = ct->ctrl_states.root_rot_mat * ct->ctrl_states.foot_vel_rel.block<3, 1>(0, 1);
+
+        // ct->ctrl_states.foot_vel_world.block<3, 1>(0, 0) = LeftFootFrame.CalcSpatialVelocityInWorld(*_plant_context).translational();
+        // ct->ctrl_states.foot_vel_world.block<3, 1>(0, 1) = RightFootFrame.CalcSpatialVelocityInWorld(*_plant_context).translational();
+
+        // ct->ctrl_states.foot_vel_rel.block<3, 1>(0, 0) = ct->ctrl_states.root_rot_mat.transpose() * ct->ctrl_states.foot_vel_world.block<3, 1>(0, 0);
+        // ct->ctrl_states.foot_vel_rel.block<3, 1>(0, 1) = ct->ctrl_states.root_rot_mat.transpose() * ct->ctrl_states.foot_vel_world.block<3, 1>(0, 1);
+        
+
+
         // if(context.get_time() < 0.001) {
         //     drake::log()->info("ct->ctrl_states.q = ");
         //     drake::log()->info(ct->ctrl_states.q);

@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-17 16:49:42
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-14 21:05:47
+ * @LastEditTime: 2022-10-15 20:12:43
  * @FilePath: /drake/workspace/centaur_sim/controller/Tasks/TorsoPosTask.hpp
  * @Description: 
  * 
@@ -26,9 +26,14 @@ public:
         Task<T>::Jt_.block(0, 3, 3, 3).setIdentity();
         Task<T>::JtDotQdot_ = DVec<T>::Zero(Task<T>::dim_task_);
         
-        _Kp_kin = DVec<T>::Constant(Task<T>::dim_task_, .0);
-        _Kp = DVec<T>::Constant(Task<T>::dim_task_, .0);
-        _Kd = DVec<T>::Constant(Task<T>::dim_task_, .0);
+        _Kp_kin = DVec<T>::Zero(Task<T>::dim_task_);
+        _Kp = DVec<T>::Zero(Task<T>::dim_task_);
+        _Kd = DVec<T>::Zero(Task<T>::dim_task_);
+
+        // base pos task for x, y, z
+        _Kp_kin << 0.0, 0.0, 0.1;
+        _Kp << 0.0, 0.0, 0.1;
+        _Kd << 0.0, 0.0, 0.01;
 
     }
     ~TorsoPosTask() {}
@@ -48,6 +53,7 @@ public:
         Vec3<T> pos_cmd = *(static_cast<const Vec3<T>*>(pos_des));
         Vec3<T> link_pos = _robot_sys->_state.bodyPosition;
 
+        // std::cout << "pos_cmd = " << pos_cmd.transpose() << "/" << "curr = " << _robot_sys->_state.bodyPosition.transpose() << std::endl;
 
         // torso velocity expressed in the absolute coodinates
         Quat<T> quat = _robot_sys->_state.bodyOrientation;

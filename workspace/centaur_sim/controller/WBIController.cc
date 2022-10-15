@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-16 17:07:03
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-14 21:59:00
+ * @LastEditTime: 2022-10-15 21:56:30
  * @FilePath: /drake/workspace/centaur_sim/controller/WBIController.cc
  * @Description: 
  * 
@@ -12,7 +12,7 @@
 
 
 WBIController::WBIController(/* args */):
-    _full_config(centaurParam::num_act_joint + 6),
+    _full_config(centaurParam::num_act_joint + 7),
     _tau_ff(centaurParam::num_act_joint),
     _des_jpos(centaurParam::num_act_joint),
     _des_jvel(centaurParam::num_act_joint) {
@@ -24,16 +24,16 @@ WBIController::WBIController(/* args */):
     I_mtx =  DMat<double>::Identity(num_qdot_, num_qdot_); // 12x 12 Identity 
 
     _dim_floating = 6;
-    _eye = DMat<double>::Identity(num_qdot_, num_qdot_);
-    _eye_floating = DMat<double>::Identity(_dim_floating, _dim_floating);
+    _eye = DMat<double>::Identity(num_qdot_, num_qdot_); // 12x 12 Identity 
+    _eye_floating = DMat<double>::Identity(_dim_floating, _dim_floating); // 6x 6 Identity 
 
     last_dim_decision_variables = 0;
     
     Sa_ = DMat<double>::Zero(num_act_joint_, num_qdot_);
-    Sv_ = DMat<double>::Zero(6, num_qdot_);
+    Sv_ = DMat<double>::Zero(_dim_floating, num_qdot_);
 
-    Sa_.block(0, 6, num_act_joint_, num_act_joint_).setIdentity();
-    Sv_.block(0, 0, 6, 6).setIdentity();
+    Sa_.block(0, 6, num_act_joint_, num_act_joint_).setIdentity(); // [0 I]
+    Sv_.block(0, 0, 6, 6).setIdentity(); // [I 0]
 
     _quat_des.setZero();
     _pBody_des.setZero();
@@ -92,8 +92,10 @@ void WBIController::update_model(CentaurStates& state) {
     fb_states.bodyOrientation[3] = state.root_quat.coeffs()[2];
 
     fb_states.bodyPosition = state.root_pos; // Vec_from_world_to_base, expressed in world
+
     fb_states.bodyVelocity.head(3) = state.root_ang_vel_rel;
     fb_states.bodyVelocity.tail(3) = state.root_lin_vel_rel;
+    
     fb_states.q = state.q;
     fb_states.qd = state.qdot;
 
@@ -106,7 +108,7 @@ void WBIController::update_model(CentaurStates& state) {
     
     
     // The equations of motion can be expressed as:
-    // _A*qddot + _coriolis + _grav = tau + J^{T} * Fc
+    // _A*qddot + _coriolis + _grav = tau + Jc^{T} * Fc
     _A = ctModel._fb_model.getMassMatrix();
     _grav = ctModel._fb_model.getGravityForce();
     _coriolis = ctModel._fb_model.getCoriolisForce();
@@ -118,7 +120,12 @@ void WBIController::update_model(CentaurStates& state) {
         _full_config[i + 6] = state.q[i]; 
     }
     
+    // std::cout << "calculated contact velocity = " << ctModel._fb_model._vGC.at(1).transpose() << ", ";
+    // std::cout << "ground true = " << state.foot_vel_world.block<3, 1>(0, 1).transpose() << std::endl;
     
+    // std::cout << "computed Jacobian = " << std::endl << ctModel._fb_model._Jc.at(0) << ", " << std::endl;
+    
+    // std::cout << "-----" << std::endl;
 
 
 }
@@ -138,6 +145,8 @@ void WBIController::update_contact_task(CentaurStates& state) {
     _quat_des = ori::rpyToQuat(state.root_euler_d);
     _pFoot_des[0] = state.foot_pos_cmd_world.block<3, 1>(0, 0);
     _pFoot_des[1] = state.foot_pos_cmd_world.block<3, 1>(0, 1);
+
+    
 
     // update desired variables for each tasks
     // Vec3<double> zero_vec3; zero_vec3.setZero();
@@ -425,7 +434,8 @@ void WBIController::_SetCost() {
     // Set p.s.d. weight matrix
   size_t idx_offset(0);
 
-  G.block<6, 6>(0, 0).diagonal() << 0.1, 0.1, 0.1, 0.1, 0.1, 0.1;
+  // d/dt{[wx wy wz vx vy vz]}
+  G.block<6, 6>(0, 0).diagonal() << 0.1, 0.3, 0.2, 0, 0, 0.1;
 
   idx_offset += _dim_floating;
   for (size_t i(0); i < _dim_rf; ++i) {
@@ -536,17 +546,28 @@ void WBIController::_InverseDyn(const DVec<double>& qddot_original, DVec<double>
     Fr.resize(_dim_rf); Fr.setZero();
     qddot_cmd.resize(num_qdot_); qddot_cmd.setZero();
 
+    qddot_cmd = qddot_original;
+
     for (size_t i(0); i < _dim_floating; ++i)
         qddot_cmd[i] = qddot_original[i] + z_star[i];
+
+    qddot_cmd[1] = 0.0;
+    
+    qddot_cmd[3] = 0.0;
+    qddot_cmd[4] = 0.0;
 
     if (_dim_rf > 0) {
         for (size_t i(0); i < _dim_rf; ++i)
             Fr[i] = z_star[i + _dim_floating] + _Fr_des[i];
         total_tau = 
-            _A * qddot_original + _coriolis + _grav - _Jc.transpose() * Fr;
+            _A * qddot_cmd + _coriolis + _grav - _Jc.transpose() * Fr;
     } else {
         total_tau = _A * qddot_cmd + _coriolis + _grav;
     }
+
+    std::cout << "qddot_original = " << qddot_original.transpose() << std::endl;
+    std::cout << "qddot_cmd = " << qddot_cmd.transpose() << std::endl;
+    std::cout << "---" << std::endl;
 
     // std::cout << "_A * qddot_cmd  = " << (total_tau).transpose() << std::endl;
     // std::cout << "before fmpc = " << _Fr_des.transpose() << ". After wbc fr = " << Fr.transpose() << std::endl;
