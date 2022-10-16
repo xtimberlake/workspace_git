@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-16 17:07:03
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-15 21:56:30
+ * @LastEditTime: 2022-10-16 20:07:22
  * @FilePath: /drake/workspace/centaur_sim/controller/WBIController.cc
  * @Description: 
  * 
@@ -12,7 +12,7 @@
 
 
 WBIController::WBIController(/* args */):
-    _full_config(centaurParam::num_act_joint + 7),
+    _full_config(centaurParam::num_act_joint + 6),
     _tau_ff(centaurParam::num_act_joint),
     _des_jpos(centaurParam::num_act_joint),
     _des_jvel(centaurParam::num_act_joint) {
@@ -154,8 +154,7 @@ void WBIController::update_contact_task(CentaurStates& state) {
     _torso_ori_task->UpdateTask(&_quat_des, state.root_ang_vel_d_world, state.root_ang_acc_d_world);
 
     // store in the task lists
-    _task_list.push_back(_torso_pos_task);
-    _task_list.push_back(_torso_ori_task);
+   _task_list.push_back(_torso_ori_task);
     
     for (size_t leg(0); leg < 2; leg++)
     {
@@ -172,6 +171,8 @@ void WBIController::update_contact_task(CentaurStates& state) {
             _task_list.push_back(_foot_task[leg]);
         }
     }
+    
+    _task_list.push_back(_torso_pos_task);
     
     
 }
@@ -551,10 +552,13 @@ void WBIController::_InverseDyn(const DVec<double>& qddot_original, DVec<double>
     for (size_t i(0); i < _dim_floating; ++i)
         qddot_cmd[i] = qddot_original[i] + z_star[i];
 
-    qddot_cmd[1] = 0.0;
-    
-    qddot_cmd[3] = 0.0;
-    qddot_cmd[4] = 0.0;
+    // qddot_cmd.head(6).setZero();
+    // qddot_cmd[0] = 0.0;   // roll
+    // qddot_cmd[1] = 0.0; // pitch
+    // qddot_cmd[2] = 0.0; // yaw
+    qddot_cmd[3] = 0.0; // x
+    qddot_cmd[4] = 0.0; // y 
+    // qddot_cmd[5] = 20.0; // z
 
     if (_dim_rf > 0) {
         for (size_t i(0); i < _dim_rf; ++i)
@@ -567,6 +571,7 @@ void WBIController::_InverseDyn(const DVec<double>& qddot_original, DVec<double>
 
     std::cout << "qddot_original = " << qddot_original.transpose() << std::endl;
     std::cout << "qddot_cmd = " << qddot_cmd.transpose() << std::endl;
+    // std::cout << "A = (" << _A.rows() << "," << _A.cols() << ")" << " = " << std::endl << _A << std::endl; 
     std::cout << "---" << std::endl;
 
     // std::cout << "_A * qddot_cmd  = " << (total_tau).transpose() << std::endl;
