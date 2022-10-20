@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-22 08:44:58
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-15 21:33:13
+ * @LastEditTime: 2022-10-20 21:38:02
  * @FilePath: /drake/workspace/centaur_sim/controller/LegController.cc
  * @Description: 
  * 
@@ -18,8 +18,11 @@ LegController::LegController()
     this->_kp_swing << 100.0, 100, 50;
     this->_kd_swing << 200.0, 200, 100;
 
-    this->_kp_joint_stance << 80.0, 30.0, 30.0;
+    // wbc
+    this->_kp_joint_stance << 50.0, 30.0, 30.0;
     this->_kd_joint_stance << 15.0, 8.5, 8.5;
+    // this->_kp_joint_stance << 20.0, 30.0, 30.0;
+    // this->_kd_joint_stance << 3.0, 5.5, 5.5;
 
     this->_kp_joint_swing << 250.0, 125.0, 125.0;
     this->_kd_joint_swing << 35.0, 15.0, 15.0;

@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-14 12:43:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-15 19:42:52
+ * @LastEditTime: 2022-10-20 20:31:30
  * @FilePath: /drake/workspace/centaur_sim/centaur_controller.h
  * @Description: controller block for drake simulation
  * 
@@ -87,7 +87,8 @@ private:
                 ct->standing->update_gait_pattern(ct->ctrl_states);
             }
             else {
-                ct->walking->update_gait_pattern(ct->ctrl_states);
+                // ct->walking->update_gait_pattern(ct->ctrl_states);
+                ct->jumping->update_gait_pattern(ct->ctrl_states);
             }
 
             // swing
@@ -102,7 +103,8 @@ private:
             ct->wbicontroller->run(ct->ctrl_states);
 
             if(ct->ctrl_states.t < 0.5) { // start trotting in 0.5 seconds
-                output_torques = ct->legcontroller->task_impedance_control(ct->ctrl_states);
+                // output_torques = ct->legcontroller->task_impedance_control(ct->ctrl_states);
+                output_torques = ct->legcontroller->wbc_low_level_control(ct->ctrl_states);
             }
             else {
                 // output_torques = ct->legcontroller->task_impedance_control(ct->ctrl_states);

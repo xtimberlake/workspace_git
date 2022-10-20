@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-16 17:07:03
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-16 20:07:22
+ * @LastEditTime: 2022-10-20 21:50:51
  * @FilePath: /drake/workspace/centaur_sim/controller/WBIController.cc
  * @Description: 
  * 
@@ -154,13 +154,21 @@ void WBIController::update_contact_task(CentaurStates& state) {
     _torso_ori_task->UpdateTask(&_quat_des, state.root_ang_vel_d_world, state.root_ang_acc_d_world);
 
     // store in the task lists
-   _task_list.push_back(_torso_ori_task);
+    _task_list.push_back(_torso_ori_task);
+   
     
     for (size_t leg(0); leg < 2; leg++)
     {
         if (state.plan_contacts_phase[leg] > 0.) { // contact
             // NOTICE: the sign of GRF
-            _foot_contact[leg]->setRFDesired(state.foot_force_cmd_world.block<3, 1>(0, leg));
+            Vec3<double> impulse_force;
+            impulse_force.setZero();
+            if (state.plan_contacts_phase[leg] >= 0.95) {
+
+                impulse_force[2] = 300 * sin(M_PI * (state.plan_contacts_phase[leg] - 0.95) / 0.05);
+            }
+            
+            _foot_contact[leg]->setRFDesired(state.foot_force_cmd_world.block<3, 1>(0, leg) + impulse_force);
             _foot_contact[leg]->UpdateContactSpec();
             _contact_list.push_back(_foot_contact[leg]);
 
@@ -254,7 +262,7 @@ bool WBIController::kin_wbcFindConfiguration(const DVec<double>& curr_config,
     // Contact Jacobian Setup
     // stack all the contact Jacobian matrix togather
     DMat<double> Nc(num_qdot_, num_qdot_); Nc.setIdentity();                        
-    if(contact_list.size() > 0){
+    if(contact_list.size() > 0){ // no contact motion is the primary task
         DMat<double> Jc, Jc_i;
         contact_list[0]->getContactJacobian(Jc);
         size_t num_rows = Jc.rows();
@@ -356,7 +364,7 @@ void WBIController::_SetOptimizationSize() {
     _Uf_ieq_vec = DVec<double>::Zero(_dim_Uf);
 
   } else {
-    drake::log()->info("no contact!!");
+    // drake::log()->info("no contact!!");
     CI.resize(1, _dim_opt); CI.setZero();
     ci0.resize(1); ci0.setZero();
   }
@@ -436,7 +444,7 @@ void WBIController::_SetCost() {
   size_t idx_offset(0);
 
   // d/dt{[wx wy wz vx vy vz]}
-  G.block<6, 6>(0, 0).diagonal() << 0.1, 0.3, 0.2, 0, 0, 0.1;
+  G.block<6, 6>(0, 0).diagonal() << 0.1, 0.1, 0.1, 0, 0, 0.1;
 
   idx_offset += _dim_floating;
   for (size_t i(0); i < _dim_rf; ++i) {
@@ -446,8 +454,12 @@ void WBIController::_SetCost() {
 }
 void WBIController::_SetInEqualityConstraint() {
     // friction pyramid + normal grf limits
-    CI.block(0, _dim_floating, _dim_Uf, _dim_rf) = _Uf;
-    ci0 = _Uf_ieq_vec - _Uf * _Fr_des;
+    if (_dim_rf > 0) {
+        CI.block(0, _dim_floating, _dim_Uf, _dim_rf) = _Uf;
+        ci0 = _Uf_ieq_vec - _Uf * _Fr_des;
+    }
+    
+    
     // std::cout << "_Fr_des = (" << _Fr_des.rows() << "," << _Fr_des.cols() << ") = " << std::endl;
     // std::cout << _Fr_des.transpose() << std::endl;
 }
@@ -498,9 +510,18 @@ double WBIController::_SolveQuadraticProgramming(Eigen::VectorXd& z) {
     // std::cout << "G = (" << G.rows() << "," << G.cols() << ") = " << std::endl;
     // std::cout << G << std::endl;
     
-    DVec<double> ub;
-    ub = DVec<double>::Ones(_dim_Uf) * std::numeric_limits<double>::infinity();
-    auto inEq_constraint = prog.AddLinearConstraint(CI, ci0, ub, x_star);
+    
+    if (_dim_rf > 0) {
+        DVec<double> ub;
+        ub = DVec<double>::Ones(_dim_Uf) * std::numeric_limits<double>::infinity();
+        auto inEq_constraint = prog.AddLinearConstraint(CI, ci0, ub, x_star);
+    }
+
+    
+
+    
+    
+    
     
     
     // auto inEq_constraint = prog.AddLinearConstraint(CI, lb, ub, x_star);
@@ -563,10 +584,14 @@ void WBIController::_InverseDyn(const DVec<double>& qddot_original, DVec<double>
     if (_dim_rf > 0) {
         for (size_t i(0); i < _dim_rf; ++i)
             Fr[i] = z_star[i + _dim_floating] + _Fr_des[i];
+        
         total_tau = 
             _A * qddot_cmd + _coriolis + _grav - _Jc.transpose() * Fr;
+        // total_tau = 
+        //     _A * qddot_original + _coriolis + _grav - _Jc.transpose() * Fr;
     } else {
         total_tau = _A * qddot_cmd + _coriolis + _grav;
+        // total_tau.setZero();
     }
 
     std::cout << "qddot_original = " << qddot_original.transpose() << std::endl;
