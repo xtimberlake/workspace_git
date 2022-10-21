@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-14 12:43:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-20 20:31:30
+ * @LastEditTime: 2022-10-21 21:02:02
  * @FilePath: /drake/workspace/centaur_sim/centaur_controller.h
  * @Description: controller block for drake simulation
  * 
@@ -87,8 +87,8 @@ private:
                 ct->standing->update_gait_pattern(ct->ctrl_states);
             }
             else {
-                // ct->walking->update_gait_pattern(ct->ctrl_states);
-                ct->jumping->update_gait_pattern(ct->ctrl_states);
+                ct->walking->update_gait_pattern(ct->ctrl_states);
+                // ct->jumping->update_gait_pattern(ct->ctrl_states);
             }
 
             // swing

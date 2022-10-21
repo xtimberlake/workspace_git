@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-16 17:07:03
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-20 21:50:51
+ * @LastEditTime: 2022-10-21 21:25:49
  * @FilePath: /drake/workspace/centaur_sim/controller/WBIController.cc
  * @Description: 
  * 
@@ -165,7 +165,7 @@ void WBIController::update_contact_task(CentaurStates& state) {
             impulse_force.setZero();
             if (state.plan_contacts_phase[leg] >= 0.95) {
 
-                impulse_force[2] = 300 * sin(M_PI * (state.plan_contacts_phase[leg] - 0.95) / 0.05);
+                impulse_force[2] = 0 * sin(M_PI * (state.plan_contacts_phase[leg] - 0.95) / 0.05);
             }
             
             _foot_contact[leg]->setRFDesired(state.foot_force_cmd_world.block<3, 1>(0, leg) + impulse_force);
@@ -587,20 +587,22 @@ void WBIController::_InverseDyn(const DVec<double>& qddot_original, DVec<double>
         
         total_tau = 
             _A * qddot_cmd + _coriolis + _grav - _Jc.transpose() * Fr;
+        total_tau = 
+            _A * qddot_original + _coriolis + _grav - _Jc.transpose() * Fr;
         // total_tau = 
-        //     _A * qddot_original + _coriolis + _grav - _Jc.transpose() * Fr;
+        //     - _Jc.transpose() * _Fr_des;
     } else {
         total_tau = _A * qddot_cmd + _coriolis + _grav;
         // total_tau.setZero();
     }
 
-    std::cout << "qddot_original = " << qddot_original.transpose() << std::endl;
-    std::cout << "qddot_cmd = " << qddot_cmd.transpose() << std::endl;
-    // std::cout << "A = (" << _A.rows() << "," << _A.cols() << ")" << " = " << std::endl << _A << std::endl; 
-    std::cout << "---" << std::endl;
+    // std::cout << "qddot_original = " << qddot_original.transpose() << std::endl;
+    // std::cout << "qddot_cmd = " << qddot_cmd.transpose() << std::endl;
+    // // std::cout << "A = (" << _A.rows() << "," << _A.cols() << ")" << " = " << std::endl << _A << std::endl; 
+    // std::cout << "---" << std::endl;
 
     // std::cout << "_A * qddot_cmd  = " << (total_tau).transpose() << std::endl;
-    // std::cout << "before fmpc = " << _Fr_des.transpose() << ". After wbc fr = " << Fr.transpose() << std::endl;
+    std::cout << "before fmpc = " << _Fr_des.transpose() << ". After wbc fr = " << Fr.transpose() << std::endl;
 
     tao_j = total_tau.tail(num_act_joint_); 
 }

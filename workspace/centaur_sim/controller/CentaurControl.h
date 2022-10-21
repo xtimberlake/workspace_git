@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:31:28
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-21 10:52:34
+ * @LastEditTime: 2022-10-21 15:51:13
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurControl.h
  * @Description: centaur root controller
  * 
@@ -14,6 +14,7 @@
 #include "drake/workspace/centaur_sim/controller/ConvexMPC.h"
 #include "drake/workspace/centaur_sim/controller/CentaurParams.h"
 #include "drake/workspace/centaur_sim/Utils/Utils.h"
+#include "drake/workspace/centaur_sim/Utils/orientationTools.h"
 #include <type_traits>
 
 class CentaurStates;

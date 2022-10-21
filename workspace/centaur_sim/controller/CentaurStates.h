@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:30:49
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-14 15:41:35
+ * @LastEditTime: 2022-10-21 15:00:31
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurStates.h
  * @Description: define all the states that used in controller; mainly 
  *                adapted from https://github.com/ShuoYangRobotics/A1-QP-MPC-Controller
@@ -130,6 +130,15 @@ class CentaurStates {
             robot_params_const.left_hip_location.at(0) + ctrl_params_const.default_foot_pos_under_hip.at(0),
             FILP_DIR * robot_params_const.left_hip_location.at(1) + ctrl_params_const.default_foot_pos_under_hip.at(1),
             robot_params_const.left_hip_location.at(2) + ctrl_params_const.default_foot_pos_under_hip.at(2);
+
+        hipLocation_local.block<3, 1>(0, 0) << robot_params_const.left_hip_location.at(0),
+            robot_params_const.left_hip_location.at(1),
+            robot_params_const.left_hip_location.at(2);
+
+        hipLocation_local.block<3, 1>(0, 1) << robot_params_const.left_hip_location.at(0),
+            FILP_DIR * robot_params_const.left_hip_location.at(1),
+            robot_params_const.left_hip_location.at(2),
+
 
         foot_vel_cmd_rel.setZero();
         foot_vel_cmd_world.setZero();
@@ -265,5 +274,8 @@ class CentaurStates {
     
     // wbc
     Eigen::Matrix<double, 6, 1> wbc_q_cmd, wbc_qdot_cmd, wbc_tau_ff;
+
+    // configuration
+    Eigen::Matrix<double, 3, 2> hipLocation_local;
 
 };
