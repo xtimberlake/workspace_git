@@ -96,7 +96,7 @@ namespace centaur_sim {
 
         auto states_logger = builder.AddSystem<systems::VectorLogSink<double>>(25);
 
-        auto zoh = builder.AddSystem<systems::ZeroOrderHold<double>>(FLAGS_sim_dt, 6);
+        auto zoh = builder.AddSystem<systems::ZeroOrderHold<double>>(FLAGS_sim_dt, plant->num_actuated_dofs(centaur_model_index));
 
         auto zoh2 = builder.AddSystem<systems::ZeroOrderHold<double>>(FLAGS_sim_dt, 5);
 
@@ -127,6 +127,9 @@ namespace centaur_sim {
 
         builder.Connect(extract_data_block->GetOutputPort("full_states"),
                         centaur_controller->GetInputPort("full_states"));
+
+        builder.Connect(extract_data_block->GetOutputPort("position_rotation"),
+                        centaur_controller->GetInputPort("position_rotation"));
 
         // builder.Connect(centaur_controller->GetOutputPort("actuated_torque"),
         //                 plant->get_actuation_input_port(centaur_model_index));
@@ -173,7 +176,8 @@ namespace centaur_sim {
         shank_length = 0.48;
         initial_state <<
         // 1, 0, 0, 0,
-        0, 0, 0,
+        0, 0, 0, // x,y,z
+        0, 0, 0, // r,p,y
         0, increment_angle + acos((ramp * ramp + thigh_length * thigh_length - shank_length * shank_length) / (2 * ramp * thigh_length)), acos((-ramp * ramp + thigh_length * thigh_length + shank_length * shank_length) / (2 * shank_length * thigh_length)) - M_PI,
         0, increment_angle + acos((ramp * ramp + thigh_length * thigh_length - shank_length * shank_length) / (2 * ramp * thigh_length)), acos((-ramp * ramp + thigh_length * thigh_length + shank_length * shank_length) / (2 * shank_length * thigh_length)) - M_PI;
 

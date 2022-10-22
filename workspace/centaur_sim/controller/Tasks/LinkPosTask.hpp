@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-10-10 17:19:10
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-21 21:23:23
+ * @LastEditTime: 2022-10-22 14:51:06
  * @FilePath: /drake/workspace/centaur_sim/controller/Tasks/LinkPosTask.hpp
  * @Description: 
  * 
@@ -28,7 +28,7 @@ class LinkPosTask : public Task<T> {
         _Kp = DVec<T>::Zero(Task<T>::dim_task_);
         _Kd = DVec<T>::Zero(Task<T>::dim_task_);
 
-        _Kp_kin << 2.5, 2.5, 2.5;
+        _Kp_kin << 2.0, 2.0, 2.5;
         _Kp << 0.5, 0.5, 0.5;
         _Kd << 0.1, 0.1, 0.1;
 

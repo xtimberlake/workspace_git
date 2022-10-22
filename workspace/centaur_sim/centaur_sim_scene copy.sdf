@@ -20,93 +20,10 @@
     </collision>
   </link>
 
-  <frame name='x_block_init_frame' attached_to='ground'> 
+  <frame name='f_t_sensor_frame' attached_to='ground'> 
     <pose relative_to='ground'>0.217 0 0.9005 0 0 0</pose>
   </frame>
-  <link name='x_block'>
-    <pose relative_to='x_block_init_frame'>0 0 0 0 0 0</pose>
-    <visual name='visual'>
-      <pose relative_to='x_block_init_frame'>0 0 0 0 0 0</pose>
-      <geometry> <box> <size>0.02 0.02 0.02</size> </box> </geometry>
-      <material>
-        <diffuse>0.5 0.0 0.0 0.6</diffuse>
-      </material>
-    </visual>  
-  </link>
-  <joint name='x_prismastic_joint' type='prismatic'>
-    <pose relative_to='x_block_init_frame'>0 0 0 0 0 0</pose>
-    <parent>ground</parent>
-    <child>x_block</child>
-    <axis>  
-      <xyz>1 0 0</xyz>
-      <limit> 
-        <!-- <lower>-0.8028514559173915</lower>
-        <upper>0.8028514559173915</upper> -->
-        <!-- <effort>1000000.0</effort> -->
-        <!-- <velocity>1000.0</velocity> -->
-      </limit>
-    </axis>
-  </joint> 
 
-  <frame name='y_block_init_frame' attached_to='x_block'> 
-    <pose relative_to='x_block'>0.01 0 0 0 0 0</pose>
-  </frame>
-  <link name='y_block'>
-    <pose relative_to='y_block_init_frame'>0 0 0 0 0 0</pose>
-    <visual name='visual'>
-      <pose relative_to='y_block_init_frame'>0 0 0 0 0 0</pose>
-      <geometry> <box> <size>0.02 0.02 0.02</size> </box> </geometry>
-      <material>
-        <diffuse>0.0 0.5 0.0 0.6</diffuse>
-      </material>
-    </visual>  
-  </link>
-  <joint name='y_prismastic_joint' type='prismatic'>
-    <pose relative_to='y_block_init_frame'>0 0 0 0 0 0</pose>
-    <parent>x_block</parent>
-    <child>y_block</child>
-    <axis>  
-      <xyz>0 1 0</xyz>
-      <limit> 
-        <!-- <lower>-0.8028514559173915</lower>
-        <upper>0.8028514559173915</upper> -->
-        <!-- <effort>1000000.0</effort>
-        <velocity>1000.0</velocity> -->
-      </limit>
-    </axis>
-  </joint>  
-
-  <frame name='z_block_init_frame' attached_to='y_block'> 
-    <pose relative_to='y_block'>0 0.01 0 0 0 0</pose>
-  </frame>
-  <link name='z_block'>
-    <pose relative_to='z_block_init_frame'>0 0 0 0 0 0</pose>
-    <visual name='visual'>
-      <pose relative_to='z_block_init_frame'>0 0 0 0 0 0</pose>
-      <geometry> <box> <size>0.02 0.02 0.02</size> </box> </geometry>
-      <material>
-        <diffuse>0.0 0.0 0.5 0.6</diffuse>
-      </material>
-    </visual>  
-  </link>
-  <joint name='z_prismastic_joint' type='prismatic'>
-    <pose relative_to='z_block_init_frame'>0 0 0 0 0 0</pose>
-    <parent>y_block</parent>
-    <child>z_block</child>
-    <axis>  
-      <xyz>0 0 1</xyz>
-      <limit> 
-        <!-- <lower>-0.8028514559173915</lower>
-        <upper>0.8028514559173915</upper> -->
-        <!-- <effort>1000000.0</effort>
-        <velocity>1000.0</velocity> -->
-      </limit>
-    </axis>
-  </joint>  
-
-  <frame name='f_t_sensor_frame' attached_to='z_block'> 
-    <pose relative_to='z_block'>0 0 0.01 0 0 0</pose>
-  </frame>
   <link name='f_t_sensor_link'>
     <pose relative_to='f_t_sensor_frame'>0 0 0 0 0 0</pose>
     <visual name='visual'>
@@ -117,37 +34,21 @@
       </material>
     </visual>  
   </link>
+
   <joint name='f_t_sensor_fixed_joint' type='fixed'>
     <pose relative_to='f_t_sensor_frame'>0.0005 0 0 0 0 0</pose>
-    <parent>z_block</parent>
+    <parent>ground</parent>
     <child>f_t_sensor_link</child>
   </joint>
-
-
-  <!-- <frame name='f_t_sensor_frame' attached_to='ground'> 
-    <pose relative_to='ground'>0.217 0 0.9005 0 0 0</pose>
-  </frame>
-
-  <link name='f_t_sensor_link'>
-    <pose relative_to='f_t_sensor_frame'>0 0 0 0 0 0</pose>
-    <visual name='visual'>
-      <pose relative_to='f_t_sensor_frame'>0 0 0 0 0 0</pose>
-      <geometry> <box> <size>0.02 0.02 0.02</size> </box> </geometry>
-      <material>
-        <diffuse>0.5 0.1 0.1 0.6</diffuse>
-      </material>
-    </visual>  
-  </link>
-
-  <joint name='f_t_sensor_fixed_joint' type='fixed'>
-    <pose relative_to='f_t_sensor_frame'>0.0005 0 0 0 0 0</pose>
-    <parent>ground</parent>
-    <child>f_t_sensor_link</child>
-  </joint> -->
 
   <frame name='ball_joint_frame' attached_to='f_t_sensor_link'> 
     <pose relative_to='f_t_sensor_link'>-0.01 0 0 0 0 0</pose>
   </frame>
+
+
+  <!-- <frame name='ball_joint_frame' attached_to='ground'> 
+    <pose relative_to='ground'>0.216 0 0.9005 0 0 0</pose>
+  </frame> -->
 
   <joint name='ball_joint' type='ball'>
     <pose relative_to='ball_joint_frame'>0 0 0 0 0 0</pose>

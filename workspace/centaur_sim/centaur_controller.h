@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-14 12:43:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-21 21:02:02
+ * @LastEditTime: 2022-10-22 21:59:28
  * @FilePath: /drake/workspace/centaur_sim/centaur_controller.h
  * @Description: controller block for drake simulation
  * 
@@ -56,7 +56,11 @@ public:
 
         this->DeclareVectorInputPort("full_states",
                                     _control_model.num_positions() + _control_model.num_velocities());
-        this->DeclareVectorOutputPort("actuated_torque", 6,
+
+        this->DeclareVectorInputPort("position_rotation",
+                                    12);
+
+        this->DeclareVectorOutputPort("actuated_torque", 9,
                                     &CentaurController::CalcTorques);
         this->DeclareVectorOutputPort("controller_log_data", 5,
                                     &CentaurController::OutpotLog);
@@ -70,14 +74,28 @@ public:
 private:
     multibody::MultibodyPlant<T> _control_model;
     std::unique_ptr<systems::Context<T>> _plant_context;
-
+    
 
     void CalcTorques(const systems::Context<T>& context,
                   systems::BasicVector<T>* output) const {
 
-        Eigen::VectorXd output_torques(_control_model.num_actuators()); output_torques.setZero();
+            
+        Eigen::VectorXd total_torques(3 + _control_model.num_actuators()); total_torques.setZero();
+        static Eigen::Matrix<double, 6, 1> output_torques = Eigen::Matrix<double, -1, 1>::Zero(6);
         update_states(context);
-        
+
+        Eigen::VectorXd pos_rpy_states = this->GetInputPort("position_rotation").Eval(context);
+        Eigen::Vector3d prismatic_joint_q; prismatic_joint_q.setZero();
+        Eigen::Vector3d prismatic_joint_qdot; prismatic_joint_qdot.setZero();
+        Eigen::Vector3d prismatic_joint_q_des; prismatic_joint_q_des.setZero();
+        Eigen::Vector3d prismatic_joint_qdot_des; prismatic_joint_qdot_des.setZero();
+
+        prismatic_joint_q = pos_rpy_states.head(3);
+        prismatic_joint_qdot = pos_rpy_states.segment<3>(6);
+
+        total_torques.head(3) = 100000 * (prismatic_joint_q_des - pos_rpy_states) 
+                                + 200 * (prismatic_joint_qdot_des - prismatic_joint_qdot);
+
         if((ct->ctrl_states.t - ct->ctrl_states.k * ct->ctrl_states.control_dt) > ct->ctrl_states.control_dt)
         {   
             // running at 1 kHz
@@ -99,7 +117,7 @@ private:
                 ct->controller->ComputeGoundReactionForce(ct->ctrl_states);
             }
 
-            // calculate torques through Jacobian matrix
+            // whole-body impluse controller
             ct->wbicontroller->run(ct->ctrl_states);
 
             if(ct->ctrl_states.t < 0.5) { // start trotting in 0.5 seconds
@@ -113,9 +131,12 @@ private:
             
 
         }
-        
+
+        total_torques.tail(6) = output_torques;
+
+        // std::cout << "total_torques = " << total_torques.transpose() << std::endl;
        
-        output->set_value(output_torques);
+        output->set_value(total_torques);
     
     }
 
@@ -145,6 +166,7 @@ private:
     void update_states(const systems::Context<T>& context) const
     {
         Eigen::VectorXd states = this->GetInputPort("full_states").Eval(context);
+        
         _control_model.SetPositionsAndVelocities(_plant_context.get(), states);
         ct->ctrl_states.t = context.get_time();
 

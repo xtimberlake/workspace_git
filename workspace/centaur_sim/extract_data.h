@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-19 09:55:16
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-09-13 17:22:05
+ * @LastEditTime: 2022-10-22 21:12:36
  * @FilePath: /drake/workspace/centaur_sim/extract_data.h
  * @Description: 
  * 
@@ -29,7 +29,7 @@ public:
         : _plant(plant) {
 
         _plant_context = _plant.CreateDefaultContext();
-        this->DeclareVectorInputPort("sim_scene_states", 18);
+        this->DeclareVectorInputPort("sim_scene_states", 24);
         std::cout<< (this->DeclareAbstractInputPort("spatial_forces_in",
             Value<std::vector<drake::multibody::SpatialForce<double>>>()).get_index());
         std::cout << "index is above" << std::endl;
@@ -42,6 +42,9 @@ public:
             "log_data", 18,
             &extractData::CalcLogData);
         
+        this->DeclareVectorOutputPort(
+            "position_rotation", 12,
+            &extractData::ExtractPosRot);
         
     }
 
@@ -57,10 +60,10 @@ private:
         Eigen::Vector3d pos;
         Eigen::Vector3d omega;
         Eigen::Vector3d v;
-        Eigen::VectorXd q(_plant.num_actuators());
-        Eigen::VectorXd qdot(_plant.num_actuators());
+        Eigen::VectorXd q(6);
+        Eigen::VectorXd qdot(6);
 
-        Eigen::VectorXd scene_states(18);
+        Eigen::VectorXd scene_states(24);
         scene_states = this->GetInputPort("sim_scene_states").Eval(context);
         _plant.SetPositionsAndVelocities(_plant_context.get(), scene_states);
 
@@ -82,14 +85,15 @@ private:
 
         v = floating_base_farme.CalcSpatialVelocityInWorld(*_plant_context).translational();
 
-        // q
-        q = scene_states.segment<6>(3);
+        // q: x y z, r p y, q1,...q6 
+        // q = scene_states.segment<6>(3);
+        q = scene_states.segment<6>(6);
 
         // qdot                   
-        qdot = scene_states.segment<6>(12);                 
+        qdot = scene_states.segment<6>(18);                 
 
         // Q: what is the reference frame of floating base system in drake?
-        // A: 
+        // A: world
         full_states.segment<4>(0) = quat;
         full_states.segment<3>(4) = pos;
         full_states.segment<6>(7) = q;
@@ -131,7 +135,7 @@ private:
         log_data.segment<3>(9) = linear_vel;
 
         // Part 2: forces data
-        // spatial_vec include 12x6 wrenches(for each joint)
+        // spatial_vec include 12x6 wrenches for each joint; including the fixed joints and the 'worldWeld' joint
         const std::vector<drake::multibody::SpatialForce<double>>& spatial_vec =
             this->GetInputPort("spatial_forces_in").template Eval<std::vector<drake::multibody::SpatialForce<double>>>(context);
         Eigen::Matrix<double ,6, 1> wrenches = spatial_vec[11].get_coeffs();
@@ -139,6 +143,20 @@ private:
         log_data.segment<6>(12) = wrenches;
 
         logoutput->set_value(log_data);
+    }
+
+    void ExtractPosRot(const systems::Context<T>& context,
+                           systems::BasicVector<T>* output) const {
+        Eigen::VectorXd scene_states(24); // [x, y ,z], [r, p, y], [q1, ..., q6]
+        scene_states = this->GetInputPort("sim_scene_states").Eval(context);
+        Eigen::VectorXd pos_and_rpy(12); pos_and_rpy.setZero();
+        pos_and_rpy.segment<3>(0) = scene_states.segment<3>(0); // [x, y ,z]
+        pos_and_rpy.segment<3>(3) = scene_states.segment<3>(3); // [r, p, y]
+        pos_and_rpy.segment<3>(6) = scene_states.segment<3>(12);
+        pos_and_rpy.segment<3>(9) = scene_states.segment<3>(15);
+        
+        output->set_value(pos_and_rpy);
+
     }
 
 };

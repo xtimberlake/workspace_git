@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-16 17:07:03
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-21 21:25:49
+ * @LastEditTime: 2022-10-22 16:06:26
  * @FilePath: /drake/workspace/centaur_sim/controller/WBIController.cc
  * @Description: 
  * 
@@ -58,6 +58,9 @@ WBIController::WBIController(/* args */):
         _foot_contact[i] = new SingleContact<double>(&(ctModel._fb_model), i); // foot contact
         _foot_task[i] = new LinkPosTask<double>(&(ctModel._fb_model), i);
     }
+
+    tau_dist.setZero();
+
     
 }
 
@@ -127,6 +130,11 @@ void WBIController::update_model(CentaurStates& state) {
     
     // std::cout << "-----" << std::endl;
 
+    Eigen::Matrix3d I3; I3.setIdentity();
+    SXform<double> cXcom = createSXform(I3, state.sphere_joint_location);
+    tau_dist.head(6) = cXcom.transpose() * state.external_wrench;
+
+    // std::cout << "tau_dist = " << tau_dist.transpose() << std::endl;
 
 }
 
@@ -160,14 +168,16 @@ void WBIController::update_contact_task(CentaurStates& state) {
     for (size_t leg(0); leg < 2; leg++)
     {
         if (state.plan_contacts_phase[leg] > 0.) { // contact
-            // NOTICE: the sign of GRF
+            
+            // impulse vertical force that used in jumping  gait
             Vec3<double> impulse_force;
             impulse_force.setZero();
             if (state.plan_contacts_phase[leg] >= 0.95) {
 
                 impulse_force[2] = 0 * sin(M_PI * (state.plan_contacts_phase[leg] - 0.95) / 0.05);
             }
-            
+
+            // NOTICE: the sign of GRF
             _foot_contact[leg]->setRFDesired(state.foot_force_cmd_world.block<3, 1>(0, leg) + impulse_force);
             _foot_contact[leg]->UpdateContactSpec();
             _contact_list.push_back(_foot_contact[leg]);
@@ -477,11 +487,11 @@ void WBIController::_SetEqualityConstraint(const DVec<double>& qddot) {
     CE.block(0, _dim_floating, _dim_eq_cstr, _dim_rf) =
       -Sv_ * _Jc.transpose();
     ce0 = -Sv_ * (_A * qddot + _coriolis + _grav -
-        _Jc.transpose() * _Fr_des);
+        _Jc.transpose() * _Fr_des - tau_dist);
     } else {
         CE.block(0, 0, _dim_eq_cstr, _dim_floating) =
         _A.block(0, 0, _dim_floating, _dim_floating);
-        ce0 = -Sv_ * (_A * qddot + _coriolis + _grav);
+        ce0 = -Sv_ * (_A * qddot + _coriolis + _grav - tau_dist);
     }
 
     // std::cout << "_Fr_des = (" << _Fr_des.rows() << "," << _Fr_des.cols() << ") = " << std::endl;
@@ -577,8 +587,8 @@ void WBIController::_InverseDyn(const DVec<double>& qddot_original, DVec<double>
     // qddot_cmd[0] = 0.0;   // roll
     // qddot_cmd[1] = 0.0; // pitch
     // qddot_cmd[2] = 0.0; // yaw
-    qddot_cmd[3] = 0.0; // x
-    qddot_cmd[4] = 0.0; // y 
+    // qddot_cmd[3] = 0.0; // x
+    // qddot_cmd[4] = 0.0; // y 
     // qddot_cmd[5] = 20.0; // z
 
     if (_dim_rf > 0) {
@@ -586,13 +596,13 @@ void WBIController::_InverseDyn(const DVec<double>& qddot_original, DVec<double>
             Fr[i] = z_star[i + _dim_floating] + _Fr_des[i];
         
         total_tau = 
-            _A * qddot_cmd + _coriolis + _grav - _Jc.transpose() * Fr;
-        total_tau = 
-            _A * qddot_original + _coriolis + _grav - _Jc.transpose() * Fr;
+            _A * qddot_cmd + _coriolis + _grav - _Jc.transpose() * Fr - tau_dist;
+        // total_tau = 
+        //     _A * qddot_original + _coriolis + _grav - _Jc.transpose() * Fr;
         // total_tau = 
         //     - _Jc.transpose() * _Fr_des;
     } else {
-        total_tau = _A * qddot_cmd + _coriolis + _grav;
+        total_tau = _A * qddot_cmd + _coriolis + _grav - tau_dist;
         // total_tau.setZero();
     }
 
@@ -602,7 +612,7 @@ void WBIController::_InverseDyn(const DVec<double>& qddot_original, DVec<double>
     // std::cout << "---" << std::endl;
 
     // std::cout << "_A * qddot_cmd  = " << (total_tau).transpose() << std::endl;
-    std::cout << "before fmpc = " << _Fr_des.transpose() << ". After wbc fr = " << Fr.transpose() << std::endl;
+    // std::cout << "before fmpc = " << _Fr_des.transpose() << ". After wbc fr = " << Fr.transpose() << std::endl;
 
     tao_j = total_tau.tail(num_act_joint_); 
 }
