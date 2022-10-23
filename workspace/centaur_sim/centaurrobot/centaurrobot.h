@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 16:07:26
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-23 11:31:13
+ * @LastEditTime: 2022-10-23 20:15:27
  * @FilePath: /drake/workspace/centaur_sim/centaurrobot/centaurrobot.h
  * @Description: define centaur robot handle
  * 
@@ -27,9 +27,9 @@ public:
     {
         
         standing = new CentuarGaitPattern(0.5, ctrl_states.ctrl_params_const, Eigen::Vector2f(1.0, 1.0), Eigen::Vector2f(0.0, 0.5)); 
-        // walking = new CentuarGaitPattern(0.5, ctrl_states.ctrl_params_const, Eigen::Vector2f(0.5, 0.5), Eigen::Vector2f(0.0, 0.5)); 
-        jumping = new CentuarGaitPattern(0.5, ctrl_states.ctrl_params_const, Eigen::Vector2f(0.75, 0.75), Eigen::Vector2f(0.0, 0.0)); 
-        // galloping = new CentuarGaitPattern(0.5, ctrl_states.ctrl_params_const, Eigen::Vector2f(0.5, 0.5), Eigen::Vector2f(0.0, 0.25)); 
+        walking = new CentuarGaitPattern(0.5, ctrl_states.ctrl_params_const, Eigen::Vector2f(0.5, 0.5), Eigen::Vector2f(0.0, 0.5)); 
+        // jumping = new CentuarGaitPattern(0.5, ctrl_states.ctrl_params_const, Eigen::Vector2f(0.75, 0.75), Eigen::Vector2f(0.0, 0.0)); 
+        // fly_trotting = new CentuarGaitPattern(0.5, ctrl_states.ctrl_params_const, Eigen::Vector2f(0.3, 0.3), Eigen::Vector2f(0.0, 0.5)); 
 
         controller = new CentaurControl(ctrl_states.ctrl_params_const);
         
@@ -47,9 +47,9 @@ public:
     
     CentuarGaitPattern* standing;
     FloatingBaseModel centaur_dynamics_model;
-    // CentuarGaitPattern* walking;
-    CentuarGaitPattern* jumping;
-    // CentuarGaitPattern* galloping;
+    CentuarGaitPattern* walking;
+    // CentuarGaitPattern* jumping;
+    // CentuarGaitPattern* fly_trotting;
 
 
 };

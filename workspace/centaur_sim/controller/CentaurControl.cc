@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:31:07
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-23 11:28:19
+ * @LastEditTime: 2022-10-23 21:09:53
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurControl.cc
  * @Description: 
  * 
@@ -123,7 +123,7 @@ void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
 
     
     for (int leg = 0; leg < 2; leg++) {
-        Eigen::Matrix<double, 3, 1> offset( state.ctrl_params_const.default_foot_pos_under_hip.at(0), side_sign[leg] * .0, 0);
+        Eigen::Matrix<double, 3, 1> offset(1.0 * state.ctrl_params_const.default_foot_pos_under_hip.at(0), side_sign[leg] * .0, 0);
         swingTimeRemain = (1 - state.plan_swings_phase[leg]) * state.gait_period * (1 - state.stance_duration[leg]);
         tStance = (state.gait_period * state.stance_duration(leg));
         pShoulder_world.block<3, 1>(0, leg) = state.root_pos + state.root_rot_mat * (state.hipLocation_local.block<3, 1>(0, leg) + offset);
@@ -137,12 +137,12 @@ void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
         pDelta[1] = (pDelta[1]>FOOT_DELTA_Y_LIMIT)?(FOOT_DELTA_Y_LIMIT):((pDelta[1]<-FOOT_DELTA_Y_LIMIT)?(-FOOT_DELTA_Y_LIMIT):pDelta[1]);
 
         foot_final_pos = pYawCorrected + pDelta;
-        foot_final_pos[2] = 0.00; // height in world frame
+        foot_final_pos[2] = -0.003; // height in world frame
 
-        if (leg == 0) {
-            std::cout << "pSymmetry = " << pSymmetry.transpose() << ", " << "pCentrifugal = " << pCentrifugal.transpose() << "," 
-            << "swingT*vel =  " << swingTimeRemain * state.root_lin_vel_world.transpose() << std::endl;
-        }
+        // if (leg == 0) {
+        //     std::cout << "pSymmetry = " << pSymmetry.transpose() << ", " << "pCentrifugal = " << pCentrifugal.transpose() << "," 
+        //     << "swingT*vel =  " << swingTimeRemain * state.root_lin_vel_world.transpose() << std::endl;
+        // }
         
 
         state.foothold_dest_world.block<3, 1>(0, leg) = foot_final_pos;

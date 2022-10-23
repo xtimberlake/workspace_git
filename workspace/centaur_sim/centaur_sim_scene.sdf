@@ -6,7 +6,7 @@
     <visual name='visual'>
       <pose>0 0 -0.025 0 0 0</pose>
       <geometry>
-        <box>  <size>10.0 8.0 0.05</size> </box>
+        <box>  <size>25.0 10.0 0.05</size> </box>
       </geometry>
       <material>
         <diffuse>0.9 0.8 0.7 0.6</diffuse>
@@ -15,7 +15,7 @@
     <collision name="collision">
       <pose>0 0 -0.025 0 0 0</pose>
       <geometry>
-        <box>  <size>10.0 8.0 0.05</size> </box>
+        <box>  <size>25.0 10.0 0.05</size> </box>
       </geometry>
     </collision>
   </link>
@@ -124,26 +124,6 @@
   </joint>
 
 
-  <!-- <frame name='f_t_sensor_frame' attached_to='ground'> 
-    <pose relative_to='ground'>0.217 0 0.9005 0 0 0</pose>
-  </frame>
-
-  <link name='f_t_sensor_link'>
-    <pose relative_to='f_t_sensor_frame'>0 0 0 0 0 0</pose>
-    <visual name='visual'>
-      <pose relative_to='f_t_sensor_frame'>0 0 0 0 0 0</pose>
-      <geometry> <box> <size>0.02 0.02 0.02</size> </box> </geometry>
-      <material>
-        <diffuse>0.5 0.1 0.1 0.6</diffuse>
-      </material>
-    </visual>  
-  </link>
-
-  <joint name='f_t_sensor_fixed_joint' type='fixed'>
-    <pose relative_to='f_t_sensor_frame'>0.0005 0 0 0 0 0</pose>
-    <parent>ground</parent>
-    <child>f_t_sensor_link</child>
-  </joint> -->
 
   <frame name='ball_joint_frame' attached_to='f_t_sensor_link'> 
     <pose relative_to='f_t_sensor_link'>-0.01 0 0 0 0 0</pose>

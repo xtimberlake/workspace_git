@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-14 12:43:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-23 11:31:31
+ * @LastEditTime: 2022-10-23 22:10:55
  * @FilePath: /drake/workspace/centaur_sim/centaur_controller.h
  * @Description: controller block for drake simulation
  * 
@@ -93,22 +93,51 @@ private:
 
         prismatic_joint_q = pos_rpy_states.head(3);
         prismatic_joint_qdot = pos_rpy_states.segment<3>(6);
-        prismatic_joint_q_des[0] += 0.0001;
+
+        double v_des, v_now, delta_x, buffTime;
+        delta_x = 0;
+        v_now = 0.0;
+        v_des = 0.6;
+        buffTime = 2.0; // secs
+        
+        if(ct->ctrl_states.t > 0.1) {
+
+            if(ct->ctrl_states.t < buffTime) {
+                v_now = v_des * sin(M_2_PI * ct->ctrl_states.t / buffTime);
+                // v_now += v_des/buffTime;
+            } else {
+                v_now = v_des;
+            }
+        }
+        delta_x = v_now * 5e-4;
+
+        prismatic_joint_q_des[0] += delta_x;
+
+        // position
+        ct->ctrl_states.root_pos_d[0] = prismatic_joint_q_des[0];
+        ct->ctrl_states.root_pos_d[1] = prismatic_joint_q_des[1];
+
+        // velocity
+        ct->ctrl_states.root_lin_vel_d_world[0] = v_now / 4.0;
+
 
         total_torques.head(3) = 100000 * (prismatic_joint_q_des - pos_rpy_states) 
                                 + 20000 * (prismatic_joint_qdot_des - prismatic_joint_qdot);
+
 
         if((ct->ctrl_states.t - ct->ctrl_states.k * ct->ctrl_states.control_dt) > ct->ctrl_states.control_dt)
         {   
             // running at 1 kHz
             ct->ctrl_states.k++;
 
-            if(ct->ctrl_states.t < 0.5) { // start trotting in 0.5 seconds
+            if(ct->ctrl_states.t < 0.1) { // start trotting in 0.5 seconds
                 ct->standing->update_gait_pattern(ct->ctrl_states);
             }
             else {
-                // ct->walking->update_gait_pattern(ct->ctrl_states);
-                ct->jumping->update_gait_pattern(ct->ctrl_states);
+                ct->walking->update_gait_pattern(ct->ctrl_states);
+                // ct->jumping->update_gait_pattern(ct->ctrl_states);
+                // ct->galloping->update_gait_pattern(ct->ctrl_states);
+                
             }
 
             // swing
@@ -122,7 +151,7 @@ private:
             // whole-body impluse controller
             ct->wbicontroller->run(ct->ctrl_states);
 
-            if(ct->ctrl_states.t < 0.5) { // start trotting in 0.5 seconds
+            if(ct->ctrl_states.t < 0.1) { // start trotting in 0.5 seconds
                 // output_torques = ct->legcontroller->task_impedance_control(ct->ctrl_states);
                 output_torques = ct->legcontroller->wbc_low_level_control(ct->ctrl_states);
             }

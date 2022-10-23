@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-18 09:28:36
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-22 14:45:09
+ * @LastEditTime: 2022-10-23 21:03:22
  * @FilePath: /drake/workspace/centaur_sim/controller/ConvexMPC.cc
  * @Description: 
  * 
@@ -164,7 +164,7 @@ void ConvexMPC::Update_Xd_Trajectory(CentaurStates& state)
 {
     // velocity
     // state.root_euler_d[2] += 0.1;
-    // state.root_ang_vel_d_world = 0.5 * (state.root_euler_d - state.root_euler);
+    state.root_ang_vel_d_world = 0.5 * (state.root_euler_d - state.root_euler);
     // state.root_lin_vel_d_world = 0.5 * (state.root_pos_d - state.root_pos);
     for (int i = 0; i < MPC_HORIZON; i++)
     {

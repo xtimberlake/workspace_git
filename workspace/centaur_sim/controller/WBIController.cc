@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-16 17:07:03
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-23 11:32:30
+ * @LastEditTime: 2022-10-23 20:47:35
  * @FilePath: /drake/workspace/centaur_sim/controller/WBIController.cc
  * @Description: 
  * 
@@ -172,9 +172,9 @@ void WBIController::update_contact_task(CentaurStates& state) {
             // impulse vertical force that used in jumping  gait
             Vec3<double> impulse_force;
             impulse_force.setZero();
-            if (state.plan_contacts_phase[leg] >= 0.90) {
+            if (state.plan_contacts_phase[leg] >= 0.95) {
 
-                impulse_force[2] = 200 * sin(M_PI * (state.plan_contacts_phase[leg] - 0.90) / 0.1);
+                impulse_force[2] = 0.0 * sin(M_PI * (state.plan_contacts_phase[leg] - 0.95) / 0.05);
             }
 
             // NOTICE: the sign of GRF

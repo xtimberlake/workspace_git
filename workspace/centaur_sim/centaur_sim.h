@@ -268,7 +268,7 @@ namespace centaur_sim {
 
         // interest_data_logger: 0euler, 3pos, 6omega, 9lin_vel, 12wrenches at the f/t sensor
         const auto& log = interest_data_logger->FindLog(simulator.get_context());
-        const auto& controller_log_data = controller_logger->FindLog(simulator.get_context());
+        // const auto& controller_log_data = controller_logger->FindLog(simulator.get_context());
 
         common::CallPython("figure", 1);
         common::CallPython("clf");
@@ -280,37 +280,48 @@ namespace centaur_sim {
         // }
         // common::CallPython("plot", log.sample_times(),
         //                    desired_height);
-        common::CallPython("subplot", 4, 1, 1);
-        common::CallPython("plot", controller_log_data.sample_times(),
-                           controller_log_data.data().row(1).transpose());
-        common::CallPython("legend", common::ToPythonTuple("left contact state"));
 
 
-
-        common::CallPython("subplot", 4, 1, 2);
         common::CallPython("plot", log.sample_times(),
                            log.data().row(15).transpose());
-        common::CallPython("plot", controller_log_data.sample_times(),
-                           controller_log_data.data().row(2).transpose());
-        common::CallPython("legend", common::ToPythonTuple("grf_x", "tgt_grf_x"));
+                 
+        common::CallPython("legend", common::ToPythonTuple("fx"));
+        // common::CallPython("legend", common::ToPythonTuple("Desired Height(m)"));
+        common::CallPython("axis", "tight");
+
+
+        // // plot from controller
+        // common::CallPython("subplot", 4, 1, 1);
+        // common::CallPython("plot", controller_log_data.sample_times(),
+        //                    controller_log_data.data().row(1).transpose());
+        // common::CallPython("legend", common::ToPythonTuple("left contact state"));
+
+
+
+        // common::CallPython("subplot", 4, 1, 2);
+        // common::CallPython("plot", log.sample_times(),
+        //                    log.data().row(15).transpose());
+        // common::CallPython("plot", controller_log_data.sample_times(),
+        //                    controller_log_data.data().row(2).transpose());
+        // common::CallPython("legend", common::ToPythonTuple("grf_x", "tgt_grf_x"));
 
 
         
-        common::CallPython("subplot", 4, 1, 3);
-        common::CallPython("plot", log.sample_times(),
-                           log.data().row(16).transpose());
-        common::CallPython("plot", controller_log_data.sample_times(),
-                           controller_log_data.data().row(3).transpose());
-        common::CallPython("legend", common::ToPythonTuple("grf_y", "tgt_grf_y"));
+        // common::CallPython("subplot", 4, 1, 3);
+        // common::CallPython("plot", log.sample_times(),
+        //                    log.data().row(16).transpose());
+        // common::CallPython("plot", controller_log_data.sample_times(),
+        //                    controller_log_data.data().row(3).transpose());
+        // common::CallPython("legend", common::ToPythonTuple("grf_y", "tgt_grf_y"));
 
 
 
-        common::CallPython("subplot", 4, 1, 4);
-        common::CallPython("plot", log.sample_times(),
-                           log.data().row(17).transpose());
-        common::CallPython("plot", controller_log_data.sample_times(),
-                           controller_log_data.data().row(4).transpose());
-        common::CallPython("legend", common::ToPythonTuple("grf_z", "tgt_grf_z"));
+        // common::CallPython("subplot", 4, 1, 4);
+        // common::CallPython("plot", log.sample_times(),
+        //                    log.data().row(17).transpose());
+        // common::CallPython("plot", controller_log_data.sample_times(),
+        //                    controller_log_data.data().row(4).transpose());
+        // common::CallPython("legend", common::ToPythonTuple("grf_z", "tgt_grf_z"));
 
 
         // common::CallPython("axis", "tight");

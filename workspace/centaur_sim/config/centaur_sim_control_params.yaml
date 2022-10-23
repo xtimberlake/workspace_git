@@ -26,7 +26,7 @@ mu: 0.4
 
 
 # Swing foot
-default_foot_pos_under_hip: [-0.02, 0.0, -0.9]
+default_foot_pos_under_hip: [-0.04, 0.0, -0.9]
 
 # kinematics
 max_iter: 100

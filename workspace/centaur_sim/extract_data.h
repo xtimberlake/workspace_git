@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-19 09:55:16
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-22 21:12:36
+ * @LastEditTime: 2022-10-23 22:10:25
  * @FilePath: /drake/workspace/centaur_sim/extract_data.h
  * @Description: 
  * 
@@ -110,7 +110,7 @@ private:
         Eigen::VectorXd log_data(18);
         log_data.setZero();
         // Part 1: kinematics data
-        Eigen::VectorXd scene_states(18);
+        Eigen::VectorXd scene_states(24);
         scene_states = this->GetInputPort("sim_scene_states").Eval(context);
         _plant.SetPositionsAndVelocities(_plant_context.get(), scene_states);
 
@@ -138,7 +138,7 @@ private:
         // spatial_vec include 12x6 wrenches for each joint; including the fixed joints and the 'worldWeld' joint
         const std::vector<drake::multibody::SpatialForce<double>>& spatial_vec =
             this->GetInputPort("spatial_forces_in").template Eval<std::vector<drake::multibody::SpatialForce<double>>>(context);
-        Eigen::Matrix<double ,6, 1> wrenches = spatial_vec[11].get_coeffs();
+        Eigen::Matrix<double ,6, 1> wrenches = spatial_vec[4].get_coeffs();
         // std::cout << "spatial forces dimention = " << spatial_vec.size() << std::endl;
         log_data.segment<6>(12) = wrenches;
 
