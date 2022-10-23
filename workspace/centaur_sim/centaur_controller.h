@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-14 12:43:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-22 21:59:28
+ * @LastEditTime: 2022-10-23 11:31:31
  * @FilePath: /drake/workspace/centaur_sim/centaur_controller.h
  * @Description: controller block for drake simulation
  * 
@@ -82,19 +82,21 @@ private:
             
         Eigen::VectorXd total_torques(3 + _control_model.num_actuators()); total_torques.setZero();
         static Eigen::Matrix<double, 6, 1> output_torques = Eigen::Matrix<double, -1, 1>::Zero(6);
+        // output_torques.setZero();
         update_states(context);
 
         Eigen::VectorXd pos_rpy_states = this->GetInputPort("position_rotation").Eval(context);
         Eigen::Vector3d prismatic_joint_q; prismatic_joint_q.setZero();
         Eigen::Vector3d prismatic_joint_qdot; prismatic_joint_qdot.setZero();
-        Eigen::Vector3d prismatic_joint_q_des; prismatic_joint_q_des.setZero();
+        static Eigen::Vector3d prismatic_joint_q_des = Eigen::Vector3d::Zero();
         Eigen::Vector3d prismatic_joint_qdot_des; prismatic_joint_qdot_des.setZero();
 
         prismatic_joint_q = pos_rpy_states.head(3);
         prismatic_joint_qdot = pos_rpy_states.segment<3>(6);
+        prismatic_joint_q_des[0] += 0.0001;
 
         total_torques.head(3) = 100000 * (prismatic_joint_q_des - pos_rpy_states) 
-                                + 200 * (prismatic_joint_qdot_des - prismatic_joint_qdot);
+                                + 20000 * (prismatic_joint_qdot_des - prismatic_joint_qdot);
 
         if((ct->ctrl_states.t - ct->ctrl_states.k * ct->ctrl_states.control_dt) > ct->ctrl_states.control_dt)
         {   
@@ -105,8 +107,8 @@ private:
                 ct->standing->update_gait_pattern(ct->ctrl_states);
             }
             else {
-                ct->walking->update_gait_pattern(ct->ctrl_states);
-                // ct->jumping->update_gait_pattern(ct->ctrl_states);
+                // ct->walking->update_gait_pattern(ct->ctrl_states);
+                ct->jumping->update_gait_pattern(ct->ctrl_states);
             }
 
             // swing

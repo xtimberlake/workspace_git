@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:31:07
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-22 14:41:24
+ * @LastEditTime: 2022-10-23 11:28:19
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurControl.cc
  * @Description: 
  * 
@@ -81,74 +81,74 @@ Eigen::Matrix<double, 3, 2> CentaurControl::ComputeGoundReactionForce(CentaurSta
 
 void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
 {
-    // Step 1: update foot_pos_dest_rel
-    // Raibert Heuristic, calculate foothold position
-    state.foothold_dest_rel = state.default_foot_pos_rel;
-    Eigen::Vector3d lin_vel_rel = state.root_rot_mat.transpose() * state.root_lin_vel_world;
+    // // Step 1: update foot_pos_dest_rel
+    // // Raibert Heuristic, calculate foothold position
+    // state.foothold_dest_rel = state.default_foot_pos_rel;
+    // Eigen::Vector3d lin_vel_rel = state.root_rot_mat.transpose() * state.root_lin_vel_world;
 
-    for (int leg = 0; leg < 2; leg++) // two legs
-    {
-        double swingTimeRemain = (1 - state.plan_swings_phase[leg]) * state.gait_period * (1 - state.stance_duration[leg]);
+    // for (int leg = 0; leg < 2; leg++) // two legs
+    // {
+    //     double swingTimeRemain = (1 - state.plan_swings_phase[leg]) * state.gait_period * (1 - state.stance_duration[leg]);
 
-        double delta_x =
-                8 * std::sqrt(std::abs(0.9/*state.default_foot_pos_rel(2)*/) / 9.81) * (lin_vel_rel(0) - state.root_lin_vel_d_rel(0))
-                + (state.gait_period * state.stance_duration(leg)) / 2.0 * state.root_lin_vel_d_rel(0)
-                + swingTimeRemain * lin_vel_rel(0);
+    //     double delta_x =
+    //             8 * std::sqrt(std::abs(0.9/*state.default_foot_pos_rel(2)*/) / 9.81) * (lin_vel_rel(0) - state.root_lin_vel_d_rel(0))
+    //             + (state.gait_period * state.stance_duration(leg)) / 2.0 * state.root_lin_vel_d_rel(0)
+    //             + swingTimeRemain * lin_vel_rel(0);
         
-        double delta_y =
-                8 * std::sqrt(std::abs(0.9/*state.default_foot_pos_rel(2)*/) / 9.81) * (lin_vel_rel(1) - state.root_lin_vel_d_rel(1))
-                + (state.gait_period * state.stance_duration(leg))  / 2.0 * state.root_lin_vel_d_rel(1)
-                + swingTimeRemain * lin_vel_rel(1);
+    //     double delta_y =
+    //             8 * std::sqrt(std::abs(0.9/*state.default_foot_pos_rel(2)*/) / 9.81) * (lin_vel_rel(1) - state.root_lin_vel_d_rel(1))
+    //             + (state.gait_period * state.stance_duration(leg))  / 2.0 * state.root_lin_vel_d_rel(1)
+    //             + swingTimeRemain * lin_vel_rel(1);
 
-        delta_x = (delta_x>FOOT_DELTA_X_LIMIT)?(FOOT_DELTA_X_LIMIT):((delta_x<-FOOT_DELTA_X_LIMIT)?(-FOOT_DELTA_X_LIMIT):delta_x);
-        delta_y = (delta_y>FOOT_DELTA_Y_LIMIT)?(FOOT_DELTA_Y_LIMIT):((delta_y<-FOOT_DELTA_Y_LIMIT)?(-FOOT_DELTA_Y_LIMIT):delta_y);
+    //     delta_x = (delta_x>FOOT_DELTA_X_LIMIT)?(FOOT_DELTA_X_LIMIT):((delta_x<-FOOT_DELTA_X_LIMIT)?(-FOOT_DELTA_X_LIMIT):delta_x);
+    //     delta_y = (delta_y>FOOT_DELTA_Y_LIMIT)?(FOOT_DELTA_Y_LIMIT):((delta_y<-FOOT_DELTA_Y_LIMIT)?(-FOOT_DELTA_Y_LIMIT):delta_y);
         
-        state.foothold_dest_rel(0, leg) += delta_x;
-        state.foothold_dest_rel(1, leg) += delta_y;
+    //     state.foothold_dest_rel(0, leg) += delta_x;
+    //     state.foothold_dest_rel(1, leg) += delta_y;
         
-        state.foothold_dest_abs.block<3, 1>(0, leg) = state.root_rot_mat * state.foothold_dest_rel.block<3, 1>(0, leg);
-        state.foothold_dest_world.block<3, 1>(0, leg) = state.foothold_dest_abs.block<3, 1>(0, leg) + state.root_pos;
+    //     state.foothold_dest_abs.block<3, 1>(0, leg) = state.root_rot_mat * state.foothold_dest_rel.block<3, 1>(0, leg);
+    //     state.foothold_dest_world.block<3, 1>(0, leg) = state.foothold_dest_abs.block<3, 1>(0, leg) + state.root_pos;
 
-    }
+    // }
 
-    // Eigen::Matrix<double, 3, 2> pShoulder_world; pShoulder_world.setZero();
-    // Eigen::Matrix<double, 3, 1> pSymmetry; pSymmetry.setZero();
-    // Eigen::Matrix<double, 3, 1> pCentrifugal; pCentrifugal.setZero();
-    // Eigen::Matrix<double, 3, 1> pYawCorrected; pYawCorrected.setZero();
-    // Eigen::Matrix<double, 3, 1> pDelta; pDelta.setZero();
-    // Eigen::Matrix<double, 3, 1> foot_final_pos; foot_final_pos.setZero();
-    // double tStance;
-    // double swingTimeRemain;
-    // int side_sign[2] = {1, -1};
+    Eigen::Matrix<double, 3, 2> pShoulder_world; pShoulder_world.setZero();
+    Eigen::Matrix<double, 3, 1> pSymmetry; pSymmetry.setZero();
+    Eigen::Matrix<double, 3, 1> pCentrifugal; pCentrifugal.setZero();
+    Eigen::Matrix<double, 3, 1> pYawCorrected; pYawCorrected.setZero();
+    Eigen::Matrix<double, 3, 1> pDelta; pDelta.setZero();
+    Eigen::Matrix<double, 3, 1> foot_final_pos; foot_final_pos.setZero();
+    double tStance;
+    double swingTimeRemain;
+    int side_sign[2] = {1, -1};
 
     
-    // for (int leg = 0; leg < 2; leg++) {
-    //     Eigen::Matrix<double, 3, 1> offset(state.ctrl_params_const.default_foot_pos_under_hip.at(0), side_sign[leg] * .06, 0);
-    //     swingTimeRemain = (1 - state.plan_swings_phase[leg]) * state.gait_period * (1 - state.stance_duration[leg]);
-    //     tStance = (state.gait_period * state.stance_duration(leg));
-    //     pShoulder_world.block<3, 1>(0, leg) = state.root_pos + state.root_rot_mat * (state.hipLocation_local.block<3, 1>(0, leg) + offset);
-    //     pYawCorrected = ori::coordinateRotation(ori::CoordinateAxis::Z, - state.root_ang_vel_d_world[2] * tStance / 2) * pShoulder_world.block<3, 1>(0, leg);
+    for (int leg = 0; leg < 2; leg++) {
+        Eigen::Matrix<double, 3, 1> offset( state.ctrl_params_const.default_foot_pos_under_hip.at(0), side_sign[leg] * .0, 0);
+        swingTimeRemain = (1 - state.plan_swings_phase[leg]) * state.gait_period * (1 - state.stance_duration[leg]);
+        tStance = (state.gait_period * state.stance_duration(leg));
+        pShoulder_world.block<3, 1>(0, leg) = state.root_pos + state.root_rot_mat * (state.hipLocation_local.block<3, 1>(0, leg) + offset);
+        pYawCorrected = ori::coordinateRotation(ori::CoordinateAxis::Z, - state.root_ang_vel_d_world[2] * tStance / 2) * pShoulder_world.block<3, 1>(0, leg);
 
-    //     pSymmetry = 5 * tStance / 2.0 * state.root_lin_vel_world + 0.05 * (state.root_lin_vel_world - state.root_lin_vel_d_world);
-    //     pCentrifugal = std::sqrt(std::abs(/*state.root_pos(2)*/0.9) / 9.81)/2.0 * state.root_lin_vel_world.cross(state.root_ang_vel_d_world);
+        pSymmetry = tStance / 2.0 * state.root_lin_vel_world + 0.03 * (state.root_lin_vel_world - state.root_lin_vel_d_world);
+        pCentrifugal = std::sqrt(std::abs(/*state.root_pos(2)*/0.9) / 9.81)/2.0 * state.root_lin_vel_world.cross(state.root_ang_vel_d_world);
 
-    //     pDelta = pSymmetry + pCentrifugal + swingTimeRemain * state.root_lin_vel_world;
-    //     pDelta[0] = (pDelta[0]>FOOT_DELTA_X_LIMIT)?(FOOT_DELTA_X_LIMIT):((pDelta[0]<-FOOT_DELTA_X_LIMIT)?(-FOOT_DELTA_X_LIMIT):pDelta[0]);
-    //     pDelta[1] = (pDelta[1]>FOOT_DELTA_Y_LIMIT)?(FOOT_DELTA_Y_LIMIT):((pDelta[1]<-FOOT_DELTA_Y_LIMIT)?(-FOOT_DELTA_Y_LIMIT):pDelta[1]);
+        pDelta = pSymmetry + pCentrifugal + swingTimeRemain * state.root_lin_vel_world;
+        pDelta[0] = (pDelta[0]>FOOT_DELTA_X_LIMIT)?(FOOT_DELTA_X_LIMIT):((pDelta[0]<-FOOT_DELTA_X_LIMIT)?(-FOOT_DELTA_X_LIMIT):pDelta[0]);
+        pDelta[1] = (pDelta[1]>FOOT_DELTA_Y_LIMIT)?(FOOT_DELTA_Y_LIMIT):((pDelta[1]<-FOOT_DELTA_Y_LIMIT)?(-FOOT_DELTA_Y_LIMIT):pDelta[1]);
 
-    //     foot_final_pos = pYawCorrected + pDelta;
-    //     foot_final_pos[2] = 0.003; // height in world frame
+        foot_final_pos = pYawCorrected + pDelta;
+        foot_final_pos[2] = 0.00; // height in world frame
 
-    //     if (leg == 0) {
-    //         std::cout << "pSymmetry = " << pSymmetry.transpose() << ", " << "pCentrifugal = " << pCentrifugal.transpose() << "," 
-    //         << "swingT*vel =  " << swingTimeRemain * state.root_lin_vel_world.transpose() << std::endl;
-    //     }
+        if (leg == 0) {
+            std::cout << "pSymmetry = " << pSymmetry.transpose() << ", " << "pCentrifugal = " << pCentrifugal.transpose() << "," 
+            << "swingT*vel =  " << swingTimeRemain * state.root_lin_vel_world.transpose() << std::endl;
+        }
         
 
-    //     state.foothold_dest_world.block<3, 1>(0, leg) = foot_final_pos;
-    //     state.foothold_dest_abs.block<3, 1>(0, leg) = state.foothold_dest_world.block<3, 1>(0, leg) - state.root_pos;
-    //     state.foothold_dest_rel.block<3, 1>(0, leg) = state.root_rot_mat.transpose() * state.foothold_dest_abs.block<3, 1>(0, leg);
-    // }
+        state.foothold_dest_world.block<3, 1>(0, leg) = foot_final_pos;
+        state.foothold_dest_abs.block<3, 1>(0, leg) = state.foothold_dest_world.block<3, 1>(0, leg) - state.root_pos;
+        state.foothold_dest_rel.block<3, 1>(0, leg) = state.root_rot_mat.transpose() * state.foothold_dest_abs.block<3, 1>(0, leg);
+    }
     
 
 
