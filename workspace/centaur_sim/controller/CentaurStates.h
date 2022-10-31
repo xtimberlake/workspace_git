@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:30:49
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-21 15:00:31
+ * @LastEditTime: 2022-10-31 20:23:34
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurStates.h
  * @Description: define all the states that used in controller; mainly 
  *                adapted from https://github.com/ShuoYangRobotics/A1-QP-MPC-Controller
@@ -68,6 +68,7 @@ struct robot_params_constant {
     double mass;
     std::vector<double> sphere_joint_location;
     std::vector<double> left_hip_location;
+    std::vector<double> ext_wrench;
 
 
     template <typename Archive>
@@ -81,6 +82,7 @@ struct robot_params_constant {
         a->Visit(DRAKE_NVP(Iyz));
         a->Visit(DRAKE_NVP(sphere_joint_location));
         a->Visit(DRAKE_NVP(left_hip_location));
+        a->Visit(DRAKE_NVP(ext_wrench));
         
     }
 };
@@ -165,11 +167,27 @@ class CentaurStates {
         this->root_ang_acc_d_world.setZero();
       
         // Others:
-        this->external_wrench << 0, 0, 0, 0, 0, 15;
+        // this->external_wrench << 0, 0, 0, -40.0, 0, 15;
+        for (size_t i = 0; i < 6; i++) {
+            this->external_wrench[i] = robot_params_const.ext_wrench.at(i);
+        }
+        
+        
 
         wbc_q_cmd.setZero();
         wbc_qdot_cmd.setZero();
         wbc_tau_ff.setZero();
+
+        foot_force_cmd_world_wbc.setZero();
+
+        this->firstRun = true;
+
+        this->tau_feedback.setZero();
+
+        this->hri_wrench_realtime.setZero();
+
+        plan_contacts_phase.setZero();
+        plan_swings_phase.setZero();
     }
 
     // variables
@@ -247,14 +265,19 @@ class CentaurStates {
     Eigen::Matrix<double, 3, 2> foot_acc_cmd_rel;    // command
     Eigen::Matrix<double, 3, 2> foot_acc_cmd_world;
     
+    Eigen::Matrix<double, 3, 2> foot_force_rel;    // estimate from motors' torques
+    Eigen::Matrix<double, 3, 2> foot_force_world;  
+
     Eigen::Matrix<double, 3, 2> foot_force_cmd_rel;    // command
-    Eigen::Matrix<double, 3, 2> foot_force_cmd_world;
+    Eigen::Matrix<double, 3, 2> foot_force_cmd_world;  // from mpc
+    Eigen::Matrix<double, 3, 2> foot_force_cmd_world_wbc;  // after wbc
 
     Eigen::Matrix<double, 3, 3> JacobianFoot[2];
 
     // motors
     Eigen::Matrix<double, 6, 1> q, qdot, q_cmd, qdot_cmd, tau_ff;
     Eigen::Matrix<double, 6, 1> tau;
+    Eigen::Matrix<double, 6, 1> tau_feedback;
 
     // ik
     int max_iter;
@@ -271,11 +294,14 @@ class CentaurStates {
 
     // Others
     Eigen::Matrix<double, 6, 1> external_wrench;
+    Eigen::Matrix<double, 6, 1> hri_wrench_realtime;
     
     // wbc
     Eigen::Matrix<double, 6, 1> wbc_q_cmd, wbc_qdot_cmd, wbc_tau_ff;
 
     // configuration
     Eigen::Matrix<double, 3, 2> hipLocation_local;
+
+    bool firstRun;
 
 };

@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-22 08:44:58
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-22 15:15:40
+ * @LastEditTime: 2022-10-31 19:13:58
  * @FilePath: /drake/workspace/centaur_sim/controller/LegController.cc
  * @Description: 
  * 
@@ -12,10 +12,16 @@
 
 LegController::LegController()
 {
-    this->_kp_stance << 5.0, 2, 2;
-    this->_kd_stance << 5.0, 2, 2;
+    // this->_kp_stance << 5.0, 2, 2;
+    // this->_kd_stance << 5.0, 2, 2;
 
-    this->_kp_swing << 100.0, 100, 50;
+    // this->_kp_swing << 100.0, 100, 50;
+    // this->_kd_swing << 200.0, 200, 100;
+
+    this->_kp_stance << 50.0, 20, 20;
+    this->_kd_stance << 20.0, 20, 25;
+
+    this->_kp_swing << 200.0, 200, 150;
     this->_kd_swing << 200.0, 200, 100;
 
     // // wbc 
@@ -108,6 +114,7 @@ Eigen::Matrix<double, 6, 1> LegController::wbc_low_level_control(CentaurStates& 
                 + _kd_joint_swing.cwiseProduct(state.wbc_qdot_cmd.segment<3>(3 * leg) - state.qdot.segment<3>(3 * leg));
         }
     }
+    state.tau = torques;
 
     return torques;
 }

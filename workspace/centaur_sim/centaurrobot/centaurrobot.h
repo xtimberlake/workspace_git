@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 16:07:26
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-23 20:15:27
+ * @LastEditTime: 2022-10-25 14:47:38
  * @FilePath: /drake/workspace/centaur_sim/centaurrobot/centaurrobot.h
  * @Description: define centaur robot handle
  * 

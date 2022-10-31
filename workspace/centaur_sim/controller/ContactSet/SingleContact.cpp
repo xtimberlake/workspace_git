@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-10-10 15:11:18
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-14 20:49:03
+ * @LastEditTime: 2022-10-24 15:52:41
  * @FilePath: /drake/workspace/centaur_sim/controller/ContactSet/SingleContact.cpp
  * @Description: 
  * 
@@ -21,7 +21,7 @@ SingleContact<T>::SingleContact(const FloatingBaseModel* robot, int pt)
   Contact::JcDotQdot_ = DVec<T>::Zero(Contact::dim_contact_);
   Contact::Uf_ = DMat<T>::Zero(_dim_U, Contact::dim_contact_);
 
-  T mu(0.4);
+  T mu(0.3);
 
   Contact::Uf_(0, 2) = 1.;
 

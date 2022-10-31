@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-17 11:21:35
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-22 19:45:07
+ * @LastEditTime: 2022-10-31 17:23:30
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurGaitPattern.cc
  * @Description: 
  * 
@@ -41,7 +41,14 @@ void CentuarGaitPattern::update_gait_pattern(CentaurStates& state)
     state.gait_period = this->_gait_period;
     state.stance_duration = this->_stance_duration;
     _gait_counter_speed = _gait_total_counter / (_gait_period / state.control_dt);
-    _gait_counter += _gait_counter_speed;
+    if (state.firstRun) {
+        _gait_counter = _gait_total_counter / 4;
+        state.firstRun = false;
+        // std::cout << "frist run _gait_counter = " << _gait_counter << std::endl;
+    } else {
+        _gait_counter += _gait_counter_speed;
+    }
+
     _gait_counter = std::fmod(_gait_counter, _gait_total_counter);
    
     _phase = _gait_counter / _gait_total_counter;

@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-16 17:07:03
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-23 20:47:35
+ * @LastEditTime: 2022-10-31 16:39:39
  * @FilePath: /drake/workspace/centaur_sim/controller/WBIController.cc
  * @Description: 
  * 
@@ -134,6 +134,7 @@ void WBIController::update_model(CentaurStates& state) {
     SXform<double> cXcom = createSXform(I3, state.sphere_joint_location);
     tau_dist.head(6) = cXcom.transpose() * state.external_wrench;
 
+    // std::cout << "state.external_wrench = " << state.external_wrench.transpose() << std::endl;
     // std::cout << "tau_dist = " << tau_dist.transpose() << std::endl;
 
 }
@@ -454,11 +455,11 @@ void WBIController::_SetCost() {
   size_t idx_offset(0);
 
   // d/dt{[wx wy wz vx vy vz]}
-  G.block<6, 6>(0, 0).diagonal() << 0.1, 0.1, 0.1, 0, 0, 0.1;
+  G.block<6, 6>(0, 0).diagonal() << 0.1, 0.1, 0.1, 0.1, 0.1, 0.1;
 
   idx_offset += _dim_floating;
   for (size_t i(0); i < _dim_rf; ++i) {
-    G(i + idx_offset, i + idx_offset) = 1.0;
+    G(i + idx_offset, i + idx_offset) = .25;
   }
 
 }
@@ -592,8 +593,10 @@ void WBIController::_InverseDyn(const DVec<double>& qddot_original, DVec<double>
     // qddot_cmd[5] = 20.0; // z
 
     if (_dim_rf > 0) {
-        for (size_t i(0); i < _dim_rf; ++i)
+        for (size_t i(0); i < _dim_rf; ++i) {
             Fr[i] = z_star[i + _dim_floating] + _Fr_des[i];
+        }
+            
         
         total_tau = 
             _A * qddot_cmd + _coriolis + _grav - _Jc.transpose() * Fr - tau_dist;
@@ -606,13 +609,16 @@ void WBIController::_InverseDyn(const DVec<double>& qddot_original, DVec<double>
         // total_tau.setZero();
     }
 
+    // std::cout << "Jc = " << std::endl << _Jc.transpose() << std::endl;
     // std::cout << "qddot_original = " << qddot_original.transpose() << std::endl;
     // std::cout << "qddot_cmd = " << qddot_cmd.transpose() << std::endl;
-    // // std::cout << "A = (" << _A.rows() << "," << _A.cols() << ")" << " = " << std::endl << _A << std::endl; 
+    // std::cout << "A = (" << _A.rows() << "," << _A.cols() << ")" << " = " << std::endl << _A << std::endl; 
     // std::cout << "---" << std::endl;
-
-    // std::cout << "_A * qddot_cmd  = " << (total_tau).transpose() << std::endl;
+    // std::cout << "tau_dist = " << tau_dist.transpose() << std::endl;
+    // std::cout << "_A * qddot_cmd  = " << (_A * qddot_cmd).transpose() << std::endl;
     // std::cout << "before fmpc = " << _Fr_des.transpose() << ". After wbc fr = " << Fr.transpose() << std::endl;
+    // std::cout << "_coriolis = " << _coriolis.transpose() << std::endl;
+    // std::cout << "_grav = " << _grav.transpose() << std::endl;
 
     tao_j = total_tau.tail(num_act_joint_); 
 }
@@ -622,5 +628,15 @@ void WBIController::update_command(CentaurStates& state, const DVec<double>& qj,
     state.wbc_q_cmd = qj;
     state.wbc_qdot_cmd = qj_dot;
     state.wbc_tau_ff = tau;
+
+    for (int leg = 0; leg < 2; leg++) {
+        if (state.plan_contacts_phase(leg) > 0) {
+            for (size_t i = 0; i < 3; i++) {
+               state.foot_force_cmd_world_wbc(i, leg) = z_star[i + _dim_floating] + _Fr_des[i];
+            } 
+        }
+    }
+    
+    
 
 }

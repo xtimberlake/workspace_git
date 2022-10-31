@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-14 12:43:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-23 22:10:55
+ * @LastEditTime: 2022-10-31 20:52:58
  * @FilePath: /drake/workspace/centaur_sim/centaur_controller.h
  * @Description: controller block for drake simulation
  * 
@@ -60,9 +60,12 @@ public:
         this->DeclareVectorInputPort("position_rotation",
                                     12);
 
+        this->DeclareVectorInputPort("force_sensors_output",
+                                    12);
+
         this->DeclareVectorOutputPort("actuated_torque", 9,
                                     &CentaurController::CalcTorques);
-        this->DeclareVectorOutputPort("controller_log_data", 5,
+        this->DeclareVectorOutputPort("controller_log_data", 8,
                                     &CentaurController::OutpotLog);
         
         
@@ -95,6 +98,7 @@ private:
         prismatic_joint_qdot = pos_rpy_states.segment<3>(6);
 
         double v_des, v_now, delta_x, buffTime;
+        // static int sign = 1;
         delta_x = 0;
         v_now = 0.0;
         v_des = 0.6;
@@ -103,11 +107,32 @@ private:
         if(ct->ctrl_states.t > 0.1) {
 
             if(ct->ctrl_states.t < buffTime) {
-                v_now = v_des * sin(M_2_PI * ct->ctrl_states.t / buffTime);
+                // v_now = v_des * sin(M_PI_2 * ct->ctrl_states.t / buffTime);
+                v_now = 0;
                 // v_now += v_des/buffTime;
-            } else {
+            } 
+            else if(ct->ctrl_states.t < 2 * buffTime)
+            {
+                double phase = ct->ctrl_states.t - buffTime;
+                v_now = v_des * sin(M_PI_2 * phase / buffTime);
+            }
+            else
+            {
                 v_now = v_des;
             }
+            // else if(ct->ctrl_states.t < 3 * buffTime)
+            // {
+            //     double phase = ct->ctrl_states.t - 2*buffTime;
+            //     v_now = -v_des * sin(M_PI_2 * phase / buffTime);
+            // }
+            // else if(ct->ctrl_states.t < 4 * buffTime)
+            // {
+            //     double phase = ct->ctrl_states.t - 3*buffTime;
+            //     v_now = -v_des + v_des * sin(M_PI_2 * phase / buffTime);
+            // }
+
+           
+
         }
         delta_x = v_now * 5e-4;
 
@@ -130,13 +155,14 @@ private:
             // running at 1 kHz
             ct->ctrl_states.k++;
 
-            if(ct->ctrl_states.t < 0.1) { // start trotting in 0.5 seconds
+            if(ct->ctrl_states.t < 0.1) { // start trotting in 0.1 seconds
                 ct->standing->update_gait_pattern(ct->ctrl_states);
+                ct->ctrl_states.firstRun = true;
             }
             else {
                 ct->walking->update_gait_pattern(ct->ctrl_states);
                 // ct->jumping->update_gait_pattern(ct->ctrl_states);
-                // ct->galloping->update_gait_pattern(ct->ctrl_states);
+                // ct->fly_trotting->update_gait_pattern(ct->ctrl_states);
                 
             }
 
@@ -174,7 +200,18 @@ private:
     void OutpotLog(const systems::Context<T>& context,
                   systems::BasicVector<T>* output) const {
 
-            Eigen::VectorXd output_log_vector(5); output_log_vector.setZero();
+            Eigen::VectorXd output_log_vector(8); output_log_vector.setZero();
+            // /* 
+            //     0: time
+            //     1: left_contact_state
+            //     2: (left)grf_x
+            //     3: grf_y
+            //     4: grf_z
+            // */
+            // output_log_vector[0] = context.get_time();
+            // output_log_vector[1] = ct->ctrl_states.plan_contacts_phase[0];
+            // output_log_vector.segment<3>(2) = ct->ctrl_states.foot_force_cmd_rel.block<3, 1>(0, 0);
+
             /* 
                 0: time
                 1: left_contact_state
@@ -183,8 +220,12 @@ private:
                 4: grf_z
             */
             output_log_vector[0] = context.get_time();
+
+            output_log_vector[0] = ct->ctrl_states.root_pos(2);
             output_log_vector[1] = ct->ctrl_states.plan_contacts_phase[0];
-            output_log_vector.segment<3>(2) = ct->ctrl_states.foot_force_cmd_rel.block<3, 1>(0, 0);
+
+            output_log_vector.segment<3>(2) = -ct->ctrl_states.foot_force_world.block<3, 1>(0, 1);
+            output_log_vector.segment<3>(5) = ct->ctrl_states.foot_force_cmd_world.block<3, 1>(0, 1);
 
             output->set_value(output_log_vector);
 
@@ -203,6 +244,11 @@ private:
 
         const multibody::BodyFrame<T>& FloatingBodyFrame = 
                 _control_model.GetBodyByName("floating_base").body_frame();
+
+        Eigen::VectorXd force_sensor_data = this->GetInputPort("force_sensors_output").Eval(context);
+
+        ct->ctrl_states.tau_feedback = force_sensor_data.head(6); 
+        ct->ctrl_states.hri_wrench_realtime = force_sensor_data.tail(6); 
 
         //TODO(haoyun) acceleration is actuators- and wrench- dependent states
         // // ct->ctrl_states.root_acc = FloatingBodyFrame.CalcSpatialAccelerationInWorld(*_plant_context).translational(); 
@@ -259,6 +305,9 @@ private:
         // // expressed in the body frame                 
         ct->ctrl_states.JacobianFoot[0] = ct->ctrl_states.root_rot_mat.transpose() * J_BF_left.block<3, 3>(0, 6);
 
+        ct->ctrl_states.foot_force_rel.block<3, 1>(0, 0) = ct->ctrl_states.JacobianFoot[0].transpose().inverse() * ct->ctrl_states.tau_feedback.head(3);
+        ct->ctrl_states.foot_force_world.block<3, 1>(0, 0) = ct->ctrl_states.root_rot_mat * ct->ctrl_states.foot_force_rel.block<3, 1>(0, 0);
+
         MatrixX<double> J_BF_right(3, _control_model.num_velocities());
         _control_model.CalcJacobianTranslationalVelocity(*_plant_context,
                                                          multibody::JacobianWrtVariable::kV,
@@ -273,7 +322,9 @@ private:
         // ct->ctrl_states.JacobianFoot[1] = J_BF_right.block<3, 3>(0, 9);
         ct->ctrl_states.JacobianFoot[1] = ct->ctrl_states.root_rot_mat.transpose() * J_BF_right.block<3, 3>(0, 9);
                                                         
- 
+        ct->ctrl_states.foot_force_rel.block<3, 1>(0, 1) = ct->ctrl_states.JacobianFoot[1].transpose().inverse() * ct->ctrl_states.tau_feedback.tail(3);
+        ct->ctrl_states.foot_force_world.block<3, 1>(0, 1) = ct->ctrl_states.root_rot_mat * ct->ctrl_states.foot_force_rel.block<3, 1>(0, 1);
+
         Eigen::Matrix<double, 13, 1> qvec;
         qvec = _control_model.GetPositions(*_plant_context);
         ct->ctrl_states.q << qvec.tail(6); // joint angle

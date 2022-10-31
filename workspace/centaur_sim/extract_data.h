@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-19 09:55:16
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-23 22:10:25
+ * @LastEditTime: 2022-10-31 20:46:32
  * @FilePath: /drake/workspace/centaur_sim/extract_data.h
  * @Description: 
  * 
@@ -45,6 +45,10 @@ public:
         this->DeclareVectorOutputPort(
             "position_rotation", 12,
             &extractData::ExtractPosRot);
+
+        this->DeclareVectorOutputPort(
+            "force_sensors_output", 12,
+            &extractData::ExtractForce);
         
     }
 
@@ -100,7 +104,8 @@ private:
         full_states.segment<3>(13) = omega;
         full_states.segment<3>(16) = v;
         full_states.segment<6>(19) = qdot;
-        
+
+
         output->set_value(full_states);
     }
 
@@ -136,11 +141,20 @@ private:
 
         // Part 2: forces data
         // spatial_vec include 12x6 wrenches for each joint; including the fixed joints and the 'worldWeld' joint
+        // index [4]: hri_wrench
+        // index [6]: left abAd motor
+        // index [7]: left hip motor
+        // index [8]: left knee motor
+        // index [9]: left foot 
+        // index [10]: right abAd motor
+        // index [11]: right hip motor
+        // index [12]: right knee motor
+        // index [13]: right foot
         const std::vector<drake::multibody::SpatialForce<double>>& spatial_vec =
             this->GetInputPort("spatial_forces_in").template Eval<std::vector<drake::multibody::SpatialForce<double>>>(context);
-        Eigen::Matrix<double ,6, 1> wrenches = spatial_vec[4].get_coeffs();
+        Eigen::Matrix<double ,6, 1> hri_wrench = spatial_vec[8].get_coeffs();
         // std::cout << "spatial forces dimention = " << spatial_vec.size() << std::endl;
-        log_data.segment<6>(12) = wrenches;
+        log_data.segment<6>(12) = hri_wrench;
 
         logoutput->set_value(log_data);
     }
@@ -156,6 +170,32 @@ private:
         pos_and_rpy.segment<3>(9) = scene_states.segment<3>(15);
         
         output->set_value(pos_and_rpy);
+
+    }
+
+    void ExtractForce(const systems::Context<T>& context,
+                           systems::BasicVector<T>* output) const {
+
+        Eigen::VectorXd forces(12); forces.setZero();
+        // // extract the forces 
+        // index [4]: hri_wrench
+        // index [6, 7, 8]: left abAd motor, left hip motor, left knee motor 
+        // index [10, 11, 12]: right abAd motor, right hip motor, right knee motor
+        const std::vector<drake::multibody::SpatialForce<double>>& spatial_vec =
+            this->GetInputPort("spatial_forces_in").template Eval<std::vector<drake::multibody::SpatialForce<double>>>(context);
+        
+        forces(0) = spatial_vec[6].get_coeffs()(0); // x-axis
+        forces(1) = spatial_vec[7].get_coeffs()(1);
+        forces(2) = spatial_vec[8].get_coeffs()(1);
+
+        forces(3) = spatial_vec[10].get_coeffs()(0); // x-axis
+        forces(4) = spatial_vec[11].get_coeffs()(1);
+        forces(5) = spatial_vec[12].get_coeffs()(1);
+
+        forces.segment<6>(6) = spatial_vec[4].get_coeffs();
+
+
+        output->set_value(forces);
 
     }
 

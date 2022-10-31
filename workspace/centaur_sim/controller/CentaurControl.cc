@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:31:07
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-23 21:09:53
+ * @LastEditTime: 2022-10-24 17:17:54
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurControl.cc
  * @Description: 
  * 
@@ -123,7 +123,7 @@ void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
 
     
     for (int leg = 0; leg < 2; leg++) {
-        Eigen::Matrix<double, 3, 1> offset(1.0 * state.ctrl_params_const.default_foot_pos_under_hip.at(0), side_sign[leg] * .0, 0);
+        Eigen::Matrix<double, 3, 1> offset(1.0 * state.ctrl_params_const.default_foot_pos_under_hip.at(0), side_sign[leg] * state.ctrl_params_const.default_foot_pos_under_hip.at(1), 0);
         swingTimeRemain = (1 - state.plan_swings_phase[leg]) * state.gait_period * (1 - state.stance_duration[leg]);
         tStance = (state.gait_period * state.stance_duration(leg));
         pShoulder_world.block<3, 1>(0, leg) = state.root_pos + state.root_rot_mat * (state.hipLocation_local.block<3, 1>(0, leg) + offset);
