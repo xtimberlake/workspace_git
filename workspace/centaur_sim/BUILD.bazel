@@ -87,6 +87,8 @@ drake_cc_library(
         "dynamics/FloatingBaseModel.cpp",
         "dynamics/CentaurModel.cpp",
         "controller/ContactSet/SingleContact.cpp",
+        "Utils/Goldfarb_Optimizer/Array.cc",
+        "Utils/Goldfarb_Optimizer/QuadProg++.cc",
     ],
     hdrs = [
         "centaur_controller.h",
@@ -111,6 +113,8 @@ drake_cc_library(
         "dynamics/spatial.h",
         "Utils/orientationTools.h",
         "Utils/pseudoInverse.h",
+        "Utils/Goldfarb_Optimizer/Array.hh",
+        "Utils/Goldfarb_Optimizer/QuadProg++.hh",
     ],
     data = [
         "centaur_control_model.sdf",
