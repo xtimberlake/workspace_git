@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-16 17:07:03
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-31 16:39:39
+ * @LastEditTime: 2022-11-06 10:08:23
  * @FilePath: /drake/workspace/centaur_sim/controller/WBIController.cc
  * @Description: 
  * 
@@ -258,7 +258,8 @@ void WBIController::dyn_wbc() {
     // Set equality constraints
     _SetEqualityConstraint(qddot_pre);
     
-    _SolveQuadraticProgramming(z_star);
+    // _SolveQuadraticProgramming(z_star);
+    _SolveQuadraticProgrammingThroughQPpp(z_star);
     // std::cout << "original qddot = " << qddot_pre.head(6).transpose() << std::endl;
     // std::cout << "xstar = " << z_star.transpose() << ",  Total cost = " << cost << std::endl;
 
@@ -529,12 +530,6 @@ double WBIController::_SolveQuadraticProgramming(Eigen::VectorXd& z) {
     }
 
     
-
-    
-    
-    
-    
-    
     // auto inEq_constraint = prog.AddLinearConstraint(CI, lb, ub, x_star);
     // std::cout << "CI = (" << CI.rows() << "," << CI.cols() << ") = " << std::endl;
     // std::cout << CI << std::endl;
@@ -567,6 +562,14 @@ double WBIController::_SolveQuadraticProgramming(Eigen::VectorXd& z) {
 
 
     return cost;
+}
+
+
+double WBIController::_SolveQuadraticProgrammingThroughQPpp(Eigen::VectorXd& z) {
+    
+    z = DVec<double>::Zero(_dim_opt);
+    double ret(trans_solve_quadprog(G, g0, CE, ce0, CI, ci0, z));
+    return ret;
 }
 
 void WBIController::_InverseDyn(const DVec<double>& qddot_original, DVec<double>& tao_j) {

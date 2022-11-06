@@ -81,4 +81,9 @@ double solve_quadprog(Eigen::MatrixXd& G, Eigen::VectorXd& g0,
                       const Eigen::MatrixXd& CI, const Eigen::VectorXd& ci0,
                       Eigen::VectorXd& x);
 
+double trans_solve_quadprog(Eigen::MatrixXd& _G, Eigen::VectorXd& _g0,
+                      const Eigen::MatrixXd& _CE, const Eigen::VectorXd& _ce0,
+                      const Eigen::MatrixXd& _CI, const Eigen::VectorXd& _ci0,
+                      Eigen::VectorXd& _x);
+
 #endif // #define _QUADPROGPP

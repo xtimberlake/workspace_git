@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-16 17:07:22
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-15 09:53:25
+ * @LastEditTime: 2022-11-06 10:01:25
  * @FilePath: /drake/workspace/centaur_sim/controller/WBIController.h
  * @Description: Whole-body impulse controller
  * 
@@ -18,6 +18,7 @@
 #include "drake/workspace/centaur_sim/controller/ContactSet/SingleContact.hpp"
 #include "drake/workspace/centaur_sim/Utils/pseudoInverse.h"
 #include "drake/workspace/centaur_sim/controller/ConvexMPC.h"
+#include "drake/workspace/centaur_sim/Utils/Goldfarb_Optimizer/QuadProg++.hh"
 
 struct wbc_interface_data {
     Eigen::Matrix<double, 6, 1> qj_cmd;
@@ -50,6 +51,7 @@ public:
     void _SetEqualityConstraint(const DVec<double>& qddot);
     void _SetInEqualityConstraint();    
     double _SolveQuadraticProgramming(Eigen::VectorXd& z);
+    double _SolveQuadraticProgrammingThroughQPpp(Eigen::VectorXd& z);
     void _InverseDyn(const DVec<double>& qddot_cmd, DVec<double>& tao_j);
     void update_command(CentaurStates& state, const DVec<double>& qj, const DVec<double>& qj_dot, const DVec<double>& tau);
 
