@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-16 17:07:22
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-11-06 10:01:25
+ * @LastEditTime: 2022-11-07 14:55:04
  * @FilePath: /drake/workspace/centaur_sim/controller/WBIController.h
  * @Description: Whole-body impulse controller
  * 
@@ -40,7 +40,7 @@ public:
 
     bool kin_wbcFindConfiguration(const DVec<double>& curr_config,
                          const std::vector<Task<double>*>& task_list,
-                         const std::vector<ContactSpec<double>*>& contact_list,
+                         const std::vector<SingleContact<double>*>& contact_list,
                          DVec<double>& jpos_cmd, DVec<double>& jvel_cmd);
     
 
@@ -75,10 +75,10 @@ public:
 
 
     std::vector<Task<double> * > _task_list;
-    std::vector<ContactSpec<double> * > _contact_list;
+    std::vector<SingleContact<double> * > _contact_list;
 
     // contact pts
-    ContactSpec<double>* _foot_contact[2];
+    SingleContact<double>* _foot_contact[2];
 
     // task lists
     Task<double>* _torso_pos_task;

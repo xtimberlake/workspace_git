@@ -32,7 +32,7 @@
 #include "drake/workspace/centaur_sim/extract_data.h"
 #include "drake/workspace/centaur_sim/centaur_controller.h"
 
-DEFINE_double(simulation_sec, 6,
+DEFINE_double(simulation_sec, 2,
               "Number of seconds to simulate.");
 DEFINE_double(sim_dt, 5e-4,
               "The time step to use for MultibodyPlant model"
@@ -307,7 +307,9 @@ namespace centaur_sim {
         common::CallPython("subplot", 4, 1, 1);
         common::CallPython("plot", controller_log_data.sample_times(),
                            controller_log_data.data().row(1).transpose());
-        common::CallPython("legend", common::ToPythonTuple("left contact state"));
+        common::CallPython("plot", controller_log_data.sample_times(),
+                           controller_log_data.data().row(0).transpose());
+        common::CallPython("legend", common::ToPythonTuple("left contact state", "contact_prob"));
 
         common::CallPython("subplot", 4, 1, 2);
         common::CallPython("plot", controller_log_data.sample_times(),

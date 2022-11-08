@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-14 12:43:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-31 20:52:58
+ * @LastEditTime: 2022-11-08 15:26:25
  * @FilePath: /drake/workspace/centaur_sim/centaur_controller.h
  * @Description: controller block for drake simulation
  * 
@@ -149,7 +149,7 @@ private:
         total_torques.head(3) = 100000 * (prismatic_joint_q_des - pos_rpy_states) 
                                 + 20000 * (prismatic_joint_qdot_des - prismatic_joint_qdot);
 
-
+        
         if((ct->ctrl_states.t - ct->ctrl_states.k * ct->ctrl_states.control_dt) > ct->ctrl_states.control_dt)
         {   
             // running at 1 kHz
@@ -165,11 +165,21 @@ private:
                 // ct->fly_trotting->update_gait_pattern(ct->ctrl_states);
                 
             }
+            Eigen::Vector2d contact_phases;
+            Eigen::Vector2d swing_phases;
+            contact_phases << ct->ctrl_states.plan_contacts_phase[0], ct->ctrl_states.plan_contacts_phase[1];
+            swing_phases << ct->ctrl_states.plan_swings_phase[0], ct->ctrl_states.plan_swings_phase[1];
+            
+            ct->contactestimate->updateEstimate(contact_phases, swing_phases,
+                                            ct->ctrl_states.foot_pos_world, ct->ctrl_states.foot_force_world);
+
+            // ct->contactestimate->updateEstimate(ct->ctrl_states.plan_contacts_phase, ct->ctrl_states.plan_swings_phase,
+            //                                 ct->ctrl_states.foot_pos_world, ct->ctrl_states.foot_force_world);
 
             // swing
             ct->controller->GenerateSwingTrajectory(ct->ctrl_states);
 
-            // compute grfs at 100 Hz
+            // compute mpc grfs at 100 Hz
             if(ct->ctrl_states.k == 1 ||ct->ctrl_states.k % ct->ctrl_states.nIterationsPerMPC == 0) {
                 ct->controller->ComputeGoundReactionForce(ct->ctrl_states);
             }
@@ -219,9 +229,29 @@ private:
                 3: grf_y
                 4: grf_z
             */
+           double s_phi, s_phi_bar;
+            if(ct->ctrl_states.plan_contacts_phase[0] > 0)  {
+                s_phi = 1.0;
+                s_phi_bar = 0.0;
+            }
+            else {
+                s_phi = 0.0;
+                s_phi_bar = 1.0;
+            }
+            double lambda[2] = {0.0, 1.0};
+            double sigma2[2] = {0.025, 0.025};
+            double prob;
+            
+            prob = 0.5 * (s_phi * (std::erf( (ct->ctrl_states.plan_contacts_phase[0]-lambda[0]) / (std::sqrt(2)*sigma2[0]) )
+                                 + std::erf( (lambda[1]-ct->ctrl_states.plan_contacts_phase[0]) / (std::sqrt(2)*sigma2[1]) ))
+                        + s_phi_bar * (2 + std::erf( (lambda[0]-ct->ctrl_states.plan_swings_phase[0]) / (std::sqrt(2)*sigma2[0]) )
+                                         + std::erf( (ct->ctrl_states.plan_swings_phase[0]-lambda[1]) / (std::sqrt(2)*sigma2[1]) )));
+
+
             output_log_vector[0] = context.get_time();
 
-            output_log_vector[0] = ct->ctrl_states.root_pos(2);
+            // output_log_vector[0] = ct->ctrl_states.root_pos(2);
+            output_log_vector[0] = prob;
             output_log_vector[1] = ct->ctrl_states.plan_contacts_phase[0];
 
             output_log_vector.segment<3>(2) = -ct->ctrl_states.foot_force_world.block<3, 1>(0, 1);

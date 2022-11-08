@@ -89,6 +89,8 @@ drake_cc_library(
         "controller/ContactSet/SingleContact.cpp",
         "Utils/Goldfarb_Optimizer/Array.cc",
         "Utils/Goldfarb_Optimizer/QuadProg++.cc",
+        "estimator/contactEstimate.cc",
+        "estimator/linearKalmanFilter.cc",
     ],
     hdrs = [
         "centaur_controller.h",
@@ -115,6 +117,8 @@ drake_cc_library(
         "Utils/pseudoInverse.h",
         "Utils/Goldfarb_Optimizer/Array.hh",
         "Utils/Goldfarb_Optimizer/QuadProg++.hh",
+        "estimator/contactEstimate.h",
+        "estimator/linearKalmanFilter.h",
     ],
     data = [
         "centaur_control_model.sdf",

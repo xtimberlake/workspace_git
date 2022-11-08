@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 16:07:26
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-25 14:47:38
+ * @LastEditTime: 2022-11-07 16:28:54
  * @FilePath: /drake/workspace/centaur_sim/centaurrobot/centaurrobot.h
  * @Description: define centaur robot handle
  * 
@@ -15,8 +15,9 @@
 #include "drake/workspace/centaur_sim/controller/CentaurGaitPattern.h"
 #include "drake/workspace/centaur_sim/controller/LegController.h"
 #include "drake/workspace/centaur_sim/controller/WBIController.h"
-#include "drake/workspace/centaur_sim/dynamics/FloatingBaseModel.h"
+// #include "drake/workspace/centaur_sim/dynamics/FloatingBaseModel.h"
 #include "drake/workspace/centaur_sim/dynamics/CentaurModel.h"
+#include "drake/workspace/centaur_sim/estimator/contactEstimate.h"
 
 
 class centaurrobot
@@ -37,10 +38,13 @@ public:
 
         wbicontroller = new WBIController();
 
+        contactestimate = new contactEstimate<double>();
+
     }
 
     // variables
     CentaurStates ctrl_states;
+    contactEstimate<double>* contactestimate; 
     CentaurControl* controller;
     LegController* legcontroller;
     WBIController* wbicontroller;

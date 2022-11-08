@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-16 17:07:03
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-11-06 10:08:23
+ * @LastEditTime: 2022-11-07 14:55:19
  * @FilePath: /drake/workspace/centaur_sim/controller/WBIController.cc
  * @Description: 
  * 
@@ -149,7 +149,7 @@ void WBIController::update_contact_task(CentaurStates& state) {
     // wash out the previous setup
     clean_up();
     
-    // receice target position
+    // receive target position
     _pBody_des = state.root_pos_d;
     _quat_des = ori::rpyToQuat(state.root_euler_d);
     _pFoot_des[0] = state.foot_pos_cmd_world.block<3, 1>(0, 0);
@@ -268,7 +268,7 @@ void WBIController::dyn_wbc() {
 
 bool WBIController::kin_wbcFindConfiguration(const DVec<double>& curr_config,
                          const std::vector<Task<double>*>& task_list,
-                         const std::vector<ContactSpec<double>*>& contact_list,
+                         const std::vector<SingleContact<double>*>& contact_list,
                          DVec<double>& jpos_cmd, DVec<double>& jvel_cmd) {
 
     // Contact Jacobian Setup
