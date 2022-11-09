@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:30:49
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-31 20:23:34
+ * @LastEditTime: 2022-11-09 19:41:12
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurStates.h
  * @Description: define all the states that used in controller; mainly 
  *                adapted from https://github.com/ShuoYangRobotics/A1-QP-MPC-Controller
@@ -188,6 +188,10 @@ class CentaurStates {
 
         plan_contacts_phase.setZero();
         plan_swings_phase.setZero();
+        prob_contact.setZero();
+        prob_contact_of_plan.setZero();
+        prob_contact_of_pos.setZero();
+        prob_contact_of_force.setZero();
     }
 
     // variables
@@ -206,6 +210,7 @@ class CentaurStates {
     Eigen::Vector2f plan_swings_phase;
     double gait_period; //symmetric gait
     Eigen::Vector2f stance_duration;
+    Eigen::Vector2d prob_contact, prob_contact_of_plan ,prob_contact_of_pos, prob_contact_of_force;
 
 
     // mpc

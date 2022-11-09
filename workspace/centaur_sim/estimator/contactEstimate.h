@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-11-07 15:32:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-11-08 15:25:45
+ * @LastEditTime: 2022-11-09 21:47:20
  * @FilePath: /drake/workspace/centaur_sim/estimator/contactEstimate.h
  * @Description: contact estimate that fuses plan_states, foot_pos & grf_z
  * [ref]: 
@@ -25,7 +25,10 @@ public:
  ~contactEstimate();
 
  bool* getBinaryContactState() const { return _s_contact; }
- void getContactProbabilities(DVec<T>& prob_contact) const { prob_contact = _prob_contact; }
+ void getContactProbabilities(Vec2<T>& prob_contact) const { prob_contact = _prob_contact; }
+ void getContactProbabilitiesBasedonPlan(Vec2<T>& prob_contact) const { prob_contact = _prob_contact_plan; }
+ void getContactProbabilitiesBasedonPos(Vec2<T>& prob_contact) const { prob_contact = _prob_contact_pos; }
+ void getContactProbabilitiesBasedonForce(Vec2<T>& prob_contact) const { prob_contact = _prob_contact_force; }
  void setThresholdValue(const T& threshold) { _threshold = threshold; }
 
 
@@ -36,7 +39,7 @@ public:
 protected:
  bool *_s_contact;
  T _threshold;
- Vec2<T> _prob_contact;
+ Vec2<T> _prob_contact, _prob_contact_plan, _prob_contact_pos, _prob_contact_force;
  linearKalmanFilter<T>* kalmanFliter;
 };
 

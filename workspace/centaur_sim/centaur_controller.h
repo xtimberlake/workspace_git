@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-14 12:43:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-11-08 15:26:25
+ * @LastEditTime: 2022-11-09 22:07:42
  * @FilePath: /drake/workspace/centaur_sim/centaur_controller.h
  * @Description: controller block for drake simulation
  * 
@@ -146,8 +146,12 @@ private:
         ct->ctrl_states.root_lin_vel_d_world[0] = v_now / 4.0;
 
 
-        total_torques.head(3) = 100000 * (prismatic_joint_q_des - pos_rpy_states) 
-                                + 20000 * (prismatic_joint_qdot_des - prismatic_joint_qdot);
+        total_torques.head(3) = 500 * (prismatic_joint_q_des - pos_rpy_states) 
+                                + 100 * (prismatic_joint_qdot_des - prismatic_joint_qdot);
+
+        // z
+        total_torques[2] = 10000 * (prismatic_joint_q_des[2] - pos_rpy_states[2]) 
+                                + 5000 * (prismatic_joint_qdot_des[2] - prismatic_joint_qdot[2]);
 
         
         if((ct->ctrl_states.t - ct->ctrl_states.k * ct->ctrl_states.control_dt) > ct->ctrl_states.control_dt)
@@ -172,6 +176,11 @@ private:
             
             ct->contactestimate->updateEstimate(contact_phases, swing_phases,
                                             ct->ctrl_states.foot_pos_world, ct->ctrl_states.foot_force_world);
+
+            ct->contactestimate->getContactProbabilities(ct->ctrl_states.prob_contact);
+            ct->contactestimate->getContactProbabilitiesBasedonPlan(ct->ctrl_states.prob_contact_of_plan);
+            ct->contactestimate->getContactProbabilitiesBasedonPos(ct->ctrl_states.prob_contact_of_pos);
+            ct->contactestimate->getContactProbabilitiesBasedonForce(ct->ctrl_states.prob_contact_of_force);
 
             // ct->contactestimate->updateEstimate(ct->ctrl_states.plan_contacts_phase, ct->ctrl_states.plan_swings_phase,
             //                                 ct->ctrl_states.foot_pos_world, ct->ctrl_states.foot_force_world);
@@ -251,11 +260,19 @@ private:
             output_log_vector[0] = context.get_time();
 
             // output_log_vector[0] = ct->ctrl_states.root_pos(2);
-            output_log_vector[0] = prob;
-            output_log_vector[1] = ct->ctrl_states.plan_contacts_phase[0];
+            output_log_vector[0] = ct->ctrl_states.plan_contacts_phase[1];
+            output_log_vector[1] = prob;
+            output_log_vector[1] = ct->ctrl_states.prob_contact_of_plan(1);
 
-            output_log_vector.segment<3>(2) = -ct->ctrl_states.foot_force_world.block<3, 1>(0, 1);
-            output_log_vector.segment<3>(5) = ct->ctrl_states.foot_force_cmd_world.block<3, 1>(0, 1);
+            output_log_vector[2] = ct->ctrl_states.foot_pos_world(2, 1); // left foot vertical position
+            output_log_vector[3] = ct->ctrl_states.prob_contact_of_pos(1);
+
+            output_log_vector[4] = ct->ctrl_states.foot_force_world(2, 1); // left foot vertical position
+            output_log_vector[5] = ct->ctrl_states.prob_contact_of_force(1);
+
+            output_log_vector[6] = ct->ctrl_states.prob_contact(1);
+
+            
 
             output->set_value(output_log_vector);
 
