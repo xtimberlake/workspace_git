@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-19 09:55:16
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-31 20:46:32
+ * @LastEditTime: 2022-11-16 19:01:34
  * @FilePath: /drake/workspace/centaur_sim/extract_data.h
  * @Description: 
  * 
@@ -152,7 +152,7 @@ private:
         // index [13]: right foot
         const std::vector<drake::multibody::SpatialForce<double>>& spatial_vec =
             this->GetInputPort("spatial_forces_in").template Eval<std::vector<drake::multibody::SpatialForce<double>>>(context);
-        Eigen::Matrix<double ,6, 1> hri_wrench = spatial_vec[8].get_coeffs();
+        Eigen::Matrix<double ,6, 1> hri_wrench = spatial_vec[4].get_coeffs();
         // std::cout << "spatial forces dimention = " << spatial_vec.size() << std::endl;
         log_data.segment<6>(12) = hri_wrench;
 

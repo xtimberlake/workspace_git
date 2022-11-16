@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-14 12:43:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-11-09 22:07:42
+ * @LastEditTime: 2022-11-16 21:22:19
  * @FilePath: /drake/workspace/centaur_sim/centaur_controller.h
  * @Description: controller block for drake simulation
  * 
@@ -101,7 +101,7 @@ private:
         // static int sign = 1;
         delta_x = 0;
         v_now = 0.0;
-        v_des = 0.6;
+        v_des = 0.7;
         buffTime = 2.0; // secs
         
         if(ct->ctrl_states.t > 0.1) {
@@ -146,9 +146,11 @@ private:
         ct->ctrl_states.root_lin_vel_d_world[0] = v_now / 4.0;
 
 
-        total_torques.head(3) = 500 * (prismatic_joint_q_des - pos_rpy_states) 
-                                + 100 * (prismatic_joint_qdot_des - prismatic_joint_qdot);
+        total_torques[0] = 500 * (prismatic_joint_q_des[0] - pos_rpy_states[0]) 
+                                + 300 * (prismatic_joint_qdot_des[0] - prismatic_joint_qdot[0]);
 
+        total_torques[1] = 500 * (prismatic_joint_q_des[1] - pos_rpy_states[1]) 
+                                + 300 * (prismatic_joint_qdot_des[1] - prismatic_joint_qdot[1]);
         // z
         total_torques[2] = 10000 * (prismatic_joint_q_des[2] - pos_rpy_states[2]) 
                                 + 5000 * (prismatic_joint_qdot_des[2] - prismatic_joint_qdot[2]);
@@ -175,13 +177,14 @@ private:
             swing_phases << ct->ctrl_states.plan_swings_phase[0], ct->ctrl_states.plan_swings_phase[1];
             
             ct->contactestimate->updateEstimate(contact_phases, swing_phases,
-                                            ct->ctrl_states.foot_pos_world, ct->ctrl_states.foot_force_world);
+                                            ct->ctrl_states.foot_pos_world, ct->ctrl_states.foot_force_world,
+                                            ct->ctrl_states.foot_vel_world);
 
             ct->contactestimate->getContactProbabilities(ct->ctrl_states.prob_contact);
             ct->contactestimate->getContactProbabilitiesBasedonPlan(ct->ctrl_states.prob_contact_of_plan);
             ct->contactestimate->getContactProbabilitiesBasedonPos(ct->ctrl_states.prob_contact_of_pos);
             ct->contactestimate->getContactProbabilitiesBasedonForce(ct->ctrl_states.prob_contact_of_force);
-
+            ct->contactestimate->getContactProbabilitiesBasedonVelocity(ct->ctrl_states.prob_contact_of_velocity);
             // ct->contactestimate->updateEstimate(ct->ctrl_states.plan_contacts_phase, ct->ctrl_states.plan_swings_phase,
             //                                 ct->ctrl_states.foot_pos_world, ct->ctrl_states.foot_force_world);
 
@@ -262,12 +265,12 @@ private:
             // output_log_vector[0] = ct->ctrl_states.root_pos(2);
             output_log_vector[0] = ct->ctrl_states.plan_contacts_phase[1];
             output_log_vector[1] = prob;
-            output_log_vector[1] = ct->ctrl_states.prob_contact_of_plan(1);
-
+            output_log_vector[1] = ct->ctrl_states.foot_acc_world(2, 1);
+            output_log_vector[1] = ct->ctrl_states.prob_contact_of_velocity(1);
             output_log_vector[2] = ct->ctrl_states.foot_pos_world(2, 1); // left foot vertical position
             output_log_vector[3] = ct->ctrl_states.prob_contact_of_pos(1);
 
-            output_log_vector[4] = ct->ctrl_states.foot_force_world(2, 1); // left foot vertical position
+            output_log_vector[4] = ct->ctrl_states.foot_vel_world(2, 1); // left foot vertical position
             output_log_vector[5] = ct->ctrl_states.prob_contact_of_force(1);
 
             output_log_vector[6] = ct->ctrl_states.prob_contact(1);
@@ -383,9 +386,17 @@ private:
         ct->ctrl_states.foot_vel_rel.block<3, 1>(0, 1) = ct->ctrl_states.JacobianFoot[1] * ct->ctrl_states.qdot.segment<3>(3);
 
         // TODOs: how to 
-        ct->ctrl_states.foot_vel_world.block<3, 1>(0, 0) = ct->ctrl_states.root_rot_mat * ct->ctrl_states.foot_vel_rel.block<3, 1>(0, 0);
-        ct->ctrl_states.foot_vel_world.block<3, 1>(0, 1) = ct->ctrl_states.root_rot_mat * ct->ctrl_states.foot_vel_rel.block<3, 1>(0, 1);
+        Eigen::Vector3d current_vel; current_vel.setZero();
+        current_vel = ct->ctrl_states.root_rot_mat * ct->ctrl_states.foot_vel_rel.block<3, 1>(0, 0);
+        ct->ctrl_states.foot_acc_world.block<3, 1>(0, 0) = (current_vel - ct->ctrl_states.foot_vel_world.block<3, 1>(0, 0))/ct->ctrl_states.control_dt;
+        // if(ct->ctrl_states.foot_acc_world(2, 0) > 0) ct->ctrl_states.foot_acc_world(2, 0) = 0.0;
+        ct->ctrl_states.foot_vel_world.block<3, 1>(0, 0) = current_vel;
 
+        current_vel = ct->ctrl_states.root_rot_mat * ct->ctrl_states.foot_vel_rel.block<3, 1>(0, 1);
+        ct->ctrl_states.foot_acc_world.block<3, 1>(0, 1) = (current_vel - ct->ctrl_states.foot_vel_world.block<3, 1>(0, 1))/ct->ctrl_states.control_dt;
+        // if(ct->ctrl_states.foot_acc_world(2, 1) > 0) ct->ctrl_states.foot_acc_world(2, 1) = 0.0;
+        ct->ctrl_states.foot_vel_world.block<3, 1>(0, 1) = current_vel;
+        
         // ct->ctrl_states.foot_vel_world.block<3, 1>(0, 0) = LeftFootFrame.CalcSpatialVelocityInWorld(*_plant_context).translational();
         // ct->ctrl_states.foot_vel_world.block<3, 1>(0, 1) = RightFootFrame.CalcSpatialVelocityInWorld(*_plant_context).translational();
 

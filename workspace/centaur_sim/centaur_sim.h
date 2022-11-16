@@ -327,10 +327,16 @@ namespace centaur_sim {
 
         common::CallPython("subplot", 4, 1, 4);
         common::CallPython("plot", controller_log_data.sample_times(),
-                           controller_log_data.data().row(6).transpose());  
+                           controller_log_data.data().row(5).transpose());  
         // common::CallPython("plot", controller_log_data.sample_times(),
         //                    controller_log_data.data().row(7).transpose()); 
         common::CallPython("legend", common::ToPythonTuple("_prob_contact_force"));
+
+        // common::CallPython("subplot", 4, 1, 4);
+        // common::CallPython("plot", log.sample_times(),
+        //                    log.data().row(15).transpose()); 
+        // common::CallPython("plot", log.sample_times(), averge_force); 
+        // common::CallPython("legend", common::ToPythonTuple("force", "average force"));
         
 
 

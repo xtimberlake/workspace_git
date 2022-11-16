@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-11-07 15:32:23
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-11-09 22:50:12
+ * @LastEditTime: 2022-11-16 21:30:47
  * @FilePath: /drake/workspace/centaur_sim/estimator/contactEstimate.cc
  * @Description: 
  * 
@@ -24,6 +24,7 @@ contactEstimate<T>::contactEstimate() {
     _prob_contact_plan.setZero();
     _prob_contact_pos.setZero();
     _prob_contact_force.setZero();
+    _prob_contact_velocity.setZero();
 
     Eigen::Matrix<T, 2, 2> I2; I2 = DMat<T>::Identity(2, 2);
     Eigen::Matrix<T, 2, 2> A; A.setZero();
@@ -44,26 +45,28 @@ contactEstimate<T>::~contactEstimate() {}
 template <typename T>
 void contactEstimate<T>::updateEstimate(
                     const DVec<T>& phiContact, const DVec<T> phiSwing,
-                    const DMat<T>& pFoot, const DMat<T>& forceFoot) {
+                    const DMat<T>& pFoot, const DMat<T>& forceFoot, const DMat<T>& footVelocity) {
 
     Eigen::Matrix<T, 2, 1> u_prob;    // instant input
     T miu_plan[2] = {0.0, 1.0};
-    T sigma2_plan[2] = {0.025, 0.025};
+    T sigma2_plan[2] = {0.1, 0.25};
     
     Eigen::Matrix<T, 2, 1> z1_prob;   // meas pFoot
-    T miu_pz = -0.005;
-    T sigma2_pz = 0.08;
+    T miu_pz = 0.12;
+    T sigma2_pz = 0.05;
 
     Eigen::Matrix<T, 2, 1> z2_prob;   // meas fGRF
     T miu_f = 120.0;
     T sigma2_f = 10.0;
 
-
+    Eigen::Matrix<T, 2, 1> z3_prob;   // velocity
+    T miu_v = 0.5;
+    T sigma2_v = 0.5;
     
 
     for (int leg = 0; leg < 2; leg++) {
 
-        // priority #1: plan phases
+        // prior #1: plan phases
         if(phiContact[leg] > 0)  {
             u_prob[leg] = 0.5 * (std::erf( (phiContact[leg]-miu_plan[0]) / (std::sqrt(2)*sigma2_plan[0]) )
                                + std::erf( (miu_plan[1]-phiContact[leg]) / (std::sqrt(2)*sigma2_plan[1]) ));
@@ -73,13 +76,17 @@ void contactEstimate<T>::updateEstimate(
                                    + std::erf( (phiSwing[leg]-miu_plan[1]) / (std::sqrt(2)*sigma2_plan[1]) ));
         }
         
-        // priority #2: foot position
-        T pFoot_z = -pFoot(2, leg);
-        z1_prob[leg] = (1 + std::erf( (pFoot_z-miu_pz)/(std::sqrt(2)*sigma2_pz) ));
+        // prior #2: foot position
+        T pFoot_z = pFoot(2, leg);
+        z1_prob[leg] = 0.5 * (1 - std::erf( (pFoot_z-miu_pz)/(std::sqrt(2)*sigma2_pz) ));
 
-        // priority #3: vertical foot forces
+        // prior #3: vertical foot forces
         T fGrf_z = -forceFoot(2, leg);
         z2_prob[leg] = 0.5 * (1 + std::erf( (fGrf_z-miu_f)/(std::sqrt(2)*sigma2_f) ));
+
+        // prior $4: velocity
+        T v_z = fabs(footVelocity(2, leg));
+        z3_prob[leg] = 0.5 * (1 - std::erf( (v_z-miu_v)/(std::sqrt(2)*sigma2_v) ));
     }
     
     Eigen::Matrix<T, 4, 1> zk; zk.setZero();
@@ -90,7 +97,7 @@ void contactEstimate<T>::updateEstimate(
     this->_prob_contact_plan = u_prob;
     this->_prob_contact_pos = z1_prob;
     this->_prob_contact_force = z2_prob;
-
+    this->_prob_contact_velocity = z3_prob;
 
     kalmanFliter->updateInputMeasure(u_prob, zk);
 
