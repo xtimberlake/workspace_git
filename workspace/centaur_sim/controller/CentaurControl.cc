@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:31:07
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-24 17:17:54
+ * @LastEditTime: 2022-11-25 18:57:32
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurControl.cc
  * @Description: 
  * 
@@ -184,7 +184,47 @@ void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
               
             }
         }
+    } 
+
+    // Event-based swing foot control
+    for (int leg = 0; leg< 2; leg++) {
+        switch (state.foot_contact_event[leg])
+        { 
+            case ContactEvent::SWING:
+            {
+                break;
+            }
+            case ContactEvent::EARLY_CONTACT:
+            {
+
+                state.foot_pos_cmd_world.block<3, 1>(0, leg) = state.locked_foot_pos.block<3, 1>(0, leg);
+                state.foot_vel_cmd_world.block<3, 1>(0, leg).setZero();
+                break;
+            }
+            case ContactEvent::LATE_CONTACT:
+            {
+                // state.foot_pos_cmd_world.block<3, 1>(0, leg) = state.locked_foot_pos.block<3, 1>(0, leg);
+                break;
+            }
+            case ContactEvent::RESTANCE:
+            {
+
+                break;
+            }
+            case ContactEvent::STANCE:
+            {
+                break;
+            }
+        
+            default: break;
+        }
+        
+
     }
+    
+
+
+
 
     // expressed in the CoM's frame
     for (int leg = 0; leg < 2; leg++)

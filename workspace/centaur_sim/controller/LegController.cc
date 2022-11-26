@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-22 08:44:58
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-31 19:13:58
+ * @LastEditTime: 2022-11-25 19:03:19
  * @FilePath: /drake/workspace/centaur_sim/controller/LegController.cc
  * @Description: 
  * 
@@ -100,18 +100,43 @@ Eigen::Matrix<double, 6, 1> LegController::task_impedance_control(CentaurStates&
 Eigen::Matrix<double, 6, 1> LegController::wbc_low_level_control(CentaurStates& state){
     Eigen::Matrix<double, 6, 1> torques; torques.setZero();
 
+    Eigen::Matrix<double, 3, 1> kp, kd;  kp.setZero(); kd.setZero();
+
     for (int leg = 0; leg < 2; leg++)
     {
+        // choose impedance parameters
+        switch (state.foot_contact_event[leg])
+        {
+        case ContactEvent::SWING: 
+        case ContactEvent::LATE_CONTACT:
+        case ContactEvent::RESTANCE:
+        {
+            kp = _kp_joint_swing;
+            kd = _kd_joint_swing;
+            break;
+        }
+        case ContactEvent::EARLY_CONTACT:
+        case ContactEvent::STANCE:
+        default:
+        {
+            kp = _kp_joint_stance;
+            kd = _kd_joint_stance;
+            break;
+        }
+        
+        }
+
+
         if (state.plan_contacts_phase(leg) > 0.0) {
             torques.segment<3>(3 * leg) = 
-                _kp_joint_stance.cwiseProduct(state.wbc_q_cmd.segment<3>(3 * leg) - state.q.segment<3>(3 * leg))
-                + _kd_joint_stance.cwiseProduct(state.wbc_qdot_cmd.segment<3>(3 * leg) - state.qdot.segment<3>(3 * leg))
+                kp.cwiseProduct(state.wbc_q_cmd.segment<3>(3 * leg) - state.q.segment<3>(3 * leg))
+                + kd.cwiseProduct(state.wbc_qdot_cmd.segment<3>(3 * leg) - state.qdot.segment<3>(3 * leg))
                 + state.wbc_tau_ff.segment<3>(3 * leg);
         }
         else {
            torques.segment<3>(3 * leg) = 
-                _kp_joint_swing.cwiseProduct(state.wbc_q_cmd.segment<3>(3 * leg) - state.q.segment<3>(3 * leg))
-                + _kd_joint_swing.cwiseProduct(state.wbc_qdot_cmd.segment<3>(3 * leg) - state.qdot.segment<3>(3 * leg));
+                kp.cwiseProduct(state.wbc_q_cmd.segment<3>(3 * leg) - state.q.segment<3>(3 * leg))
+                + kd.cwiseProduct(state.wbc_qdot_cmd.segment<3>(3 * leg) - state.qdot.segment<3>(3 * leg));
         }
     }
     state.tau = torques;

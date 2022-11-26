@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-14 12:43:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-11-16 21:22:19
+ * @LastEditTime: 2022-11-25 17:13:12
  * @FilePath: /drake/workspace/centaur_sim/centaur_controller.h
  * @Description: controller block for drake simulation
  * 
@@ -101,7 +101,7 @@ private:
         // static int sign = 1;
         delta_x = 0;
         v_now = 0.0;
-        v_des = 0.7;
+        v_des = 0.6;
         buffTime = 2.0; // secs
         
         if(ct->ctrl_states.t > 0.1) {
@@ -139,11 +139,11 @@ private:
         prismatic_joint_q_des[0] += delta_x;
 
         // position
-        ct->ctrl_states.root_pos_d[0] = prismatic_joint_q_des[0];
+        ct->ctrl_states.root_pos_d[0] = prismatic_joint_q_des[0] + 10;
         ct->ctrl_states.root_pos_d[1] = prismatic_joint_q_des[1];
 
         // velocity
-        ct->ctrl_states.root_lin_vel_d_world[0] = v_now / 4.0;
+        ct->ctrl_states.root_lin_vel_d_world[0] = v_now / 4.0 + 0.2;
 
 
         total_torques[0] = 500 * (prismatic_joint_q_des[0] - pos_rpy_states[0]) 
@@ -171,22 +171,7 @@ private:
                 // ct->fly_trotting->update_gait_pattern(ct->ctrl_states);
                 
             }
-            Eigen::Vector2d contact_phases;
-            Eigen::Vector2d swing_phases;
-            contact_phases << ct->ctrl_states.plan_contacts_phase[0], ct->ctrl_states.plan_contacts_phase[1];
-            swing_phases << ct->ctrl_states.plan_swings_phase[0], ct->ctrl_states.plan_swings_phase[1];
             
-            ct->contactestimate->updateEstimate(contact_phases, swing_phases,
-                                            ct->ctrl_states.foot_pos_world, ct->ctrl_states.foot_force_world,
-                                            ct->ctrl_states.foot_vel_world);
-
-            ct->contactestimate->getContactProbabilities(ct->ctrl_states.prob_contact);
-            ct->contactestimate->getContactProbabilitiesBasedonPlan(ct->ctrl_states.prob_contact_of_plan);
-            ct->contactestimate->getContactProbabilitiesBasedonPos(ct->ctrl_states.prob_contact_of_pos);
-            ct->contactestimate->getContactProbabilitiesBasedonForce(ct->ctrl_states.prob_contact_of_force);
-            ct->contactestimate->getContactProbabilitiesBasedonVelocity(ct->ctrl_states.prob_contact_of_velocity);
-            // ct->contactestimate->updateEstimate(ct->ctrl_states.plan_contacts_phase, ct->ctrl_states.plan_swings_phase,
-            //                                 ct->ctrl_states.foot_pos_world, ct->ctrl_states.foot_force_world);
 
             // swing
             ct->controller->GenerateSwingTrajectory(ct->ctrl_states);
@@ -198,7 +183,7 @@ private:
 
             // whole-body impluse controller
             ct->wbicontroller->run(ct->ctrl_states);
-
+            
             if(ct->ctrl_states.t < 0.1) { // start trotting in 0.5 seconds
                 // output_torques = ct->legcontroller->task_impedance_control(ct->ctrl_states);
                 output_torques = ct->legcontroller->wbc_low_level_control(ct->ctrl_states);
@@ -207,6 +192,18 @@ private:
                 // output_torques = ct->legcontroller->task_impedance_control(ct->ctrl_states);
                 output_torques = ct->legcontroller->wbc_low_level_control(ct->ctrl_states);
             }
+
+            ct->contactestimate->updateMeasurement(ct->ctrl_states);
+            ct->contactestimate->updateEstimate();
+            ct->contactestimate->eventsDetect();
+            ct->contactestimate->publishStates(ct->ctrl_states);
+
+            ct->contactestimate->getContactProbabilities(ct->ctrl_states.prob_contact);
+            ct->contactestimate->getContactProbabilitiesBasedonPlan(ct->ctrl_states.prob_contact_of_plan);
+            ct->contactestimate->getContactProbabilitiesBasedonPos(ct->ctrl_states.prob_contact_of_pos);
+            ct->contactestimate->getContactProbabilitiesBasedonForce(ct->ctrl_states.prob_contact_of_force);
+            ct->contactestimate->getContactProbabilitiesBasedonVelocity(ct->ctrl_states.prob_contact_of_velocity);
+            ct->contactestimate->getEstimatedContactForce(ct->ctrl_states.foot_force_est_world);
             
 
         }
@@ -267,11 +264,11 @@ private:
             output_log_vector[1] = prob;
             output_log_vector[1] = ct->ctrl_states.foot_acc_world(2, 1);
             output_log_vector[1] = ct->ctrl_states.prob_contact_of_velocity(1);
-            output_log_vector[2] = ct->ctrl_states.foot_pos_world(2, 1); // left foot vertical position
-            output_log_vector[3] = ct->ctrl_states.prob_contact_of_pos(1);
+            output_log_vector[2] = -ct->ctrl_states.foot_force_world(2, 0); // right foot vertical position
+            output_log_vector[3] = -ct->ctrl_states.foot_force_world(2, 1);
 
-            output_log_vector[4] = ct->ctrl_states.foot_vel_world(2, 1); // left foot vertical position
-            output_log_vector[5] = ct->ctrl_states.prob_contact_of_force(1);
+            output_log_vector[4] = ct->ctrl_states.foot_force_est_world(2, 0); // right foot vertical position
+            output_log_vector[5] = ct->ctrl_states.foot_force_est_world(2, 1);
 
             output_log_vector[6] = ct->ctrl_states.prob_contact(1);
 
@@ -385,6 +382,11 @@ private:
         ct->ctrl_states.foot_vel_rel.block<3, 1>(0, 0) = ct->ctrl_states.JacobianFoot[0] * ct->ctrl_states.qdot.segment<3>(0);
         ct->ctrl_states.foot_vel_rel.block<3, 1>(0, 1) = ct->ctrl_states.JacobianFoot[1] * ct->ctrl_states.qdot.segment<3>(3);
 
+        // body velocity + joint velocity
+        ct->ctrl_states.generalizedQdot.segment<3>(0) = ct->ctrl_states.root_ang_vel_rel;
+        ct->ctrl_states.generalizedQdot.segment<3>(3) = ct->ctrl_states.root_lin_vel_rel;
+        ct->ctrl_states.generalizedQdot.segment<6>(6) = ct->ctrl_states.qdot;
+
         // TODOs: how to 
         Eigen::Vector3d current_vel; current_vel.setZero();
         current_vel = ct->ctrl_states.root_rot_mat * ct->ctrl_states.foot_vel_rel.block<3, 1>(0, 0);
@@ -410,10 +412,10 @@ private:
         //     drake::log()->info(ct->ctrl_states.q);
         // }
 
-        // systems dynamics matrix
-        _control_model.CalcMassMatrix(*_plant_context, &ct->ctrl_states.Mq);
-        _control_model.CalcBiasTerm(*_plant_context, &ct->ctrl_states.Cv);
-        ct->ctrl_states.tau_g = _control_model.CalcGravityGeneralizedForces(*_plant_context);
+        // // systems dynamics matrix
+        // _control_model.CalcMassMatrix(*_plant_context, &ct->ctrl_states.Mq);
+        // _control_model.CalcBiasTerm(*_plant_context, &ct->ctrl_states.Cv);
+        // ct->ctrl_states.tau_g = _control_model.CalcGravityGeneralizedForces(*_plant_context);
     
         
     }

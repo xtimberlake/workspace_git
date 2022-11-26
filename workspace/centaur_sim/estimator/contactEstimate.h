@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-11-07 15:32:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-11-16 21:21:50
+ * @LastEditTime: 2022-11-25 18:31:42
  * @FilePath: /drake/workspace/centaur_sim/estimator/contactEstimate.h
  * @Description: contact estimate that fuses plan_states, foot_pos & grf_z
  * [ref]: 
@@ -16,6 +16,14 @@
 #include <iostream>
 #include <drake/workspace/centaur_sim/Utils/cppTypes.h>
 #include <drake/workspace/centaur_sim/estimator/linearKalmanFilter.h>
+#include <drake/workspace/centaur_sim/controller/CentaurStates.h>
+#include <drake/workspace/centaur_sim/Utils/butterworthFilter.h>
+#include <drake/workspace/centaur_sim/Utils/pseudoInverse.h>
+#include "drake/workspace/centaur_sim/estimator/contactEventData.h"
+
+class CentaurStates;
+
+
 
 
 template <typename T>
@@ -30,19 +38,58 @@ public:
  void getContactProbabilitiesBasedonPos(Vec2<T>& prob_contact) const { prob_contact = _prob_contact_pos; }
  void getContactProbabilitiesBasedonForce(Vec2<T>& prob_contact) const { prob_contact = _prob_contact_force; }
  void getContactProbabilitiesBasedonVelocity(Vec2<T>& prob_contact) const { prob_contact = _prob_contact_velocity; }
+ void getEstimatedContactForce(Eigen::Matrix<double, 3, 2>& foot_forces) const { foot_forces = _foot_force_hat; }
  void setThresholdValue(const T& threshold) { _threshold = threshold; }
 
-
- void updateEstimate(const DVec<T>& phiContact, const DVec<T> phiSwing,
-                     const DMat<T>& pFoot, const DMat<T>& forceFoot, const DMat<T>& footVelocity);
+ void updateMeasurement(const CentaurStates states);
+ void updateEstimate();
+ void eventsDetect();
+ void publishStates(CentaurStates& states);
 
  // variables 
 protected:
+ 
+ /* Measurement data */
+ // prior
+ DVec<T> phiContact;
+ DVec<T> phiSwing;
+ // kinematics 
+ DMat<T> pFoot;
+
+ // differential kinematics
+ DMat<T> footVelocity;
+
+ // dynamics 
+ DMat<T> MassqMtx;
+ DMat<T> MassqMtx_last;
+ DVec<T> generalizedQdotVec;
+ DVec<T> coriolisVec;
+ DVec<T> tau_g;
+ DVec<T> tau_actuated;
+ DMat<T> forceFoot;
+ DMat<T> J_1, J_2;
+ DVec<T> disturbance_term;
+ Eigen::Matrix<T, 3, 12> Sl_1, Sl_2;
+
+
  bool *_s_contact;
+ T _dt; // sampling time
  T _threshold;
+ T _lambda, _gamma, _beta; // cut-off frequency
  Vec2<T> _prob_contact, _prob_contact_plan, _prob_contact_pos, _prob_contact_force;
  Vec2<T> _prob_contact_velocity;
  linearKalmanFilter<T>* kalmanFliter;
+ ButterworthFilter<T>* firstOrderFilter[12];
+ Eigen::Matrix<T, 3, 2> _foot_force_hat;
+
+ ContactEvent _foot_contact_event[2]; // two legs
+ Eigen::Matrix<T, 3, 2> _locked_foot_pos;
+ bool start_gait_plan_scheduler;
+ 
+ int _RESET_GAIT_COUNTER; // 0: void, 1:left stance, 2:left swing
+
+
+
 };
 
 template class contactEstimate<double>;

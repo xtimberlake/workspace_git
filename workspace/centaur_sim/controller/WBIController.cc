@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-16 17:07:03
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-11-07 14:55:19
+ * @LastEditTime: 2022-11-23 18:58:57
  * @FilePath: /drake/workspace/centaur_sim/controller/WBIController.cc
  * @Description: 
  * 
@@ -76,11 +76,12 @@ void WBIController::run(CentaurStates& state)
     kin_wbc();
     dyn_wbc();
     update_command(state, _des_jpos, _des_jvel, _tau_ff);
+    update_dynamics_params_to_states(state);
 
 }
 
 
-void WBIController::update_model(CentaurStates& state) {
+void WBIController::update_model(const CentaurStates state) {
     
 
     // Part1: update configuration of floating base model;
@@ -136,6 +137,16 @@ void WBIController::update_model(CentaurStates& state) {
 
     // std::cout << "state.external_wrench = " << state.external_wrench.transpose() << std::endl;
     // std::cout << "tau_dist = " << tau_dist.transpose() << std::endl;
+
+}
+
+void WBIController::update_dynamics_params_to_states(CentaurStates& state) {
+
+    state.Mq = this->_A;
+    state.Cv = this->_coriolis;
+    state.tau_g = this->_grav;
+    this->_foot_contact[0]->getContactJacobian(state.J_1);
+    this->_foot_contact[1]->getContactJacobian(state.J_2);
 
 }
 

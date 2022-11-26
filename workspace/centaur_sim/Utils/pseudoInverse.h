@@ -2,12 +2,13 @@
  * @Author: haoyun 
  * @Date: 2022-10-11 15:53:47
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-11 15:55:22
+ * @LastEditTime: 2022-11-23 18:49:38
  * @FilePath: /drake/workspace/centaur_sim/Utils/pseudoInverse.h
  * @Description: 
  * 
  *  
  */
+#pragma once
 #include <stdio.h>
 #include <eigen3/Eigen/LU>
 #include <eigen3/Eigen/SVD>

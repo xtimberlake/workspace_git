@@ -2,8 +2,8 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:31:28
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-21 15:51:13
- * @FilePath: /drake/workspace/centaur_sim/controller/CentaurControl.h
+ * @LastEditTime: 2022-11-25 18:46:57
+ * @FilePath: /drake/home/haoyun/.cache/bazel/_bazel_haoyun/a17c303983e829fea1540ab5133f0aae/execroot/drake/bazel-out/k8-opt/bin/workspace/centaur_sim/_virtual_includes/centaur_controller_lib/drake/workspace/centaur_sim/controller/CentaurControl.h
  * @Description: centaur root controller
  * 
  * Copyright (c) 2022 by HAR-Lab, All Rights Reserved. 
@@ -16,6 +16,7 @@
 #include "drake/workspace/centaur_sim/Utils/Utils.h"
 #include "drake/workspace/centaur_sim/Utils/orientationTools.h"
 #include <type_traits>
+#include "drake/workspace/centaur_sim/estimator/contactEventData.h"
 
 class CentaurStates;
 

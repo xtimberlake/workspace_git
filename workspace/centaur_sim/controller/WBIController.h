@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-16 17:07:22
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-11-07 14:55:04
+ * @LastEditTime: 2022-11-23 15:07:46
  * @FilePath: /drake/workspace/centaur_sim/controller/WBIController.h
  * @Description: Whole-body impulse controller
  * 
@@ -32,7 +32,8 @@ public:
     WBIController(/* args */);
     ~WBIController();
     void run(CentaurStates& state);
-    void update_model(CentaurStates& state);
+    void update_model(const CentaurStates state);
+    void update_dynamics_params_to_states(CentaurStates& state);
     void update_contact_task(CentaurStates& state);
     void kin_wbc();
     void dyn_wbc();

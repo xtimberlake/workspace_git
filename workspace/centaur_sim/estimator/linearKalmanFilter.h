@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-11-07 19:14:11
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-11-08 16:35:14
+ * @LastEditTime: 2022-11-25 17:24:40
  * @FilePath: /drake/workspace/centaur_sim/estimator/linearKalmanFilter.h
  * @Description: implement the linear(invarient) Kalman Filter in the following model
  * 
@@ -15,6 +15,7 @@
  * Copyright (c) 2022 by HAR-Lab, All Rights Reserved. 
  */
 
+#pragma once
 #include <iostream>
 #include "drake/workspace/centaur_sim/Utils/cppTypes.h"
 

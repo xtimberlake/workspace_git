@@ -32,7 +32,7 @@
 #include "drake/workspace/centaur_sim/extract_data.h"
 #include "drake/workspace/centaur_sim/centaur_controller.h"
 
-DEFINE_double(simulation_sec, 5.5,
+DEFINE_double(simulation_sec, 7.5,
               "Number of seconds to simulate.");
 DEFINE_double(sim_dt, 5e-4,
               "The time step to use for MultibodyPlant model"
@@ -314,23 +314,25 @@ namespace centaur_sim {
         common::CallPython("subplot", 4, 1, 2);
         common::CallPython("plot", controller_log_data.sample_times(),
                            controller_log_data.data().row(2).transpose());  
-        common::CallPython("plot", controller_log_data.sample_times(),
-                           controller_log_data.data().row(3).transpose()); 
         common::CallPython("legend", common::ToPythonTuple("foot_position","contact_prob"));
 
         common::CallPython("subplot", 4, 1, 3);
+        // common::CallPython("plot", controller_log_data.sample_times(),
+        //                    controller_log_data.data().row(2).transpose()); 
         common::CallPython("plot", controller_log_data.sample_times(),
                            controller_log_data.data().row(4).transpose());  
         // common::CallPython("plot", controller_log_data.sample_times(),
         //                    controller_log_data.data().row(5).transpose()); 
-        common::CallPython("legend", common::ToPythonTuple("fz"));
+        common::CallPython("legend", common::ToPythonTuple("left JT", "GM fz"));
 
         common::CallPython("subplot", 4, 1, 4);
+        // common::CallPython("plot", controller_log_data.sample_times(),
+        //                    controller_log_data.data().row(3).transpose()); 
         common::CallPython("plot", controller_log_data.sample_times(),
                            controller_log_data.data().row(5).transpose());  
         // common::CallPython("plot", controller_log_data.sample_times(),
         //                    controller_log_data.data().row(7).transpose()); 
-        common::CallPython("legend", common::ToPythonTuple("_prob_contact_force"));
+        common::CallPython("legend", common::ToPythonTuple("right JT", "GM fz"));
 
         // common::CallPython("subplot", 4, 1, 4);
         // common::CallPython("plot", log.sample_times(),

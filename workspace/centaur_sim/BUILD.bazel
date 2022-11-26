@@ -53,11 +53,19 @@ drake_cc_library(
     srcs = [
         "controller/CentaurStates.cc",
         "Utils/Utils.cc",
+        "estimator/contactEstimate.cc",
+        "estimator/linearKalmanFilter.cc",
      ],
     hdrs = [
         "controller/CentaurStates.h",
         "controller/CentaurParams.h",
         "Utils/Utils.h",
+        "Utils/cppTypes.h",
+        "estimator/contactEstimate.h",
+        "estimator/linearKalmanFilter.h",
+        "Utils/butterworthFilter.h",
+        "Utils/pseudoInverse.h",
+        "estimator/contactEventData.h",
          ],
     deps = [
         "//systems/framework:leaf_system",
@@ -119,6 +127,8 @@ drake_cc_library(
         "Utils/Goldfarb_Optimizer/QuadProg++.hh",
         "estimator/contactEstimate.h",
         "estimator/linearKalmanFilter.h",
+        "Utils/butterworthFilter.h",
+        "estimator/contactEventData.h",
     ],
     data = [
         "centaur_control_model.sdf",

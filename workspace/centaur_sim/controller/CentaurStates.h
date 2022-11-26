@@ -2,8 +2,8 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:30:49
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-11-16 21:22:46
- * @FilePath: /drake/workspace/centaur_sim/controller/CentaurStates.h
+ * @LastEditTime: 2022-11-25 18:21:03
+ * @FilePath: /drake/bazel-out/k8-opt/bin/workspace/centaur_sim/_virtual_includes/centaur_states_lib/drake/workspace/centaur_sim/controller/CentaurStates.h
  * @Description: define all the states that used in controller; mainly 
  *                adapted from https://github.com/ShuoYangRobotics/A1-QP-MPC-Controller
  * 
@@ -20,6 +20,8 @@
 #include <type_traits>
 
 #include "drake/workspace/centaur_sim/controller/CentaurParams.h"
+#include "drake/workspace/centaur_sim/Utils/cppTypes.h"
+#include "drake/workspace/centaur_sim/estimator/contactEventData.h"
 
 
 
@@ -197,6 +199,15 @@ class CentaurStates {
         foot_vel_world.setZero();
         foot_acc_world.setZero();
 
+        Mq.setZero();
+        Cv.setZero();
+        generalizedQdot.setZero();
+        tau_g.setZero();
+        J_1.setZero();
+        J_2.setZero();
+
+        RESET_GAIT_COUNTER = 0;
+
     }
 
     // variables
@@ -211,8 +222,8 @@ class CentaurStates {
     // gait
     int nIterationsPerMPC;
     double gait_resolution;
-    Eigen::Vector2f plan_contacts_phase;
-    Eigen::Vector2f plan_swings_phase;
+    Eigen::Vector2d plan_contacts_phase;
+    Eigen::Vector2d plan_swings_phase;
     double gait_period; //symmetric gait
     Eigen::Vector2f stance_duration;
     Eigen::Vector2d prob_contact, prob_contact_of_plan ,prob_contact_of_pos, prob_contact_of_force, prob_contact_of_velocity;
@@ -278,10 +289,12 @@ class CentaurStates {
     
     Eigen::Matrix<double, 3, 2> foot_force_rel;    // estimate from motors' torques
     Eigen::Matrix<double, 3, 2> foot_force_world;  
+    Eigen::Matrix<double, 3, 2> foot_force_est_world;
 
     Eigen::Matrix<double, 3, 2> foot_force_cmd_rel;    // command
     Eigen::Matrix<double, 3, 2> foot_force_cmd_world;  // from mpc
     Eigen::Matrix<double, 3, 2> foot_force_cmd_world_wbc;  // after wbc
+    
 
     Eigen::Matrix<double, 3, 3> JacobianFoot[2];
 
@@ -289,18 +302,27 @@ class CentaurStates {
     Eigen::Matrix<double, 6, 1> q, qdot, q_cmd, qdot_cmd, tau_ff;
     Eigen::Matrix<double, 6, 1> tau;
     Eigen::Matrix<double, 6, 1> tau_feedback;
-
+    
     // ik
     int max_iter;
     double ik_eps;
 
     Eigen::Matrix<double, 3, 2> foot_force_kin;
 
+    // // system dynamics:
+    // // M(q)v̇ + C(q, v)v = tau_g + tau + ∑ J_WBᵀ(q) Fapp_Bo_W
+    // Eigen::Matrix<double, 12, 12> Mq;   // mass matrix
+    // Eigen::Matrix<double, 12, 1> Cv;    // bias term
+    // Eigen::Matrix<double, 12, 1> tau_g; // generalized forces due to gravity
+
     // system dynamics:
-    // M(q)v̇ + C(q, v)v = tau_g + tau + ∑ J_WBᵀ(q) Fapp_Bo_W
-    Eigen::Matrix<double, 12, 12> Mq;   // mass matrix
-    Eigen::Matrix<double, 12, 1> Cv;    // bias term
-    Eigen::Matrix<double, 12, 1> tau_g; // generalized forces due to gravity
+    // M(q)v̇ + C(q, v)v + tau_g =  F + tau + ∑ J_WBᵀ(q) Fapp_Bo_W
+    DMat<double> Mq;   // mass matrix
+    DVec<double> Cv;    // bias term
+    Eigen::Matrix<double, 12, 1> generalizedQdot;
+    DVec<double> tau_g; // generalized forces due to gravity
+    DMat<double> J_1;
+    DMat<double> J_2;
 
 
     // Others
@@ -315,4 +337,9 @@ class CentaurStates {
 
     bool firstRun;
 
+
+    // the interface of contactEstimator and gait scheduler
+    int RESET_GAIT_COUNTER;
+    Eigen::Matrix<double, 3, 2> locked_foot_pos;
+    ContactEvent foot_contact_event[2]; // two legs
 };
