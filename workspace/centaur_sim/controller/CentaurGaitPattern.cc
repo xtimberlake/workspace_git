@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-17 11:21:35
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-31 17:23:30
+ * @LastEditTime: 2022-11-26 12:49:22
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurGaitPattern.cc
  * @Description: 
  * 
@@ -46,7 +46,24 @@ void CentuarGaitPattern::update_gait_pattern(CentaurStates& state)
         state.firstRun = false;
         // std::cout << "frist run _gait_counter = " << _gait_counter << std::endl;
     } else {
-        _gait_counter += _gait_counter_speed;
+        
+        /* Event-based gait scheduler */
+        if(state.foot_contact_event[0] == ContactEvent::LATE_CONTACT || state.foot_contact_event[1] == ContactEvent::LATE_CONTACT)
+        {
+            // freeze the gait counter; wait for collision
+
+        }
+        else if (state.RESET_GAIT_COUNTER != 0 && (state.foot_contact_event[0] == ContactEvent::RESTANCE || state.foot_contact_event[1] == ContactEvent::RESTANCE))
+        {
+            // RESET the scheduler 
+            this->reset(state.RESET_GAIT_COUNTER);
+            state.RESET_GAIT_COUNTER = 0;
+        }
+        else
+        {
+            _gait_counter += _gait_counter_speed;
+        }
+        
     }
 
     _gait_counter = std::fmod(_gait_counter, _gait_total_counter);
@@ -115,7 +132,14 @@ void CentuarGaitPattern::update_gait_pattern(CentaurStates& state)
 }
 
 
-void CentuarGaitPattern::reset() 
+void CentuarGaitPattern::reset(int reset_type) 
 {
-    _gait_counter = 0.0;
+    switch (reset_type)
+    {
+    case 0: _gait_counter += _gait_counter_speed; break;
+    case 1: _gait_counter = 0.0; break;
+    case 2: _gait_counter = _gait_total_counter / 2; break;
+    default: break;
+    }
+    // _gait_counter = 0.0;
 }

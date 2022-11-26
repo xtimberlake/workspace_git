@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-11-07 15:32:23
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-11-25 18:31:55
+ * @LastEditTime: 2022-11-26 13:46:58
  * @FilePath: /drake/workspace/centaur_sim/estimator/contactEstimate.cc
  * @Description: 
  * 
@@ -62,6 +62,13 @@ contactEstimate<T>::contactEstimate() {
     this->MassqMtx = Eigen::Matrix<double, 12, 12>::Zero();
 
     _locked_foot_pos.setZero();
+
+    start_gait_plan_scheduler = true;
+    this->_RESET_GAIT_COUNTER = 0;
+    this->_time_start_to_extend[0] = 0.0;
+    this->_time_start_to_extend[1] = 0.0;
+
+    
 }
 
 template <typename T>
@@ -71,6 +78,7 @@ contactEstimate<T>::~contactEstimate() {}
 template <typename T>
 void contactEstimate<T>::updateMeasurement(const CentaurStates states) {
 
+    this->_system_time = states.t;
     this->phiContact = states.plan_contacts_phase;
     this->phiSwing = states.plan_swings_phase;
     this->pFoot = states.foot_pos_world;
@@ -92,6 +100,7 @@ void contactEstimate<T>::updateMeasurement(const CentaurStates states) {
     this->_locked_foot_pos = this->pFoot;
     // std::cout << "generaliezed_qdot = " << this->generalizedQdotVec.transpose() << std::endl;
     // std::cout << "---" << std::endl;
+    this->max_extend_time = states.gait_period / 10.0;
     
 }
 
@@ -187,8 +196,7 @@ void contactEstimate<T>::updateEstimate() {
     this->_foot_force_hat.col(0) = f1_hat;
     this->_foot_force_hat.col(1) = f2_hat;
 
-    start_gait_plan_scheduler = true;
-    this->_RESET_GAIT_COUNTER = 0;
+    
 
 }
 
@@ -225,7 +233,9 @@ void contactEstimate<T>::eventsDetect() {
                     {
                         this->_locked_foot_pos = this->pFoot; // store the collision pos
                         this->_foot_contact_event[leg] = ContactEvent::LATE_CONTACT;
+                        this->_time_start_to_extend[leg] = this->_system_time;
                         std::cout << "leg " << leg << ": " << "Late Contact at phase = " << this->phiSwing[leg] << "." << std::endl;
+        
                     }
                     
 
@@ -244,16 +254,25 @@ void contactEstimate<T>::eventsDetect() {
                     // meanwhile freezes the gait scheduler!
                     start_gait_plan_scheduler = false;
                     _RESET_GAIT_COUNTER = 0;
+                    double time_pass;
                     bool collision_detect = false;
-                    if(this->_foot_force_hat(2, leg) > 70.0)  collision_detect = true; // threshold the vertical impulse
+                    bool extend_time_out = false;
+                    time_pass = this->_system_time - this->_time_start_to_extend[leg];
+                
+                    if(this->_foot_force_hat(2, leg) > 40.0)  collision_detect = true; // threshold the vertical impulse
+                    if(time_pass > this->max_extend_time) extend_time_out = true;
 
-                    if(collision_detect)
+                    if(collision_detect || extend_time_out)
                     {
                         // restart and RESET the gait scheduler
                         start_gait_plan_scheduler = true;
                         _RESET_GAIT_COUNTER = leg + 1;
                         this->_foot_contact_event[leg] = ContactEvent::RESTANCE;
-                        std::cout << "leg " << leg << ": "<< "ReStance." << std::endl;
+                        std::cout << "leg " << leg << " : ReStance.";
+                        if(extend_time_out && !collision_detect) {std::cout << "(because of timeout), current impulse force = " << this->_foot_force_hat(2, leg) << ".  ";}
+                        if(!extend_time_out && collision_detect) {std::cout << "(because of collision), time elipsed = " << time_pass << ".  ";}
+                        std::cout << std::endl;
+
                     }
 
                     break;

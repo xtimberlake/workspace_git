@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-14 12:43:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-11-25 17:13:12
+ * @LastEditTime: 2022-11-26 11:00:11
  * @FilePath: /drake/workspace/centaur_sim/centaur_controller.h
  * @Description: controller block for drake simulation
  * 
@@ -139,7 +139,7 @@ private:
         prismatic_joint_q_des[0] += delta_x;
 
         // position
-        ct->ctrl_states.root_pos_d[0] = prismatic_joint_q_des[0] + 10;
+        ct->ctrl_states.root_pos_d[0] = prismatic_joint_q_des[0];
         ct->ctrl_states.root_pos_d[1] = prismatic_joint_q_des[1];
 
         // velocity

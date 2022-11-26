@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-22 08:44:58
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-11-25 19:03:19
+ * @LastEditTime: 2022-11-26 12:33:59
  * @FilePath: /drake/workspace/centaur_sim/controller/LegController.cc
  * @Description: 
  * 
@@ -18,8 +18,8 @@ LegController::LegController()
     // this->_kp_swing << 100.0, 100, 50;
     // this->_kd_swing << 200.0, 200, 100;
 
-    this->_kp_stance << 50.0, 20, 20;
-    this->_kd_stance << 20.0, 20, 25;
+    this->_kp_stance << 12.5, 5, 5;
+    this->_kd_stance << 10.0, 10, 12.5;
 
     this->_kp_swing << 200.0, 200, 150;
     this->_kd_swing << 200.0, 200, 100;
@@ -27,7 +27,7 @@ LegController::LegController()
     // // wbc 
     // these parameters are quite crutial to retrieve stability!
     // this->_kp_joint_stance << 30.0, 15.0, 15.0;
-    // this->_kd_joint_stance << 5.0, 2.5, 2.5;
+    // this->_kd_joint_stance << 5.0, 2.5, 25;
     this->_kp_joint_stance << 20.0, 30.0, 30.0;
     this->_kd_joint_stance << 3.0, 5.5, 5.5;
 

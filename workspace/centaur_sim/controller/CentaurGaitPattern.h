@@ -2,8 +2,8 @@
  * @Author: haoyun 
  * @Date: 2022-07-17 11:26:19
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-21 19:20:57
- * @FilePath: /drake/workspace/centaur_sim/controller/CentaurGaitPattern.h
+ * @LastEditTime: 2022-11-26 12:46:52
+ * @FilePath: /drake/home/haoyun/.cache/bazel/_bazel_haoyun/a17c303983e829fea1540ab5133f0aae/execroot/drake/bazel-out/k8-opt/bin/workspace/centaur_sim/_virtual_includes/centaur_controller_lib/drake/workspace/centaur_sim/controller/CentaurGaitPattern.h
  * @Description: 
  * 
  * Copyright (c) 2022 by HAR-Lab, All Rights Reserved. 
@@ -41,7 +41,7 @@ public:
                         Eigen::Vector2f offset);
 
     void update_gait_pattern(CentaurStates& state);
-    void reset();
+    void reset(int reset_type);
     
 
 };

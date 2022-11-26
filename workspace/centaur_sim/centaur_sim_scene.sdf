@@ -497,7 +497,7 @@
 
   <!-- terrain -->
   <frame name='box_frame' attached_to='ground'>
-    <pose relative_to='ground'>1.0 -0.4 0.0 0 0 0</pose>
+    <pose relative_to='ground'>0.9 -0.4 0.0 0 0 0</pose>
   </frame>
 
   <joint name='boxes_fix' type='fixed'>
@@ -511,7 +511,7 @@
     <visual name='visual'>
       <pose relative_to='box_frame'>0 0 0 0 0 0.57</pose>
       <geometry>
-        <box> <size>1 0.2 0.1</size> </box>
+        <box> <size>1 0.18 0.12</size> </box>
       </geometry>
       <material>
         <diffuse>1.0 0.423529411765 0.0392156862745 0.5</diffuse>
@@ -520,7 +520,7 @@
     <collision name='collision'>
       <pose relative_to='box_frame'>0 0 0 0 0 0.57</pose>
       <geometry>
-        <box> <size>1 0.2 0.1</size> </box>
+        <box> <size>1 0.18 0.12</size> </box>
       </geometry>
     </collision>
   </link>

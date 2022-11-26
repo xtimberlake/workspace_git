@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:31:07
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-11-25 18:57:32
+ * @LastEditTime: 2022-11-26 13:51:44
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurControl.cc
  * @Description: 
  * 
@@ -198,12 +198,14 @@ void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
             {
 
                 state.foot_pos_cmd_world.block<3, 1>(0, leg) = state.locked_foot_pos.block<3, 1>(0, leg);
+                state.foot_pos_cmd_world(2, leg) = state.locked_foot_pos(2, leg) - 0.004;
                 state.foot_vel_cmd_world.block<3, 1>(0, leg).setZero();
                 break;
             }
             case ContactEvent::LATE_CONTACT:
             {
-                // state.foot_pos_cmd_world.block<3, 1>(0, leg) = state.locked_foot_pos.block<3, 1>(0, leg);
+                state.foot_pos_cmd_world(2, leg) -= 0.1;
+                // std::cout << "leg" << leg << " z des = " << state.foot_pos_cmd_world(2, leg) << std::endl;
                 break;
             }
             case ContactEvent::RESTANCE:

@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-11-07 15:32:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-11-25 18:31:42
+ * @LastEditTime: 2022-11-26 13:19:10
  * @FilePath: /drake/workspace/centaur_sim/estimator/contactEstimate.h
  * @Description: contact estimate that fuses plan_states, foot_pos & grf_z
  * [ref]: 
@@ -73,6 +73,7 @@ protected:
 
 
  bool *_s_contact;
+ double _system_time;
  T _dt; // sampling time
  T _threshold;
  T _lambda, _gamma, _beta; // cut-off frequency
@@ -84,7 +85,9 @@ protected:
 
  ContactEvent _foot_contact_event[2]; // two legs
  Eigen::Matrix<T, 3, 2> _locked_foot_pos;
+ double _time_start_to_extend[2];
  bool start_gait_plan_scheduler;
+ double max_extend_time;
  
  int _RESET_GAIT_COUNTER; // 0: void, 1:left stance, 2:left swing
 
