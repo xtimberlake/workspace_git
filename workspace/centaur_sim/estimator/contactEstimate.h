@@ -2,8 +2,8 @@
  * @Author: haoyun 
  * @Date: 2022-11-07 15:32:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-11-26 13:19:10
- * @FilePath: /drake/workspace/centaur_sim/estimator/contactEstimate.h
+ * @LastEditTime: 2022-12-01 18:53:30
+ * @FilePath: /drake/home/haoyun/.cache/bazel/_bazel_haoyun/a17c303983e829fea1540ab5133f0aae/execroot/drake/bazel-out/k8-opt/bin/workspace/centaur_sim/_virtual_includes/centaur_states_lib/drake/workspace/centaur_sim/estimator/contactEstimate.h
  * @Description: contact estimate that fuses plan_states, foot_pos & grf_z
  * [ref]: 
  * Bledt, Gerardo, Patrick M. Wensing, Sam Ingersoll, and Sangbae Kim. "Contact model
@@ -59,6 +59,9 @@ protected:
  // differential kinematics
  DMat<T> footVelocity;
 
+ // acc
+ Eigen::Matrix<double, 3, 2> footAcc;
+
  // dynamics 
  DMat<T> MassqMtx;
  DMat<T> MassqMtx_last;
@@ -82,8 +85,10 @@ protected:
  linearKalmanFilter<T>* kalmanFliter;
  ButterworthFilter<T>* firstOrderFilter[12];
  Eigen::Matrix<T, 3, 2> _foot_force_hat;
+ Eigen::Matrix<T, 2, 1> _filted_collision_signal;
 
  ContactEvent _foot_contact_event[2]; // two legs
+ Eigen::Matrix<int, 2, 1> _restance_k;
  Eigen::Matrix<T, 3, 2> _locked_foot_pos;
  double _time_start_to_extend[2];
  bool start_gait_plan_scheduler;

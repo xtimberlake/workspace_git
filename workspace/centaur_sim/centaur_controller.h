@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-14 12:43:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-11-26 11:00:11
+ * @LastEditTime: 2022-12-01 19:01:02
  * @FilePath: /drake/workspace/centaur_sim/centaur_controller.h
  * @Description: controller block for drake simulation
  * 
@@ -267,8 +267,10 @@ private:
             output_log_vector[2] = -ct->ctrl_states.foot_force_world(2, 0); // right foot vertical position
             output_log_vector[3] = -ct->ctrl_states.foot_force_world(2, 1);
 
-            output_log_vector[4] = ct->ctrl_states.foot_force_est_world(2, 0); // right foot vertical position
-            output_log_vector[5] = ct->ctrl_states.foot_force_est_world(2, 1);
+            // output_log_vector[4] = ct->ctrl_states.foot_force_est_world(2, 0); // right foot vertical position
+            // output_log_vector[5] = ct->ctrl_states.foot_force_est_world(2, 1);
+            output_log_vector[4] = ct->ctrl_states.filted_collision_signal(1); // right foot vertical position
+            output_log_vector[5] = ct->ctrl_states.foot_acc_world(2, 1);
 
             output_log_vector[6] = ct->ctrl_states.prob_contact(1);
 

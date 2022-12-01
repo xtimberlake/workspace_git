@@ -2,8 +2,8 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:30:49
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-11-25 18:21:03
- * @FilePath: /drake/bazel-out/k8-opt/bin/workspace/centaur_sim/_virtual_includes/centaur_states_lib/drake/workspace/centaur_sim/controller/CentaurStates.h
+ * @LastEditTime: 2022-12-01 18:57:28
+ * @FilePath: /drake/workspace/centaur_sim/controller/CentaurStates.h
  * @Description: define all the states that used in controller; mainly 
  *                adapted from https://github.com/ShuoYangRobotics/A1-QP-MPC-Controller
  * 
@@ -207,6 +207,7 @@ class CentaurStates {
         J_2.setZero();
 
         RESET_GAIT_COUNTER = 0;
+        filted_collision_signal.setZero();
 
     }
 
@@ -342,4 +343,8 @@ class CentaurStates {
     int RESET_GAIT_COUNTER;
     Eigen::Matrix<double, 3, 2> locked_foot_pos;
     ContactEvent foot_contact_event[2]; // two legs
+
+    Eigen::Matrix<int, 2, 1> restance_k;
+
+    Eigen::Matrix<double, 2, 1> filted_collision_signal;
 };

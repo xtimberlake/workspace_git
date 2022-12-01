@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-11-07 15:32:23
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-11-26 13:46:58
+ * @LastEditTime: 2022-12-01 19:07:23
  * @FilePath: /drake/workspace/centaur_sim/estimator/contactEstimate.cc
  * @Description: 
  * 
@@ -47,7 +47,7 @@ contactEstimate<T>::contactEstimate() {
     num_b << 1.0-_gamma, 0.0;
     den_a << 1.0, -_gamma;
 
-    for (int i = 0; i < 12; i++) {
+    for (int i = 6; i < 12; i++) {
         firstOrderFilter[i] = new ButterworthFilter<double>(1, num_b, den_a);
     }
 
@@ -68,6 +68,20 @@ contactEstimate<T>::contactEstimate() {
     this->_time_start_to_extend[0] = 0.0;
     this->_time_start_to_extend[1] = 0.0;
 
+    this->_restance_k.setZero();
+    this->footAcc.setZero();
+
+    
+    T _acc_lambda = 100; // cutoff frequency in s-domain
+    T _acc_gamma = std::exp(-_acc_lambda*_dt); // z-domain
+    
+    Vec2<double> acc_num_b, acc_den_a;
+    acc_num_b << 1.0-_acc_gamma, 0.0;
+    acc_den_a << 1.0, -_acc_gamma;
+
+    for (int i = 0; i < 2; i++) {
+        firstOrderFilter[i] = new ButterworthFilter<double>(1, acc_num_b, acc_den_a);
+    }
     
 }
 
@@ -84,6 +98,7 @@ void contactEstimate<T>::updateMeasurement(const CentaurStates states) {
     this->pFoot = states.foot_pos_world;
     this->forceFoot = states.foot_force_world;
     this->footVelocity = states.foot_vel_world;
+    this->footAcc = states.foot_acc_world;
     this->MassqMtx_last = this->MassqMtx;
     this->MassqMtx = states.Mq;
     this->coriolisVec = states.Cv;
@@ -100,7 +115,7 @@ void contactEstimate<T>::updateMeasurement(const CentaurStates states) {
     this->_locked_foot_pos = this->pFoot;
     // std::cout << "generaliezed_qdot = " << this->generalizedQdotVec.transpose() << std::endl;
     // std::cout << "---" << std::endl;
-    this->max_extend_time = states.gait_period / 10.0;
+    this->max_extend_time = 0.002;
     
 }
 
@@ -235,7 +250,7 @@ void contactEstimate<T>::eventsDetect() {
                         this->_foot_contact_event[leg] = ContactEvent::LATE_CONTACT;
                         this->_time_start_to_extend[leg] = this->_system_time;
                         std::cout << "leg " << leg << ": " << "Late Contact at phase = " << this->phiSwing[leg] << "." << std::endl;
-        
+                        _restance_k[leg]++;
                     }
                     
 
@@ -261,7 +276,7 @@ void contactEstimate<T>::eventsDetect() {
                 
                     if(this->_foot_force_hat(2, leg) > 40.0)  collision_detect = true; // threshold the vertical impulse
                     if(time_pass > this->max_extend_time) extend_time_out = true;
-
+                    _restance_k[leg]++;
                     if(collision_detect || extend_time_out)
                     {
                         // restart and RESET the gait scheduler
@@ -271,8 +286,9 @@ void contactEstimate<T>::eventsDetect() {
                         std::cout << "leg " << leg << " : ReStance.";
                         if(extend_time_out && !collision_detect) {std::cout << "(because of timeout), current impulse force = " << this->_foot_force_hat(2, leg) << ".  ";}
                         if(!extend_time_out && collision_detect) {std::cout << "(because of collision), time elipsed = " << time_pass << ".  ";}
-                        std::cout << std::endl;
-
+                        std::cout << "Total control steps=" << this->_restance_k << std::endl;
+                        _restance_k.setZero();
+                        
                     }
 
                     break;
@@ -307,5 +323,8 @@ void contactEstimate<T>::publishStates(CentaurStates& states) {
     states.locked_foot_pos = this->_locked_foot_pos;
     states.foot_contact_event[0] = this->_foot_contact_event[0];
     states.foot_contact_event[1] = this->_foot_contact_event[1];
-
+    states.restance_k = this->_restance_k;
+    
+    states.filted_collision_signal[0] = firstOrderFilter[0]->feedData(footAcc(2, 0));
+    states.filted_collision_signal[1] = firstOrderFilter[1]->feedData(footAcc(2, 1));
 }
