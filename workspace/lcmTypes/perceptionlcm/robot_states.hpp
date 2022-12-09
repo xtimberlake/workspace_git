@@ -16,6 +16,8 @@ namespace perceptionlcm
 class robot_states
 {
     public:
+        int8_t     control_mode;
+
         double     position[3];
 
         double     orientation_wxyz[4];
@@ -118,6 +120,9 @@ int robot_states::_encodeNoHash(void *buf, int offset, int maxlen) const
 {
     int pos = 0, tlen;
 
+    tlen = __int8_t_encode_array(buf, offset + pos, maxlen - pos, &this->control_mode, 1);
+    if(tlen < 0) return tlen; else pos += tlen;
+
     tlen = __double_encode_array(buf, offset + pos, maxlen - pos, &this->position[0], 3);
     if(tlen < 0) return tlen; else pos += tlen;
 
@@ -134,6 +139,9 @@ int robot_states::_decodeNoHash(const void *buf, int offset, int maxlen)
 {
     int pos = 0, tlen;
 
+    tlen = __int8_t_decode_array(buf, offset + pos, maxlen - pos, &this->control_mode, 1);
+    if(tlen < 0) return tlen; else pos += tlen;
+
     tlen = __double_decode_array(buf, offset + pos, maxlen - pos, &this->position[0], 3);
     if(tlen < 0) return tlen; else pos += tlen;
 
@@ -149,6 +157,7 @@ int robot_states::_decodeNoHash(const void *buf, int offset, int maxlen)
 int robot_states::_getEncodedSizeNoHash() const
 {
     int enc_size = 0;
+    enc_size += __int8_t_encoded_array_size(NULL, 1);
     enc_size += __double_encoded_array_size(NULL, 3);
     enc_size += __double_encoded_array_size(NULL, 4);
     enc_size += __double_encoded_array_size(NULL, 6);
@@ -157,7 +166,7 @@ int robot_states::_getEncodedSizeNoHash() const
 
 uint64_t robot_states::_computeHash(const __lcm_hash_ptr *)
 {
-    uint64_t hash = 0x94777aa4d928abeaLL;
+    uint64_t hash = 0xd51856d80726f9c4LL;
     return (hash<<1) + ((hash>>63)&1);
 }
 
