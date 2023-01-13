@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-17 11:26:19
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-11-26 12:46:52
+ * @LastEditTime: 2022-12-13 17:30:49
  * @FilePath: /drake/home/haoyun/.cache/bazel/_bazel_haoyun/a17c303983e829fea1540ab5133f0aae/execroot/drake/bazel-out/k8-opt/bin/workspace/centaur_sim/_virtual_includes/centaur_controller_lib/drake/workspace/centaur_sim/controller/CentaurGaitPattern.h
  * @Description: 
  * 
@@ -14,6 +14,7 @@
 #include <iostream>
 #include "drake/multibody/plant/multibody_plant.h"
 #include "drake/workspace/centaur_sim/controller/CentaurStates.h"
+#include "drake/workspace/centaur_sim/controller/global_control_flag.h"
 
 
 

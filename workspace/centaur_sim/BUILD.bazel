@@ -129,6 +129,7 @@ drake_cc_library(
         "estimator/linearKalmanFilter.h",
         "Utils/butterworthFilter.h",
         "estimator/contactEventData.h",
+        "controller/global_control_flag.h",
     ],
     data = [
         "centaur_control_model.sdf",

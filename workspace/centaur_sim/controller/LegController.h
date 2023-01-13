@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-22 08:44:58
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-14 15:45:52
+ * @LastEditTime: 2022-12-13 17:01:39
  * @FilePath: /drake/workspace/centaur_sim/controller/LegController.h
  * @Description: 
  * 
@@ -11,6 +11,7 @@
 #pragma once
 
 #include "drake/workspace/centaur_sim/controller/CentaurStates.h"
+#include "drake/workspace/centaur_sim/controller/global_control_flag.h"
 
 class LegController
 {

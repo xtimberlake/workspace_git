@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-17 11:21:35
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-11-26 12:49:22
+ * @LastEditTime: 2022-12-13 17:29:40
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurGaitPattern.cc
  * @Description: 
  * 
@@ -48,6 +48,7 @@ void CentuarGaitPattern::update_gait_pattern(CentaurStates& state)
     } else {
         
         /* Event-based gait scheduler */
+        #ifdef USE_REACTIVE_CONTROL
         if(state.foot_contact_event[0] == ContactEvent::LATE_CONTACT || state.foot_contact_event[1] == ContactEvent::LATE_CONTACT)
         {
             // freeze the gait counter; wait for collision
@@ -63,10 +64,16 @@ void CentuarGaitPattern::update_gait_pattern(CentaurStates& state)
         {
             _gait_counter += _gait_counter_speed;
         }
+        #else
+            _gait_counter += _gait_counter_speed;
+        #endif
         
     }
 
+
     _gait_counter = std::fmod(_gait_counter, _gait_total_counter);
+
+
    
     _phase = _gait_counter / _gait_total_counter;
 

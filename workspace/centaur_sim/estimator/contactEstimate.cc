@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-11-07 15:32:23
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-12-01 19:07:23
+ * @LastEditTime: 2022-12-13 19:24:53
  * @FilePath: /drake/workspace/centaur_sim/estimator/contactEstimate.cc
  * @Description: 
  * 
@@ -236,6 +236,7 @@ void contactEstimate<T>::eventsDetect() {
 
                     if (this->phiSwing[leg] > 0.5) start_detect = true; // detect the evnets at second half of the swing phase
                     if(this->_foot_force_hat(2, leg) > 80.0)  collision_detect = true; // threshold the vertical impulse
+                    // if(this->footAcc(2, leg) > 40.0)  collision_detect = true; // threshold the vertical acceleration
                     if (start_detect && collision_detect)
                     {
 
@@ -244,13 +245,16 @@ void contactEstimate<T>::eventsDetect() {
                         std::cout << "leg " << leg << ": " << "Early Contact at phase = " << this->phiSwing[leg] << "." << std::endl;
                     }
 
-                    if (start_detect && !collision_detect && this->phiSwing[leg] > 0.99)
+                    if (start_detect && !collision_detect && this->phiSwing[leg] > 0.996)
                     {
                         this->_locked_foot_pos = this->pFoot; // store the collision pos
                         this->_foot_contact_event[leg] = ContactEvent::LATE_CONTACT;
                         this->_time_start_to_extend[leg] = this->_system_time;
                         std::cout << "leg " << leg << ": " << "Late Contact at phase = " << this->phiSwing[leg] << "." << std::endl;
                         _restance_k[leg]++;
+
+                        // cancell the downward motion
+                        this->_foot_contact_event[leg] = ContactEvent::SWING;
                     }
                     
 
@@ -274,7 +278,8 @@ void contactEstimate<T>::eventsDetect() {
                     bool extend_time_out = false;
                     time_pass = this->_system_time - this->_time_start_to_extend[leg];
                 
-                    if(this->_foot_force_hat(2, leg) > 40.0)  collision_detect = true; // threshold the vertical impulse
+                    if(this->_foot_force_hat(2, leg) > 50.0)  collision_detect = true; // threshold the vertical impulse
+                    // if(this->footAcc(2, leg) > 40.0)  collision_detect = true; // threshold the vertical acceleration
                     if(time_pass > this->max_extend_time) extend_time_out = true;
                     _restance_k[leg]++;
                     if(collision_detect || extend_time_out)
@@ -323,6 +328,7 @@ void contactEstimate<T>::publishStates(CentaurStates& states) {
     states.locked_foot_pos = this->_locked_foot_pos;
     states.foot_contact_event[0] = this->_foot_contact_event[0];
     states.foot_contact_event[1] = this->_foot_contact_event[1];
+    // std::cout << "left state = " << static_cast<int>(states.foot_contact_event[0]) << ", right state = " << static_cast<int>(states.foot_contact_event[1]) << std::endl;
     states.restance_k = this->_restance_k;
     
     states.filted_collision_signal[0] = firstOrderFilter[0]->feedData(footAcc(2, 0));

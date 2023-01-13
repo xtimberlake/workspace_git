@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:31:07
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-12-01 16:01:08
+ * @LastEditTime: 2022-12-13 19:20:52
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurControl.cc
  * @Description: 
  * 
@@ -186,6 +186,7 @@ void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
         }
     } 
 
+    #ifdef USE_REACTIVE_CONTROL
     // Event-based swing foot control
     for (int leg = 0; leg< 2; leg++) {
         switch (state.foot_contact_event[leg])
@@ -198,19 +199,19 @@ void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
             {
 
                 state.foot_pos_cmd_world.block<3, 1>(0, leg) = state.locked_foot_pos.block<3, 1>(0, leg);
-                // state.foot_pos_cmd_world(2, leg) = state.locked_foot_pos(2, leg) - 0.004;
+                // state.foot_pos_cmd_world(2, leg) = state.locked_foot_pos(2, leg) + 0.05;
                 state.foot_vel_cmd_world.block<3, 1>(0, leg).setZero();
                 break;
             }
             case ContactEvent::LATE_CONTACT:
             {
                 // // downward motion
-                double distance = 0;
-                distance = 0.08 + 0.01 * state.restance_k(leg);
-                distance = (distance>0.2)?0.2:distance;
+                // double distance = 0.08;
+                // // distance = 0.08 + 0.01 * state.restance_k(leg);
+                // // distance = (distance>0.2)?0.2:distance;
                 
-                state.foot_pos_cmd_world(2, leg) -= distance;
-                std::cout << "leg" << leg << " z des = " << state.foot_pos_cmd_world(2, leg) << std::endl;
+                // state.foot_pos_cmd_world(2, leg) -= distance;
+                // std::cout << "leg" << leg << " z des = " << state.foot_pos_cmd_world(2, leg) << std::endl;
                 break;
             }
             case ContactEvent::RESTANCE:
@@ -226,9 +227,10 @@ void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
             default: break;
         }
         
+        
 
     }
-    
+    #endif
 
 
 

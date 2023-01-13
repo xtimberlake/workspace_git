@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-14 12:43:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-12-01 19:01:02
+ * @LastEditTime: 2023-01-13 21:27:53
  * @FilePath: /drake/workspace/centaur_sim/centaur_controller.h
  * @Description: controller block for drake simulation
  * 
@@ -21,12 +21,14 @@
 #include "drake/multibody/tree/frame.h"
 #include <drake/multibody/math/spatial_velocity.h>
 #include <drake/math/roll_pitch_yaw.h>
+#include <drake/common/yaml/yaml_io.h>
 
 #include "drake/workspace/centaur_sim/controller/CentaurGaitPattern.h"
 #include "drake/workspace/centaur_sim/controller/CentaurStates.h"
 #include "drake/workspace/centaur_sim/centaurrobot/centaurrobot.h"
 #include "drake/workspace/centaur_sim/controller/Task.hpp"
 #include "drake/workspace/centaur_sim/controller/WBIController.h"
+#include "drake/workspace/centaur_sim/controller/global_control_flag.h"
 
 
 
@@ -39,6 +41,20 @@ class WBIController;
 namespace drake{
 namespace workspace{
 namespace centaur_sim{
+
+    struct record_states_struct {
+        std::vector<double> time_stamp;
+        double foo{0.0};
+        std::vector<double> bar;
+
+        template <typename Archive>
+        void Serialize(Archive* a) {
+        a->Visit(DRAKE_NVP(time_stamp));
+        a->Visit(DRAKE_NVP(foo));
+        a->Visit(DRAKE_NVP(bar));
+        }
+    };
+
 
 template<typename T>
 class CentaurController : public systems::LeafSystem<T>
@@ -101,7 +117,7 @@ private:
         // static int sign = 1;
         delta_x = 0;
         v_now = 0.0;
-        v_des = 0.6;
+        v_des = 0.0;
         buffTime = 2.0; // secs
         
         if(ct->ctrl_states.t > 0.1) {
@@ -143,14 +159,14 @@ private:
         ct->ctrl_states.root_pos_d[1] = prismatic_joint_q_des[1];
 
         // velocity
-        ct->ctrl_states.root_lin_vel_d_world[0] = v_now / 4.0 + 0.2;
+        // ct->ctrl_states.root_lin_vel_d_world[0] = v_now / 4.0 + 0.2;
 
+        // 500, 300 for comopliance contact
+        total_torques[0] = 5000 * (prismatic_joint_q_des[0] - pos_rpy_states[0]) 
+                                + 3000 * (prismatic_joint_qdot_des[0] - prismatic_joint_qdot[0]);
 
-        total_torques[0] = 500 * (prismatic_joint_q_des[0] - pos_rpy_states[0]) 
-                                + 300 * (prismatic_joint_qdot_des[0] - prismatic_joint_qdot[0]);
-
-        total_torques[1] = 500 * (prismatic_joint_q_des[1] - pos_rpy_states[1]) 
-                                + 300 * (prismatic_joint_qdot_des[1] - prismatic_joint_qdot[1]);
+        total_torques[1] = 5000 * (prismatic_joint_q_des[1] - pos_rpy_states[1]) 
+                                + 3000 * (prismatic_joint_qdot_des[1] - prismatic_joint_qdot[1]);
         // z
         total_torques[2] = 10000 * (prismatic_joint_q_des[2] - pos_rpy_states[2]) 
                                 + 5000 * (prismatic_joint_qdot_des[2] - prismatic_joint_qdot[2]);
@@ -193,17 +209,18 @@ private:
                 output_torques = ct->legcontroller->wbc_low_level_control(ct->ctrl_states);
             }
 
+            #ifdef USE_REACTIVE_CONTROL
             ct->contactestimate->updateMeasurement(ct->ctrl_states);
             ct->contactestimate->updateEstimate();
             ct->contactestimate->eventsDetect();
             ct->contactestimate->publishStates(ct->ctrl_states);
-
-            ct->contactestimate->getContactProbabilities(ct->ctrl_states.prob_contact);
-            ct->contactestimate->getContactProbabilitiesBasedonPlan(ct->ctrl_states.prob_contact_of_plan);
-            ct->contactestimate->getContactProbabilitiesBasedonPos(ct->ctrl_states.prob_contact_of_pos);
-            ct->contactestimate->getContactProbabilitiesBasedonForce(ct->ctrl_states.prob_contact_of_force);
-            ct->contactestimate->getContactProbabilitiesBasedonVelocity(ct->ctrl_states.prob_contact_of_velocity);
-            ct->contactestimate->getEstimatedContactForce(ct->ctrl_states.foot_force_est_world);
+            #endif
+            // ct->contactestimate->getContactProbabilities(ct->ctrl_states.prob_contact);
+            // ct->contactestimate->getContactProbabilitiesBasedonPlan(ct->ctrl_states.prob_contact_of_plan);
+            // ct->contactestimate->getContactProbabilitiesBasedonPos(ct->ctrl_states.prob_contact_of_pos);
+            // ct->contactestimate->getContactProbabilitiesBasedonForce(ct->ctrl_states.prob_contact_of_force);
+            // ct->contactestimate->getContactProbabilitiesBasedonVelocity(ct->ctrl_states.prob_contact_of_velocity);
+            // ct->contactestimate->getEstimatedContactForce(ct->ctrl_states.foot_force_est_world);
             
 
         }
@@ -219,6 +236,8 @@ private:
     void OutpotLog(const systems::Context<T>& context,
                   systems::BasicVector<T>* output) const {
 
+            static record_states_struct record_states;
+            static bool finished_write = false;
             Eigen::VectorXd output_log_vector(8); output_log_vector.setZero();
             // /* 
             //     0: time
@@ -274,9 +293,18 @@ private:
 
             output_log_vector[6] = ct->ctrl_states.prob_contact(1);
 
-            
-
             output->set_value(output_log_vector);
+
+
+            double now = context.get_time();
+            
+            if(!finished_write)
+                record_states.time_stamp.push_back(now);
+            if(now > 2 && !finished_write) {
+                yaml::SaveYamlFile("/home/haoyun/Data/Code/drake/workspace/centaur_sim/log/states.yaml", record_states);
+                finished_write = true;
+                std::cout << "write data ... " << record_states.time_stamp.size() << "in total." << std::endl;
+            }
 
     }
 

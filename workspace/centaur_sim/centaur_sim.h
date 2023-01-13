@@ -32,7 +32,7 @@
 #include "drake/workspace/centaur_sim/extract_data.h"
 #include "drake/workspace/centaur_sim/centaur_controller.h"
 
-DEFINE_double(simulation_sec, 16.0,
+DEFINE_double(simulation_sec, 8.0,
               "Number of seconds to simulate.");
 DEFINE_double(sim_dt, 5e-4,
               "The time step to use for MultibodyPlant model"
@@ -240,6 +240,10 @@ namespace centaur_sim {
                 FindResourceOrThrow("drake/workspace/centaur_sim/config/test_params.yaml"));
 
         // drake::log()->info(centaur_sim_control_params.bar);
+        // test_params_struct data{4.0, {5.0, 6.0}};
+        // yaml::SaveYamlFile("/home/haoyun/Data/Code/drake/workspace/centaur_sim/log/test_params.yaml", data);
+
+        
 
         std::cout << Eigen::Vector2d(test_params.bar.at(0), test_params.bar.at(1)) << std::endl;
         drake::log()->info(test_params.foo);
@@ -314,7 +318,7 @@ namespace centaur_sim {
         common::CallPython("subplot", 4, 1, 2);
         common::CallPython("plot", controller_log_data.sample_times(),
                            controller_log_data.data().row(2).transpose());  
-        common::CallPython("legend", common::ToPythonTuple("foot_position","contact_prob"));
+        common::CallPython("legend", common::ToPythonTuple("left foot force"));
 
         common::CallPython("subplot", 4, 1, 3);
         // common::CallPython("plot", controller_log_data.sample_times(),

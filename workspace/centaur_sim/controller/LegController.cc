@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-22 08:44:58
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-11-26 16:30:50
+ * @LastEditTime: 2022-12-13 17:33:16
  * @FilePath: /drake/workspace/centaur_sim/controller/LegController.cc
  * @Description: 
  * 
@@ -28,10 +28,12 @@ LegController::LegController()
     // these parameters are quite crutial to retrieve stability!
     // this->_kp_joint_stance << 30.0, 15.0, 15.0;
     // this->_kd_joint_stance << 5.0, 2.5, 25;
-    this->_kp_joint_stance << 60.0, 60.0, 60.0;
-    this->_kd_joint_stance << 2.0, 2.0, 2.0;
+    // this->_kp_joint_stance << 60.0, 60.0, 60.0;
+    // this->_kd_joint_stance << 2.0, 2.0, 2.0;
+    this->_kp_joint_stance << 200.0, 150.0, 150.0;
+    this->_kd_joint_stance << 35.0, 15.0, 15.0;
 
-    this->_kp_joint_swing << 250.0, 125.0, 125.0;
+    this->_kp_joint_swing << 250.0, 150.0, 150.0;
     this->_kd_joint_swing << 35.0, 15.0, 15.0;
 
 }
@@ -102,14 +104,15 @@ Eigen::Matrix<double, 6, 1> LegController::wbc_low_level_control(CentaurStates& 
 
     Eigen::Matrix<double, 3, 1> kp, kd;  kp.setZero(); kd.setZero();
 
+    
     for (int leg = 0; leg < 2; leg++)
     {
         // choose impedance parameters
+        #ifdef USE_REACTIVE_CONTROL
         switch (state.foot_contact_event[leg])
         {
         case ContactEvent::SWING: 
         case ContactEvent::LATE_CONTACT:
-        case ContactEvent::RESTANCE:
         {
             kp = _kp_joint_swing;
             kd = _kd_joint_swing;
@@ -117,15 +120,27 @@ Eigen::Matrix<double, 6, 1> LegController::wbc_low_level_control(CentaurStates& 
         }
         case ContactEvent::EARLY_CONTACT:
         case ContactEvent::STANCE:
+        case ContactEvent::RESTANCE:
         default:
         {
             kp = _kp_joint_stance;
             kd = _kd_joint_stance;
             break;
         }
-        
         }
+        #else
+        if(state.plan_contacts_phase(leg) > 0) {
+            kp = _kp_joint_stance;
+            kd = _kd_joint_stance;
 
+        } else {
+            kp = _kp_joint_swing;
+            kd = _kd_joint_swing;
+        }
+        
+
+
+        #endif
 
         if (state.plan_contacts_phase(leg) > 0.0) {
             torques.segment<3>(3 * leg) = 
@@ -139,6 +154,7 @@ Eigen::Matrix<double, 6, 1> LegController::wbc_low_level_control(CentaurStates& 
                 + kd.cwiseProduct(state.wbc_qdot_cmd.segment<3>(3 * leg) - state.qdot.segment<3>(3 * leg));
         }
     }
+    
     state.tau = torques;
 
     return torques;
