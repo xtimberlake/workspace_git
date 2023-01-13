@@ -2,6 +2,7 @@ package perceptionlcm;
 
 struct robot_states
 {
+    int8_t   control_mode;
     double   position[3];
     double   orientation_wxyz[4]; 
     double   nominal_footholds[6];
