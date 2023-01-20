@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-18 09:28:36
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-12-13 14:31:39
+ * @LastEditTime: 2023-01-19 23:53:48
  * @FilePath: /drake/workspace/centaur_sim/controller/ConvexMPC.cc
  * @Description: 
  * 
@@ -162,23 +162,23 @@ ConvexMPC::ConvexMPC(int mpc_horizon,
 
 void ConvexMPC::Update_Xd_Trajectory(CentaurStates& state)
 {
-    // velocity
-    // state.root_euler_d[2] += 0.01;
-    // state.root_ang_vel_d_world = 1.0 * (state.root_euler_d - state.root_euler);
-    // state.root_lin_vel_d_world = 0.5 * (state.root_pos_d - state.root_pos);
+    Eigen::Matrix<double, 3, 1> ang_err_increment = (state.root_ang_vel_d_world - state.root_ang_vel_world) / MPC_HORIZON;
+    // Eigen::Matrix<double, 3, 1> lin_err_increment = (state.root_lin_vel_d_world - state.root_lin_vel_world) / MPC_HORIZON;
+
     for (int i = 0; i < MPC_HORIZON; i++)
     {
-        xd_trajectory.segment<3>(6 + i * NUM_STATE) << state.root_ang_vel_d_world;
+        xd_trajectory.segment<3>(6 + i * NUM_STATE) << state.root_ang_vel_world /*+ ang_err_increment * (i+1)*/ ;
 
-        xd_trajectory.segment<3>(9 + i * NUM_STATE) << state.root_lin_vel_d_world;
+        xd_trajectory.segment<3>(9 + i * NUM_STATE) << state.root_lin_vel_world /*+ lin_err_increment * (i+1)*/ ;
     }
     // position
 
+    
     for (int i = 0; i < MPC_HORIZON; i++)
     {
-        xd_trajectory.segment<3>(0 + i * NUM_STATE) = state.root_euler_d;
+        xd_trajectory.segment<3>(0 + i * NUM_STATE) = state.root_euler_d + ang_err_increment * (i+10);
    
-        xd_trajectory.segment<3>(3 + i * NUM_STATE) = state.root_pos_d + state.root_lin_vel_d_world * (i * _mpc_dt);
+        xd_trajectory.segment<3>(3 + i * NUM_STATE) = state.root_pos + state.root_lin_vel_d_world * (i * _mpc_dt);
         // TODO(haoyun) what's proper desired euler angle?
     }
 

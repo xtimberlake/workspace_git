@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-14 12:43:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2023-01-13 21:27:53
+ * @LastEditTime: 2023-01-21 00:45:37
  * @FilePath: /drake/workspace/centaur_sim/centaur_controller.h
  * @Description: controller block for drake simulation
  * 
@@ -99,83 +99,90 @@ private:
                   systems::BasicVector<T>* output) const {
 
             
-        Eigen::VectorXd total_torques(3 + _control_model.num_actuators()); total_torques.setZero();
-        static Eigen::Matrix<double, 6, 1> output_torques = Eigen::Matrix<double, -1, 1>::Zero(6);
+        static Eigen::VectorXd total_torques(3 + _control_model.num_actuators()); 
+        // total_torques.setZero();
+        static Eigen::Matrix<double, 6, 1> output_torques;
         // output_torques.setZero();
         update_states(context);
 
-        Eigen::VectorXd pos_rpy_states = this->GetInputPort("position_rotation").Eval(context);
-        Eigen::Vector3d prismatic_joint_q; prismatic_joint_q.setZero();
-        Eigen::Vector3d prismatic_joint_qdot; prismatic_joint_qdot.setZero();
-        static Eigen::Vector3d prismatic_joint_q_des = Eigen::Vector3d::Zero();
-        Eigen::Vector3d prismatic_joint_qdot_des; prismatic_joint_qdot_des.setZero();
+        // Eigen::VectorXd pos_rpy_states = this->GetInputPort("position_rotation").Eval(context);
+        // Eigen::Vector3d prismatic_joint_q; prismatic_joint_q.setZero();
+        // Eigen::Vector3d prismatic_joint_qdot; prismatic_joint_qdot.setZero();
+        // static Eigen::Vector3d prismatic_joint_q_des = Eigen::Vector3d::Zero();
+        // Eigen::Vector3d prismatic_joint_qdot_des; prismatic_joint_qdot_des.setZero();
 
-        prismatic_joint_q = pos_rpy_states.head(3);
-        prismatic_joint_qdot = pos_rpy_states.segment<3>(6);
+        // prismatic_joint_q = pos_rpy_states.head(3);
+        // prismatic_joint_qdot = pos_rpy_states.segment<3>(6);
 
-        double v_des, v_now, delta_x, buffTime;
-        // static int sign = 1;
-        delta_x = 0;
-        v_now = 0.0;
-        v_des = 0.0;
-        buffTime = 2.0; // secs
+        // double v_des, v_now, delta_x, buffTime;
+        // // static int sign = 1;
+        // delta_x = 0;
+        // v_now = 0.0;
+        // v_des = 0.0;
+        // buffTime = 2.0; // secs
         
-        if(ct->ctrl_states.t > 0.1) {
+        // if(ct->ctrl_states.t > 0.1) {
 
-            if(ct->ctrl_states.t < buffTime) {
-                // v_now = v_des * sin(M_PI_2 * ct->ctrl_states.t / buffTime);
-                v_now = 0;
-                // v_now += v_des/buffTime;
-            } 
-            else if(ct->ctrl_states.t < 2 * buffTime)
-            {
-                double phase = ct->ctrl_states.t - buffTime;
-                v_now = v_des * sin(M_PI_2 * phase / buffTime);
-            }
-            else
-            {
-                v_now = v_des;
-            }
-            // else if(ct->ctrl_states.t < 3 * buffTime)
-            // {
-            //     double phase = ct->ctrl_states.t - 2*buffTime;
-            //     v_now = -v_des * sin(M_PI_2 * phase / buffTime);
-            // }
-            // else if(ct->ctrl_states.t < 4 * buffTime)
-            // {
-            //     double phase = ct->ctrl_states.t - 3*buffTime;
-            //     v_now = -v_des + v_des * sin(M_PI_2 * phase / buffTime);
-            // }
+        //     if(ct->ctrl_states.t < buffTime) {
+        //         // v_now = v_des * sin(M_PI_2 * ct->ctrl_states.t / buffTime);
+        //         v_now = 0;
+        //         // v_now += v_des/buffTime;
+        //     } 
+        //     else if(ct->ctrl_states.t < 2 * buffTime)
+        //     {
+        //         double phase = ct->ctrl_states.t - buffTime;
+        //         v_now = v_des * sin(M_PI_2 * phase / buffTime);
+        //     }
+        //     else
+        //     {
+        //         v_now = v_des;
+        //     }
+        //     // else if(ct->ctrl_states.t < 3 * buffTime)
+        //     // {
+        //     //     double phase = ct->ctrl_states.t - 2*buffTime;
+        //     //     v_now = -v_des * sin(M_PI_2 * phase / buffTime);
+        //     // }
+        //     // else if(ct->ctrl_states.t < 4 * buffTime)
+        //     // {
+        //     //     double phase = ct->ctrl_states.t - 3*buffTime;
+        //     //     v_now = -v_des + v_des * sin(M_PI_2 * phase / buffTime);
+        //     // }
 
            
 
-        }
-        delta_x = v_now * 5e-4;
+        // }
+        // delta_x = v_now * 5e-4;
 
-        prismatic_joint_q_des[0] += delta_x;
+        // prismatic_joint_q_des[0] += delta_x;
 
-        // position
-        ct->ctrl_states.root_pos_d[0] = prismatic_joint_q_des[0];
-        ct->ctrl_states.root_pos_d[1] = prismatic_joint_q_des[1];
+        // // position
+        // ct->ctrl_states.root_pos_d[0] = prismatic_joint_q_des[0];
+        // ct->ctrl_states.root_pos_d[1] = prismatic_joint_q_des[1];
 
-        // velocity
-        // ct->ctrl_states.root_lin_vel_d_world[0] = v_now / 4.0 + 0.2;
+        // // velocity
+        // // ct->ctrl_states.root_lin_vel_d_world[0] = v_now / 4.0 + 0.2;
 
-        // 500, 300 for comopliance contact
-        total_torques[0] = 5000 * (prismatic_joint_q_des[0] - pos_rpy_states[0]) 
-                                + 3000 * (prismatic_joint_qdot_des[0] - prismatic_joint_qdot[0]);
+        // // 500, 300 for comopliance contact
+        // total_torques[0] = 5000 * (prismatic_joint_q_des[0] - pos_rpy_states[0]) 
+        //                         + 3000 * (prismatic_joint_qdot_des[0] - prismatic_joint_qdot[0]);
 
-        total_torques[1] = 5000 * (prismatic_joint_q_des[1] - pos_rpy_states[1]) 
-                                + 3000 * (prismatic_joint_qdot_des[1] - prismatic_joint_qdot[1]);
-        // z
-        total_torques[2] = 10000 * (prismatic_joint_q_des[2] - pos_rpy_states[2]) 
-                                + 5000 * (prismatic_joint_qdot_des[2] - prismatic_joint_qdot[2]);
+        // total_torques[1] = 5000 * (prismatic_joint_q_des[1] - pos_rpy_states[1]) 
+        //                         + 3000 * (prismatic_joint_qdot_des[1] - prismatic_joint_qdot[1]);
+        // // z
+        // total_torques[2] = 10000 * (prismatic_joint_q_des[2] - pos_rpy_states[2]) 
+        //                         + 5000 * (prismatic_joint_qdot_des[2] - prismatic_joint_qdot[2]);
 
         
         if((ct->ctrl_states.t - ct->ctrl_states.k * ct->ctrl_states.control_dt) > ct->ctrl_states.control_dt)
         {   
             // running at 1 kHz
             ct->ctrl_states.k++;
+
+
+            ct->controller->CalcHRITorques(ct->ctrl_states);
+            ct->controller->UpdateDesiredStates(ct->ctrl_states);
+            total_torques.head(3) = ct->ctrl_states.hri_actuated_torques.head(3);
+           
 
             if(ct->ctrl_states.t < 0.1) { // start trotting in 0.1 seconds
                 ct->standing->update_gait_pattern(ct->ctrl_states);
@@ -188,7 +195,7 @@ private:
                 
             }
             
-
+            // ct->controller->EstHRIForces(ct->ctrl_states);
             // swing
             ct->controller->GenerateSwingTrajectory(ct->ctrl_states);
 
@@ -227,7 +234,7 @@ private:
 
         total_torques.tail(6) = output_torques;
 
-        // std::cout << "total_torques = " << total_torques.transpose() << std::endl;
+        
        
         output->set_value(total_torques);
     
@@ -236,8 +243,7 @@ private:
     void OutpotLog(const systems::Context<T>& context,
                   systems::BasicVector<T>* output) const {
 
-            static record_states_struct record_states;
-            static bool finished_write = false;
+            
             Eigen::VectorXd output_log_vector(8); output_log_vector.setZero();
             // /* 
             //     0: time
@@ -296,15 +302,17 @@ private:
             output->set_value(output_log_vector);
 
 
-            double now = context.get_time();
+            // static record_states_struct record_states;
+            // static bool finished_write = false;
+            // double now = context.get_time();
             
-            if(!finished_write)
-                record_states.time_stamp.push_back(now);
-            if(now > 2 && !finished_write) {
-                yaml::SaveYamlFile("/home/haoyun/Data/Code/drake/workspace/centaur_sim/log/states.yaml", record_states);
-                finished_write = true;
-                std::cout << "write data ... " << record_states.time_stamp.size() << "in total." << std::endl;
-            }
+            // if(!finished_write)
+            //     record_states.time_stamp.push_back(now);
+            // if(now > 2 && !finished_write) {
+            //     yaml::SaveYamlFile("/home/haoyun/Data/Code/drake/workspace/centaur_sim/log/states.yaml", record_states);
+            //     finished_write = true;
+            //     std::cout << "write data ... " << record_states.time_stamp.size() << "in total." << std::endl;
+            // }
 
     }
 
@@ -338,7 +346,26 @@ private:
         ct->ctrl_states.root_rot_mat = FloatingBodyFrame.CalcRotationMatrixInWorld(*_plant_context).matrix();
         ct->ctrl_states.root_ang_vel_rel = ct->ctrl_states.root_rot_mat.transpose() * ct->ctrl_states.root_ang_vel_world;
         ct->ctrl_states.root_lin_vel_rel = ct->ctrl_states.root_rot_mat.transpose() * ct->ctrl_states.root_lin_vel_world;
-        ct->ctrl_states.root_euler = math::RollPitchYaw<T>(FloatingBodyFrame.CalcRotationMatrixInWorld(*_plant_context)).vector();
+
+        static bool init_flag = false;
+        if(!init_flag) {
+            std::cout << "height = " << ct->ctrl_states.root_pos[2] << std::endl;
+            init_flag = true;
+        }
+        
+
+        Eigen::Matrix<double, 3, 1> temp_rpy;
+        temp_rpy = math::RollPitchYaw<T>(FloatingBodyFrame.CalcRotationMatrixInWorld(*_plant_context)).vector();
+        ct->ctrl_states.root_euler = temp_rpy;
+        if(temp_rpy[2] - ct->ctrl_states.last_robot_yaw < -M_PI) {
+            ct->ctrl_states.robot_yaw_circle++;
+        }
+        else if(temp_rpy[2] - ct->ctrl_states.last_robot_yaw > M_PI) {
+            ct->ctrl_states.robot_yaw_circle--;
+        }
+        ct->ctrl_states.last_robot_yaw = temp_rpy[2];
+        ct->ctrl_states.root_euler[2] = 2 * M_PI * ct->ctrl_states.robot_yaw_circle + temp_rpy[2];
+
         
         double sin_yaw, cos_yaw;
         sin_yaw = sin(ct->ctrl_states.root_euler[2]);
@@ -446,8 +473,11 @@ private:
         // _control_model.CalcMassMatrix(*_plant_context, &ct->ctrl_states.Mq);
         // _control_model.CalcBiasTerm(*_plant_context, &ct->ctrl_states.Cv);
         // ct->ctrl_states.tau_g = _control_model.CalcGravityGeneralizedForces(*_plant_context);
-    
-        
+
+
+        // human-position states:
+        Eigen::Matrix<double, 12, 1> pos_rpy_states = this->GetInputPort("position_rotation").Eval(context);
+        ct->ctrl_states.hri_joint_states = pos_rpy_states;
     }
 };
 

@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:31:28
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-12-13 16:30:24
+ * @LastEditTime: 2023-01-21 00:45:22
  * @FilePath: /drake/home/haoyun/.cache/bazel/_bazel_haoyun/a17c303983e829fea1540ab5133f0aae/execroot/drake/bazel-out/k8-opt/bin/workspace/centaur_sim/_virtual_includes/centaur_controller_lib/drake/workspace/centaur_sim/controller/CentaurControl.h
  * @Description: centaur root controller
  * 
@@ -15,6 +15,8 @@
 #include "drake/workspace/centaur_sim/controller/CentaurParams.h"
 #include "drake/workspace/centaur_sim/Utils/Utils.h"
 #include "drake/workspace/centaur_sim/Utils/orientationTools.h"
+#include "drake/workspace/centaur_sim/Utils/pseudoInverse.h"
+#include "drake/workspace/centaur_sim/Utils/cppTypes.h"
 #include <type_traits>
 #include "drake/workspace/centaur_sim/estimator/contactEventData.h"
 #include "drake/workspace/centaur_sim/controller/global_control_flag.h"
@@ -25,8 +27,11 @@ class CentaurControl
 {
 public:
     CentaurControl(const control_params_constant ctrl_params);
+    void UpdateDesiredStates(CentaurStates& state);
     void GenerateSwingTrajectory(CentaurStates& state);
     void InverseKinematics(CentaurStates& state);
+    void CalcHRITorques(CentaurStates& state);
+    // void EstHRIForces(CentaurStates& state);
     Eigen::Matrix<double, 3, 2> ComputeGoundReactionForce(CentaurStates& state);
     
     // variables:

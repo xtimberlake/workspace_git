@@ -7,9 +7,9 @@ gait_resolution: 120  # divide gait phase into # portions
 # MPC info
 nIterationsPerMPC: 50
 mpc_horizon: 10
-q_weights: [500.0, 50.0, 50.0,    # Roll Pitch Yaw
+q_weights: [100.0, 50.0, 300.0,    # Roll Pitch Yaw
             0.0, 0.0, 100.0,    # Posx Posy Posz
-            200.0, 100.0, 100.0,    # corresponding derivative
+            200.0, 100.0, 300.0,    # corresponding derivative
             0.0, 0.0, 50.0 ]
 # q_weights: [50.0, 70.0, 1000.0,    # Roll Pitch Yaw
 #             10.0, 10.0, 100.0,    # Posx Posy Posz

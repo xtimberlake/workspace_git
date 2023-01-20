@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-17 16:49:42
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-12-12 23:05:35
+ * @LastEditTime: 2023-01-19 23:58:23
  * @FilePath: /drake/workspace/centaur_sim/controller/Tasks/TorsoOriTask.hpp
  * @Description: 
  * 
@@ -29,7 +29,7 @@ class TorsoOriTask : public Task<T>
         _Kp = DVec<T>::Zero(Task<T>::dim_task_);
         _Kd = DVec<T>::Zero(Task<T>::dim_task_);
 
-        _Kp_kin << 0.2, 0.2, 0.4;
+        _Kp_kin << 0.2, 0.2, 0.8;
         _Kp << 50.0, 50.0, 100.0;
         _Kd << 5., 5.0, 50.0;
 

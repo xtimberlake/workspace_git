@@ -32,7 +32,7 @@
 #include "drake/workspace/centaur_sim/extract_data.h"
 #include "drake/workspace/centaur_sim/centaur_controller.h"
 
-DEFINE_double(simulation_sec, 8.0,
+DEFINE_double(simulation_sec, 30.0,
               "Number of seconds to simulate.");
 DEFINE_double(sim_dt, 5e-4,
               "The time step to use for MultibodyPlant model"
@@ -278,7 +278,7 @@ namespace centaur_sim {
 
         // interest_data_logger: 0euler, 3pos, 6omega, 9lin_vel, 12wrenches at the f/t sensor
         const auto& log = interest_data_logger->FindLog(simulator.get_context());
-        const auto& controller_log_data = controller_logger->FindLog(simulator.get_context());
+        
 
         common::CallPython("figure", 1);
         common::CallPython("clf");
@@ -308,43 +308,73 @@ namespace centaur_sim {
 
         std::cout << "average x-force = " << averge_force[log.data().row(15).transpose().size() - 1] << std::endl;
 
-        common::CallPython("subplot", 4, 1, 1);
-        common::CallPython("plot", controller_log_data.sample_times(),
-                           controller_log_data.data().row(0).transpose());
-        common::CallPython("plot", controller_log_data.sample_times(),
-                           controller_log_data.data().row(1).transpose());
-        common::CallPython("legend", common::ToPythonTuple("left contact state", "contact_prob"));
 
-        common::CallPython("subplot", 4, 1, 2);
-        common::CallPython("plot", controller_log_data.sample_times(),
-                           controller_log_data.data().row(2).transpose());  
-        common::CallPython("legend", common::ToPythonTuple("left foot force"));
 
-        common::CallPython("subplot", 4, 1, 3);
-        // common::CallPython("plot", controller_log_data.sample_times(),
-        //                    controller_log_data.data().row(2).transpose()); 
-        common::CallPython("plot", controller_log_data.sample_times(),
-                           controller_log_data.data().row(4).transpose());  
-        // common::CallPython("plot", controller_log_data.sample_times(),
-        //                    controller_log_data.data().row(5).transpose()); 
-        common::CallPython("legend", common::ToPythonTuple("left JT", "GM fz"));
 
-        common::CallPython("subplot", 4, 1, 4);
+
+        // const auto& controller_log_data = controller_logger->FindLog(simulator.get_context());
+        // common::CallPython("subplot", 4, 1, 1);
         // common::CallPython("plot", controller_log_data.sample_times(),
-        //                    controller_log_data.data().row(3).transpose()); 
-        common::CallPython("plot", controller_log_data.sample_times(),
-                           controller_log_data.data().row(5).transpose());  
+        //                    controller_log_data.data().row(0).transpose());
         // common::CallPython("plot", controller_log_data.sample_times(),
-        //                    controller_log_data.data().row(7).transpose()); 
-        common::CallPython("legend", common::ToPythonTuple("right JT", "GM fz"));
+        //                    controller_log_data.data().row(1).transpose());
+        // common::CallPython("legend", common::ToPythonTuple("left contact state", "contact_prob"));
+
+        // common::CallPython("subplot", 4, 1, 2);
+        // common::CallPython("plot", controller_log_data.sample_times(),
+        //                    controller_log_data.data().row(2).transpose());  
+        // common::CallPython("legend", common::ToPythonTuple("left foot force"));
+
+        // common::CallPython("subplot", 4, 1, 3);
+        // // common::CallPython("plot", controller_log_data.sample_times(),
+        // //                    controller_log_data.data().row(2).transpose()); 
+        // common::CallPython("plot", controller_log_data.sample_times(),
+        //                    controller_log_data.data().row(4).transpose());  
+        // // common::CallPython("plot", controller_log_data.sample_times(),
+        // //                    controller_log_data.data().row(5).transpose()); 
+        // common::CallPython("legend", common::ToPythonTuple("left JT", "GM fz"));
 
         // common::CallPython("subplot", 4, 1, 4);
-        // common::CallPython("plot", log.sample_times(),
-        //                    log.data().row(15).transpose()); 
-        // common::CallPython("plot", log.sample_times(), averge_force); 
-        // common::CallPython("legend", common::ToPythonTuple("force", "average force"));
-        
+        // // common::CallPython("plot", controller_log_data.sample_times(),
+        // //                    controller_log_data.data().row(3).transpose()); 
+        // common::CallPython("plot", controller_log_data.sample_times(),
+        //                    controller_log_data.data().row(5).transpose());  
+        // // common::CallPython("plot", controller_log_data.sample_times(),
+        // //                    controller_log_data.data().row(7).transpose()); 
+        // common::CallPython("legend", common::ToPythonTuple("right JT", "GM fz"));
 
+
+        common::CallPython("subplot", 3, 2, 1);
+        common::CallPython("plot", log.sample_times(),
+                           log.data().row(12).transpose()); 
+        common::CallPython("legend", common::ToPythonTuple("x-torque"));
+
+        common::CallPython("subplot", 3, 2, 3);
+        common::CallPython("plot", log.sample_times(),
+                           log.data().row(13).transpose()); 
+        common::CallPython("legend", common::ToPythonTuple("y-torque"));
+
+        common::CallPython("subplot", 3, 2, 5);
+        common::CallPython("plot", log.sample_times(),
+                           log.data().row(14).transpose()); 
+        common::CallPython("legend", common::ToPythonTuple("z-torque"));
+
+
+        common::CallPython("subplot", 3, 2, 2);
+        common::CallPython("plot", log.sample_times(),
+                           log.data().row(15).transpose()); 
+        common::CallPython("plot", log.sample_times(), averge_force); 
+        common::CallPython("legend", common::ToPythonTuple("x-force", "average x-force"));
+        
+        common::CallPython("subplot", 3, 2, 4);
+        common::CallPython("plot", log.sample_times(),
+                           log.data().row(16).transpose()); 
+        common::CallPython("legend", common::ToPythonTuple("y-force"));
+
+        common::CallPython("subplot", 3, 2, 6);
+        common::CallPython("plot", log.sample_times(),
+                           log.data().row(17).transpose()); 
+        common::CallPython("legend", common::ToPythonTuple("z-force"));
 
 
         // // plot from controller

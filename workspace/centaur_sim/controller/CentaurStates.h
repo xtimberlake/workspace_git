@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:30:49
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-12-01 18:57:28
+ * @LastEditTime: 2023-01-20 16:44:04
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurStates.h
  * @Description: define all the states that used in controller; mainly 
  *                adapted from https://github.com/ShuoYangRobotics/A1-QP-MPC-Controller
@@ -89,10 +89,33 @@ struct robot_params_constant {
     }
 };
 
+    struct human_ref_traj_struct {
+        std::vector<double> time;
+        std::vector<double> x;
+        std::vector<double> y;
+        std::vector<double> height;
+        std::vector<double> yaw;
+
+        template <typename Archive>
+        void Serialize(Archive* a) {
+        a->Visit(DRAKE_NVP(time));
+        a->Visit(DRAKE_NVP(x));
+        a->Visit(DRAKE_NVP(y));
+        a->Visit(DRAKE_NVP(height));
+        a->Visit(DRAKE_NVP(yaw));
+        }
+    };
+
 
 class CentaurStates {
  public:
     CentaurStates() {
+
+        this->human_ref_traj = drake::yaml::LoadYamlFile<human_ref_traj_struct>(
+            drake::FindResourceOrThrow("drake/workspace/centaur_sim/data/ab17_level_ground.yaml")
+        );
+        this->max_human_ref_index = this->human_ref_traj.x.size() - 1;
+        std::cout << "The size of human trajectory:" << max_human_ref_index + 1 << std::endl;
 
         this->ctrl_params_const = drake::yaml::LoadYamlFile<control_params_constant>(
           drake::FindResourceOrThrow("drake/workspace/centaur_sim/config/centaur_sim_control_params.yaml"));
@@ -208,6 +231,19 @@ class CentaurStates {
 
         RESET_GAIT_COUNTER = 0;
         filted_collision_signal.setZero();
+
+        human_pos_ref.setZero();
+        // human_pos_ref(2) = 0.9;
+        human_yaw_ref = 0;
+        human_pos_stiff << 5000, 5000, 10000;
+        human_pos_damp << 3000, 3000, 5000;
+        human_ref_k = 0;
+
+        hri_actuated_torques.setZero();
+        hri_joint_states.setZero();
+
+        robot_yaw_circle = 0;
+        last_robot_yaw = 0.0;
 
     }
 
@@ -347,4 +383,19 @@ class CentaurStates {
     Eigen::Matrix<int, 2, 1> restance_k;
 
     Eigen::Matrix<double, 2, 1> filted_collision_signal;
+
+
+    // human reference data
+    human_ref_traj_struct human_ref_traj;
+    int max_human_ref_index;
+    Eigen::Matrix<double, 3, 1> human_pos_ref;
+    Eigen::Matrix<double, 3, 1> human_pos_stiff, human_pos_damp;
+    Eigen::Matrix<double, 12, 1> hri_joint_states;
+    Eigen::Matrix<double, 6, 1> hri_actuated_torques;
+    double human_yaw_ref;
+    int human_ref_k;
+
+    int robot_yaw_circle;
+    double last_robot_yaw;
+
 };

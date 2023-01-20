@@ -9,5 +9,5 @@ Iyz: 0.0
 
 left_hip_location: [-0.188, 0.213, 0]
 
-sphere_joint_location: [0.216, 0, 0.05]
-ext_wrench: [0, 0, 0, 0, 0, 15]
+sphere_joint_location: [0.216, 0, 0.09]
+ext_wrench: [0, 0, 0, 0, 0, 5]

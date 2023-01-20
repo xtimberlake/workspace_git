@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:31:07
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-12-13 19:20:52
+ * @LastEditTime: 2023-01-21 00:45:15
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurControl.cc
  * @Description: 
  * 
@@ -38,6 +38,156 @@ CentaurControl::CentaurControl(const control_params_constant ctrl_params) {
     
     
 }
+
+void CentaurControl::UpdateDesiredStates(CentaurStates& state) {
+
+    // int number_of_traj = 0;
+    // number_of_traj =  static_cast<int>((state.k/5));
+    // if(number_of_traj > state.max_human_ref_index) 
+    //     number_of_traj = state.max_human_ref_index;
+    // state.root_euler_d[2] = state.human_ref_traj.yaw[number_of_traj];
+    state.root_euler_d[2] = 0.0;
+
+    state.root_pos_d = state.root_pos;
+    state.root_pos_d[2] = 0.9;
+    
+    Eigen::Matrix<double, 3, 1> Kang, Kpos;
+    Kang.setZero(); Kpos.setZero();
+    Kang << 0.0, 0.0, 0.0;
+    // Kpos << 0.0, 0.0, 1.5;
+    state.root_ang_vel_d_world = Kang.cwiseProduct(state.root_euler_d - state.root_euler);
+    state.root_lin_vel_d_world = Kpos.cwiseProduct(state.root_pos_d - state.root_pos);
+
+    
+    // std::cout << "yaw = " << state.root_euler[2] << "/" << state.root_euler_d[2] << std::endl;
+}
+
+void CentaurControl::CalcHRITorques(CentaurStates& state) {
+
+    Eigen::Matrix<double, 6, 1> total_torques; total_torques.setZero();
+    Eigen::Vector3d prismatic_joint_q; prismatic_joint_q.setZero();
+    Eigen::Vector3d prismatic_joint_qdot; prismatic_joint_qdot.setZero();
+
+    Eigen::Vector3d prismatic_joint_q_des; prismatic_joint_q_des.setZero();
+    Eigen::Vector3d prismatic_joint_qdot_des; prismatic_joint_qdot_des.setZero();
+
+    // int number_of_traj = 0;
+    // number_of_traj =  static_cast<int>((state.k/5));
+    // if(number_of_traj > state.max_human_ref_index) 
+    //     number_of_traj = state.max_human_ref_index;
+        
+    // // std::cout << "num of traj = " << number_of_traj << std::endl;
+    // prismatic_joint_q_des[0] = state.human_ref_traj.x[number_of_traj];
+    // prismatic_joint_q_des[1] = state.human_ref_traj.y[number_of_traj];
+
+
+    prismatic_joint_q = state.hri_joint_states.segment<3>(0);
+    prismatic_joint_qdot = state.hri_joint_states.segment<3>(6);
+
+    total_torques.head(3) = state.human_pos_stiff.cwiseProduct(prismatic_joint_q_des - prismatic_joint_q)
+                          + state.human_pos_damp.cwiseProduct(prismatic_joint_qdot_des - prismatic_joint_qdot);
+
+    
+
+
+    state.hri_actuated_torques = total_torques;
+
+
+
+}
+
+// void CentaurControl::EstHRIForces(CentaurStates& state) {
+
+//     // Inertia
+//     Eigen::Matrix3d R, inertia_in_world;
+//     R << cos(state.root_euler[2]), -sin(state.root_euler[2]), 0,
+//             sin(state.root_euler[2]), cos(state.root_euler[2]), 0,
+//             0, 0, 1;
+
+//     inertia_in_world = R * state.inertiaMat * R.transpose();
+
+//     // rh
+//     Eigen::Vector3d rh = R * state.sphere_joint_location;
+
+    
+//     // dot_omega
+//     static Eigen::Vector3d last_omega_world = Eigen::Vector3d::Zero();
+//     Eigen::Vector3d dot_omega = (state.root_ang_vel_world - last_omega_world)/0.001;
+//     dot_omega.setZero();
+
+//     // dot_v
+//     static Eigen::Vector3d last_v_world = Eigen::Vector3d::Zero();
+//     Eigen::Vector3d dot_v = (state.root_lin_vel_world - last_v_world)/0.001;
+//     dot_v.setZero();
+
+//     int contact_state = 0;
+//     if(state.plan_contacts_phase[0] > 0) contact_state += 1;
+//     if(state.plan_contacts_phase[1] > 0) contact_state += 2;
+
+
+//     Eigen::Vector3d ri[2], fi[2], riCrossFi, fi_total; fi_total.setZero();
+//     for (int i = 0; i < 2; i++) {
+//         ri[i].setZero();
+//         fi[i].setZero();
+//     }
+    
+//     riCrossFi.setZero();
+
+//     switch (contact_state)
+//     {
+//     case 0: 
+//         // zero already
+//     break;
+//     case 1: 
+//         // left contact only
+//         ri[0] = state.foot_pos_world.block<3, 1>(0, 0) - state.root_pos;
+//         fi[0] = -state.foot_force_world.block<3, 1>(0, 0);
+//         fi_total = fi[0];
+//         riCrossFi = ri[0].cross(fi[0]);
+//     break;
+//     case 2: 
+//         // right contact only
+//         ri[1] = state.foot_pos_world.block<3, 1>(0, 1) - state.root_pos;
+//         fi[1] = -state.foot_force_world.block<3, 1>(0, 1);
+//         fi_total = fi[1];
+//         riCrossFi = ri[1].cross(fi[1]);
+//     break;
+//     case 3: 
+//         // both contact
+//         for (int i = 0; i < 2; i++) {
+//             ri[i] = state.foot_pos_world.block<3, 1>(0, i) - state.root_pos;
+//             fi[i] = -state.foot_force_world.block<3, 1>(0, i);
+//             riCrossFi += ri[i].cross(fi[i]);
+//             fi_total += fi[i];
+//         }
+        
+
+//     break;
+    
+//     default: std::cout << "error contact!" << std::endl;
+//         break;
+//     }
+
+//     Eigen::Vector3d est_fh; est_fh.setZero();
+//     DMat<double> leftHandSide; leftHandSide = Eigen::Matrix<double, 6, 3>::Zero();
+//     DMat<double> leftHandSide_inv;
+//     leftHandSide.block<3, 3>(0, 0) = Utils::skew(rh);
+//     leftHandSide.block<3, 3>(3, 0) = Eigen::Matrix3d::Identity();
+//     pseudoInverse(leftHandSide, 0.001, leftHandSide_inv);
+
+//     Eigen::Matrix<double, 6, 1> rightHandSide; rightHandSide.setZero();
+//     Eigen::Vector3d grav; grav << 0, 0, -9.81;
+//     rightHandSide.segment<3>(0) = inertia_in_world * dot_omega - riCrossFi;
+//     rightHandSide.segment<3>(3) = state.mass * dot_v - fi_total - state.mass * grav;
+
+//     std::cout << "rh = " << rh.transpose() << ",      ri0 = " << ri[0].transpose() << std::endl;
+//     std::cout << "case = " << contact_state << ".    ";
+//     est_fh = leftHandSide_inv * rightHandSide;
+
+//     std::cout << "fi_total = " << fi_total.transpose() << ",   ";
+//     std::cout << "est_fh = " << est_fh.transpose() << std::endl;
+// }
+
 
 Eigen::Matrix<double, 3, 2> CentaurControl::ComputeGoundReactionForce(CentaurStates& state)
 {
@@ -128,9 +278,10 @@ void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
         tStance = (state.gait_period * state.stance_duration(leg));
         pShoulder_world.block<3, 1>(0, leg) = state.root_pos + state.root_rot_mat * (state.hipLocation_local.block<3, 1>(0, leg) + offset);
         pYawCorrected = ori::coordinateRotation(ori::CoordinateAxis::Z, - state.root_ang_vel_d_world[2] * tStance / 2) * pShoulder_world.block<3, 1>(0, leg);
-
+        // pYawCorrected = pShoulder_world.block<3, 1>(0, leg);
         pSymmetry = tStance / 2.0 * state.root_lin_vel_world + 0.03 * (state.root_lin_vel_world - state.root_lin_vel_d_world);
         pCentrifugal = std::sqrt(std::abs(/*state.root_pos(2)*/0.9) / 9.81)/2.0 * state.root_lin_vel_world.cross(state.root_ang_vel_d_world);
+        // pCentrifugal = 1.0 * std::sqrt(std::abs(/*state.root_pos(2)*/0.9) / 9.81)/2.0 * state.root_lin_vel_world.cross(state.root_ang_vel_world);
 
         pDelta = pSymmetry + pCentrifugal + swingTimeRemain * state.root_lin_vel_world;
         pDelta[0] = (pDelta[0]>FOOT_DELTA_X_LIMIT)?(FOOT_DELTA_X_LIMIT):((pDelta[0]<-FOOT_DELTA_X_LIMIT)?(-FOOT_DELTA_X_LIMIT):pDelta[0]);
@@ -141,7 +292,8 @@ void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
 
         // if (leg == 0) {
         //     std::cout << "pSymmetry = " << pSymmetry.transpose() << ", " << "pCentrifugal = " << pCentrifugal.transpose() << "," 
-        //     << "swingT*vel =  " << swingTimeRemain * state.root_lin_vel_world.transpose() << std::endl;
+        //     << "swingT*vel =  " << swingTimeRemain * state.root_lin_vel_world.transpose() 
+        //     << "final x = " << foot_final_pos[0] << "y = " << foot_final_pos[1] << std::endl;
         // }
         
 
@@ -261,3 +413,4 @@ void CentaurControl::InverseKinematics(CentaurStates& state)
     }
 
 }
+

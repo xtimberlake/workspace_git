@@ -67,6 +67,19 @@ drake_cc_library(
         "Utils/pseudoInverse.h",
         "estimator/contactEventData.h",
          ],
+    data = [
+        "centaur_control_model.sdf",
+        "centaur_v2.urdf",
+        "config/centaur_sim_control_params.yaml",
+        "config/centaur_sim_robot_params.yaml",
+        "data/human_ref_traj.yaml",
+        "data/ab13_level_ground.yaml",
+        "data/ab14_level_ground.yaml",
+        "data/ab15_level_ground.yaml",
+        "data/ab16_level_ground.yaml",
+        "data/ab17_level_ground.yaml",
+        
+    ],
     deps = [
         "//systems/framework:leaf_system",
         "//systems/framework:vector",
