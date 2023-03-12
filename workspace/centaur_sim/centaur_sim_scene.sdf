@@ -6,16 +6,16 @@
     <visual name='visual'>
       <pose>0 0 -0.025 0 0 0</pose>
       <geometry>
-        <box>  <size>25.0 10.0 0.05</size> </box>
+        <box>  <size>15.0 8.0 0.05</size> </box>
       </geometry>
       <material>
-        <diffuse>0.9 0.8 0.7 0.6</diffuse>
+        <diffuse>0.9 0.8 0.7 1.0</diffuse>
       </material>
     </visual> 
     <collision name="collision">
       <pose>0 0 -0.025 0 0 0</pose>
       <geometry>
-        <box>  <size>25.0 10.0 0.05</size> </box>
+        <box>  <size>15.0 8.0 0.05</size> </box>
       </geometry>
     </collision>
   </link>
@@ -82,10 +82,10 @@
   <link name='z_block'>
     <pose relative_to='z_block_init_frame'>0 0 0 0 0 0</pose>
     <visual name='visual'>
-      <pose relative_to='z_block_init_frame'>0.02 0 0.1 0 0 0</pose>
-      <geometry> <box> <size>0.02 0.3 0.4</size> </box> </geometry>
+      <pose relative_to='z_block_init_frame'>0.03 0 0.1 0 0 0</pose>
+      <geometry> <box> <size>0.02 0.3 0.5</size> </box> </geometry>
       <material>
-        <diffuse>0.1 0.1 0.4 0.2</diffuse>
+        <diffuse>0.1 0.1 0.1 0.2</diffuse>
       </material>
     </visual>  
   </link>
@@ -112,10 +112,11 @@
     <visual name='visual'>
       <pose relative_to='f_t_sensor_frame'>0 0 0 0 0 0</pose>
       <geometry>
-       <box> <size>0.1 0.1 0.1</size> </box> 
+       <sphere> <radius> 0.02 </radius> </sphere> 
       </geometry>
       <material>
-        <diffuse>1.0 0.423529411765 0.0392156862745 0.5</diffuse>
+        <!-- <diffuse>1.0 0.423529411765 0.0392156862745 0.5</diffuse> -->
+        <diffuse>0.913 0.913 0.847 1.0</diffuse>
       </material>
     </visual>  
   </link>
@@ -135,11 +136,13 @@
     <pose relative_to='ball_joint_frame'>0 0 0 0 0 0</pose>
     <parent>f_t_sensor_link</parent>
     <child>floating_base</child>
-    <!-- <axis>
+    <axis>
     <dynamics>
-      <damping> 1000.0 </damping>
+      <damping> 0 </damping>
+      <!-- <spring_reference>0 0 0</spring_reference>
+      <spring_stiffness>1000.0 1000.0 1000.0</spring_stiffness> -->
     </dynamics>
-    </axis> -->
+    </axis>
     
   </joint>
 
@@ -167,12 +170,13 @@
         <box> <size>0.432 0.2 0.22</size> </box>
       </geometry>
       <material>
-        <diffuse>0.2 0.2 0.2 0.4</diffuse>
+        <diffuse>0.62 0.62 0.62 0.45</diffuse>
       </material>
     </visual>
     <inertial>
       <mass>20.0</mass>
       <inertia> <ixx>0.1473</ixx> <iyy>0.3917</iyy> <izz>0.3777</izz> </inertia>
+      <!-- <inertia> <ixx>0.28</ixx> <iyy>0.79</iyy> <izz>0.76</izz> </inertia> -->
     </inertial>
     <collision name='collision'>
       <pose relative_to='floating_base'>0 0 0 0 0 0</pose>
@@ -203,13 +207,22 @@
 
   <link name='left_hip_from_abad'>
     <pose relative_to='left_abad_joint_frame'>0 0 0 0 0 0</pose>
-    <visual name='visual'>
+    <!-- <visual name='visual'>
       <pose relative_to='left_abad_joint_frame'>-0.14 0.04 0 1.5707963267948966 0 0</pose>
       <geometry>
         <cylinder> <length>0.127</length> <radius>0.084</radius> </cylinder>
       </geometry>
       <material>
-        <diffuse>0.913725490196 0.913725490196 0.847058823529 0.6</diffuse>
+        <diffuse>0.913725490196 0.913725490196 0.847058823529 1.0</diffuse>
+      </material>
+    </visual> -->
+    <visual name='visual'>
+      <pose relative_to='left_abad_joint_frame'>-0.08 0.04 0 0 1.5707963267948966 0</pose>
+      <geometry>
+        <cylinder> <length>0.14</length> <radius>0.02</radius> </cylinder>
+      </geometry>
+      <material>
+        <diffuse>0.2656 0.4453 0.7656 0.6</diffuse>
       </material>
     </visual>
     <collision name='collision'>
@@ -252,7 +265,8 @@
         <cylinder> <length>0.512</length> <radius>0.0175</radius> </cylinder>
       </geometry>
       <material>
-        <diffuse>0.913725490196 0.913725490196 0.847058823529 0.6</diffuse>
+        <!-- <diffuse>0.913725490196 0.913725490196 0.847058823529 0.6</diffuse> -->
+        <diffuse>0.2656 0.4453 0.7656 0.6</diffuse>
       </material>
     </visual>
     <collision name='collision'>
@@ -295,7 +309,8 @@
         <cylinder> <length>0.48</length> <radius>0.015</radius> </cylinder>
       </geometry>
       <material>
-        <diffuse>0.913725490196 0.913725490196 0.847058823529 0.6</diffuse>
+        <!-- <diffuse>0.913725490196 0.913725490196 0.847058823529 0.6</diffuse> -->
+        <diffuse>0.2656 0.4453 0.7656 0.6</diffuse>
       </material>
     </visual>
     <collision name='collision'>
@@ -329,7 +344,9 @@
         <sphere> <radius>0.02</radius> </sphere>
       </geometry>
       <material>
-        <diffuse>1.0 0.423529411765 0.0392156862745 0.5</diffuse>
+        <!-- <diffuse>1.0 0.423529411765 0.0392156862745 0.5</diffuse> -->
+        <diffuse>0.913725490196 0.913725490196 0.847058823529 0.9</diffuse>
+        
       </material>
     </visual>
     <collision name='collision'>
@@ -364,16 +381,27 @@
 
   <link name='right_hip_from_abad'>
     <pose relative_to='right_abad_joint_frame'>0 0 0 0 0 0</pose>
-    <visual name='visual'>
+    
+    <!-- <visual name='visual'>
       <pose relative_to='right_abad_joint_frame'>-0.14 -0.04 0 1.5707963267948966 0 0</pose>
       <geometry>
-        <!-- <mesh> <uri>/home/haoyun/Data/Code/drake/workspace/centaur_sim/centaur_description/meshes/dae/hip.dae</uri> </mesh> -->
         <cylinder> <length>0.127</length> <radius>0.084</radius> </cylinder>
       </geometry>
       <material>
-        <diffuse>0.913725490196 0.913725490196 0.847058823529 0.6</diffuse>
+        <diffuse>0.913725490196 0.913725490196 0.847058823529 1.0</diffuse>
+      </material>
+    </visual> -->
+    <visual name='visual'>
+      <pose relative_to='right_abad_joint_frame'>-0.08 -0.04 0 0 1.5707963267948966 0</pose>
+      <geometry>
+        <!-- <mesh> <uri>/home/haoyun/Data/Code/drake/workspace/centaur_sim/centaur_description/meshes/dae/hip.dae</uri> </mesh> -->
+        <cylinder> <length>0.14</length> <radius>0.02</radius> </cylinder>
+      </geometry>
+      <material>
+        <diffuse>0.2656 0.4453 0.7656 0.6</diffuse>
       </material>
     </visual>
+
     <collision name='collision'>
       <pose relative_to='right_abad_joint_frame'>-0.14 0 0 1.5707963267948966 0 0</pose>
       <geometry>
@@ -414,7 +442,8 @@
         <cylinder> <length>0.512</length> <radius>0.0175</radius> </cylinder>
       </geometry>
       <material>
-        <diffuse>0.913725490196 0.913725490196 0.847058823529 0.6</diffuse>
+        <!-- <diffuse>0.913725490196 0.913725490196 0.847058823529 0.6</diffuse> -->
+        <diffuse>0.2656 0.4453 0.7656 0.6</diffuse>
       </material>
     </visual>
     <collision name='collision'>
@@ -457,7 +486,8 @@
         <cylinder> <length>0.48</length> <radius>0.015</radius> </cylinder>
       </geometry>
       <material>
-        <diffuse>0.913725490196 0.913725490196 0.847058823529 0.6</diffuse>
+        <!-- <diffuse>0.913725490196 0.913725490196 0.847058823529 0.6</diffuse> -->
+        <diffuse>0.2656 0.4453 0.7656 0.6</diffuse>
       </material>
     </visual>
     <collision name='collision'>
@@ -491,7 +521,8 @@
         <sphere> <radius>0.02</radius> </sphere>
       </geometry>
       <material>
-        <diffuse>1.0 0.423529411765 0.0392156862745 0.5</diffuse>
+        <!-- <diffuse>1.0 0.423529411765 0.0392156862745 0.5</diffuse> -->
+        <diffuse>0.913725490196 0.913725490196 0.847058823529 0.9</diffuse>
       </material>
     </visual>
     <collision name='collision'>
@@ -635,33 +666,36 @@
     </collision>
   </link>  -->
 
-  <!-- <joint name='load_frame' type='fixed'>
-    <parent>floating_base</parent>
+  <joint name='load_frame' type='fixed'>
+    <parent>torso</parent>
     <child>load_link</child>
   </joint>
 
   <link name='load_link'>
-    <pose relative_to='floating_base'>0 0 0.11 0 0 0</pose>
+    <pose relative_to='floating_base'>0 0 0.1 0 0 0</pose>
     <visual name='visual'>
-      <pose relative_to='floating_base'>0 0 0.11 0 0 0</pose>
+      <pose relative_to='floating_base'>-0.22 0.135 0.11 0 0 -1.57</pose>
+      <!-- <pose relative_to='floating_base'>0 0 0.16 0 0 0</pose> 
       <geometry> 
-        <box> <size>0.2 0.1 0.1</size> </box>
-      </geometry>
+        <box> <size>0.432 0.2 0.1</size> </box>
+      </geometry> -->
       <material>
-        <diffuse>0.8 0.1 0.1</diffuse>
+        <diffuse>0.3 0.6 0.3 1.0</diffuse>
       </material>
+      <!-- <geometry>
+          <mesh>
+            <scale>0.0009 0.0009 0.0009</scale>
+            <uri>/home/haoyun/Data/Code/drake/workspace/centaur_sim/data/backpack_obj_paint.obj</uri>
+          </mesh>
+      </geometry> -->
     </visual>
     <inertial>
-      <mass>15.0</mass>
-      <inertia> <ixx>0.01</ixx> <iyy>0.01</iyy> <izz>0.01</izz> </inertia>
+      <!-- <mass>30.0</mass>
+      <inertia> <ixx>0.125</ixx> <iyy>0.49155</iyy> <izz>0.56656</izz> </inertia> -->
+      <mass>0.0</mass>
+      <inertia> <ixx>0.0</ixx> <iyy>0.0</iyy> <izz>0.0</izz> </inertia>
     </inertial>
-    <collision name='collision'>
-      <pose relative_to='floating_base'>0 0 0 0 0 0</pose>
-      <geometry> 
-        <box> <size>0.2 0.2 0.1</size> </box>
-      </geometry>
-    </collision>
-  </link> -->
+  </link>
 
 
   </model> 

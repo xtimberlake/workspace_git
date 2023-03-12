@@ -2,8 +2,8 @@
  * @Author: haoyun 
  * @Date: 2022-07-14 12:43:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2023-01-21 00:45:37
- * @FilePath: /drake/workspace/centaur_sim/centaur_controller.h
+ * @LastEditTime: 2023-03-12 21:44:19
+ * @FilePath: /centaur_sim/centaur_controller.h
  * @Description: controller block for drake simulation
  * 
  * Copyright (c) 2022 by HAR-Lab, All Rights Reserved. 
@@ -44,14 +44,25 @@ namespace centaur_sim{
 
     struct record_states_struct {
         std::vector<double> time_stamp;
-        double foo{0.0};
-        std::vector<double> bar;
+        std::vector<double> roll_ref, pitch_ref, yaw_ref, height_ref;
+        std::vector<double> roll, pitch, yaw, height;
+        std::vector<double> px, py;
+        std::vector<double> mx, my, mz, fx, fy, fz;
+        std::vector<double> gait_cycle;
+        std::vector<double> left_foot_force, right_foot_force;
+        
+
 
         template <typename Archive>
         void Serialize(Archive* a) {
         a->Visit(DRAKE_NVP(time_stamp));
-        a->Visit(DRAKE_NVP(foo));
-        a->Visit(DRAKE_NVP(bar));
+        a->Visit(DRAKE_NVP(roll_ref)); a->Visit(DRAKE_NVP(pitch_ref)); a->Visit(DRAKE_NVP(yaw_ref)); a->Visit(DRAKE_NVP(height_ref)); 
+        a->Visit(DRAKE_NVP(roll)); a->Visit(DRAKE_NVP(pitch)); a->Visit(DRAKE_NVP(yaw)); a->Visit(DRAKE_NVP(height)); 
+        a->Visit(DRAKE_NVP(px)); a->Visit(DRAKE_NVP(py));
+        a->Visit(DRAKE_NVP(mx)); a->Visit(DRAKE_NVP(my)); a->Visit(DRAKE_NVP(mz)); a->Visit(DRAKE_NVP(fx)); a->Visit(DRAKE_NVP(fy)); a->Visit(DRAKE_NVP(fz)); 
+        a->Visit(DRAKE_NVP(gait_cycle));
+        a->Visit(DRAKE_NVP(left_foot_force)); a->Visit(DRAKE_NVP(right_foot_force));
+
         }
     };
 
@@ -299,20 +310,15 @@ private:
 
             output_log_vector[6] = ct->ctrl_states.prob_contact(1);
 
+
+
+            output_log_vector[6] = ct->ctrl_states.q(2);
+            output_log_vector[7] = ct->ctrl_states.wbc_q_cmd(2);
+
+
+
             output->set_value(output_log_vector);
 
-
-            // static record_states_struct record_states;
-            // static bool finished_write = false;
-            // double now = context.get_time();
-            
-            // if(!finished_write)
-            //     record_states.time_stamp.push_back(now);
-            // if(now > 2 && !finished_write) {
-            //     yaml::SaveYamlFile("/home/haoyun/Data/Code/drake/workspace/centaur_sim/log/states.yaml", record_states);
-            //     finished_write = true;
-            //     std::cout << "write data ... " << record_states.time_stamp.size() << "in total." << std::endl;
-            // }
 
     }
 
@@ -478,6 +484,52 @@ private:
         // human-position states:
         Eigen::Matrix<double, 12, 1> pos_rpy_states = this->GetInputPort("position_rotation").Eval(context);
         ct->ctrl_states.hri_joint_states = pos_rpy_states;
+
+
+                static record_states_struct record_states;
+        static bool finished_write = false;
+        double now = context.get_time();
+        if((ct->ctrl_states.t - ct->ctrl_states.k * ct->ctrl_states.control_dt) > ct->ctrl_states.control_dt)
+        {
+
+        
+        if(!finished_write)
+        {
+            record_states.time_stamp.push_back(now);
+            record_states.mx.push_back(ct->ctrl_states.hri_wrench_realtime[0]);
+            record_states.my.push_back(ct->ctrl_states.hri_wrench_realtime[1]);
+            record_states.mz.push_back(ct->ctrl_states.hri_wrench_realtime[2]);
+            record_states.fx.push_back(ct->ctrl_states.hri_wrench_realtime[3]);
+            record_states.fy.push_back(ct->ctrl_states.hri_wrench_realtime[4]);
+            record_states.fz.push_back(ct->ctrl_states.hri_wrench_realtime[5]);
+
+            record_states.roll.push_back(ct->ctrl_states.root_euler[0]);
+            record_states.pitch.push_back( ct->ctrl_states.root_euler[1]);
+            record_states.yaw.push_back( ct->ctrl_states.root_euler[2]);
+
+            record_states.roll_ref.push_back( ct->ctrl_states.root_euler_d[0]);
+            record_states.pitch_ref.push_back( ct->ctrl_states.root_euler_d[1]);
+            record_states.yaw_ref.push_back( ct->ctrl_states.root_euler_d[2]);
+
+            record_states.px.push_back( ct->ctrl_states.root_pos[0]);
+            record_states.py.push_back(ct->ctrl_states.root_pos[1]);
+            record_states.height_ref.push_back(ct->ctrl_states.root_pos_d[2]);
+            record_states.height.push_back(ct->ctrl_states.root_pos[2]);
+
+            record_states.gait_cycle.push_back(ct->ctrl_states.plan_contacts_phase[0]);
+
+            // record_states.left_foot_force.push_back(ct->ctrl_states.foot_force_simulation(2, 0));
+            // record_states.right_foot_force.push_back(ct->ctrl_states.foot_force_simulation(2, 1));
+
+        }
+        }
+                
+        if(now > 30.0 && !finished_write) {
+            yaml::SaveYamlFile("/home/haoyun/Data/Code/drake/workspace/centaur_sim/log/representative_ab24.yaml", record_states);
+            finished_write = true;
+            std::cout << "write data ... " << record_states.time_stamp.size() << "in total." << std::endl;
+        }
+
     }
 };
 

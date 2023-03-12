@@ -2,8 +2,8 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:31:07
  * @LastEditors: haoyun 
- * @LastEditTime: 2023-01-21 00:45:15
- * @FilePath: /drake/workspace/centaur_sim/controller/CentaurControl.cc
+ * @LastEditTime: 2023-03-12 21:01:31
+ * @FilePath: /centaur_sim/controller/CentaurControl.cc
  * @Description: 
  * 
  * Copyright (c) 2022 by HAR-Lab, All Rights Reserved. 
@@ -41,12 +41,12 @@ CentaurControl::CentaurControl(const control_params_constant ctrl_params) {
 
 void CentaurControl::UpdateDesiredStates(CentaurStates& state) {
 
-    // int number_of_traj = 0;
-    // number_of_traj =  static_cast<int>((state.k/5));
-    // if(number_of_traj > state.max_human_ref_index) 
-    //     number_of_traj = state.max_human_ref_index;
-    // state.root_euler_d[2] = state.human_ref_traj.yaw[number_of_traj];
-    state.root_euler_d[2] = 0.0;
+    int number_of_traj = 0;
+    number_of_traj =  static_cast<int>((state.k/5));
+    if(number_of_traj > state.max_human_ref_index) 
+        number_of_traj = state.max_human_ref_index;
+    state.root_euler_d[2] = state.human_ref_traj.yaw[number_of_traj];
+    // state.root_euler_d[2] = 0.0;
 
     state.root_pos_d = state.root_pos;
     state.root_pos_d[2] = 0.9;
@@ -71,14 +71,14 @@ void CentaurControl::CalcHRITorques(CentaurStates& state) {
     Eigen::Vector3d prismatic_joint_q_des; prismatic_joint_q_des.setZero();
     Eigen::Vector3d prismatic_joint_qdot_des; prismatic_joint_qdot_des.setZero();
 
-    // int number_of_traj = 0;
-    // number_of_traj =  static_cast<int>((state.k/5));
-    // if(number_of_traj > state.max_human_ref_index) 
-    //     number_of_traj = state.max_human_ref_index;
+    int number_of_traj = 0;
+    number_of_traj =  static_cast<int>((state.k/5));
+    if(number_of_traj > state.max_human_ref_index) 
+        number_of_traj = state.max_human_ref_index;
         
     // // std::cout << "num of traj = " << number_of_traj << std::endl;
-    // prismatic_joint_q_des[0] = state.human_ref_traj.x[number_of_traj];
-    // prismatic_joint_q_des[1] = state.human_ref_traj.y[number_of_traj];
+    prismatic_joint_q_des[0] = state.human_ref_traj.x[number_of_traj];
+    prismatic_joint_q_des[1] = state.human_ref_traj.y[number_of_traj];
 
 
     prismatic_joint_q = state.hri_joint_states.segment<3>(0);

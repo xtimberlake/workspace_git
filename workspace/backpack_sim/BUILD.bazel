@@ -1,0 +1,70 @@
+load(
+    "@drake//tools/skylark:drake_cc.bzl",
+    "drake_cc_library",
+    "drake_cc_binary",
+)
+
+drake_cc_library(
+    name = "backpack_controller_lib",
+    srcs = [
+        "backpack_controller.cc",
+    ],
+    hdrs = [
+        "backpack_controller.h",
+        "backpack_sim.h",
+    ],
+    data = [
+        "backpack_sim_scene.sdf",
+        "ab6_treadmill_walking.yaml",
+    ],
+    deps = [
+        "//systems/framework:leaf_system",
+        "//systems/framework:vector",
+        "//multibody/plant",
+        "//multibody/tree",
+        "//multibody/parsing",
+        "//multibody/math",
+        "//common:find_resource",
+        "//common/yaml",
+        "//common/schema",
+        "//common",
+        "//solvers",
+        
+    ],
+)
+
+
+
+
+
+drake_cc_binary(
+    name = "backpack_sim",
+    srcs = ["backpack_sim.cc"],
+    data = [
+        "backpack_sim_scene.sdf",
+        "ab6_treadmill_walking.yaml",
+    ],
+    deps = [
+        ":backpack_controller_lib",
+        "//common:add_text_logging_gflags",
+        "//common:find_resource",
+        "//common/proto:call_python",
+        "//systems/framework:diagram_builder",
+        "//systems/primitives:constant_vector_source",
+        "//systems/primitives:vector_log_sink",
+        "//systems/primitives:zero_order_hold",
+        "//systems/analysis:simulator",
+        "//geometry:scene_graph",
+        "//geometry:drake_visualizer",
+        "//multibody/plant",
+        "//multibody/parsing",
+        "//lcm",
+        "//systems/lcm",
+        "//solvers:mathematical_program",
+        "//solvers:mathematical_program_result",
+        "//solvers:mosek_solver",
+        "//solvers",
+        "//common/yaml",
+        "@gflags",
+    ],
+)

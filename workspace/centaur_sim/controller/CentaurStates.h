@@ -2,8 +2,8 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:30:49
  * @LastEditors: haoyun 
- * @LastEditTime: 2023-01-20 16:44:04
- * @FilePath: /drake/workspace/centaur_sim/controller/CentaurStates.h
+ * @LastEditTime: 2023-03-12 21:42:05
+ * @FilePath: /centaur_sim/controller/CentaurStates.h
  * @Description: define all the states that used in controller; mainly 
  *                adapted from https://github.com/ShuoYangRobotics/A1-QP-MPC-Controller
  * 
@@ -245,6 +245,8 @@ class CentaurStates {
         robot_yaw_circle = 0;
         last_robot_yaw = 0.0;
 
+        // foot_force_simulation.setZero();
+
     }
 
     // variables
@@ -327,6 +329,7 @@ class CentaurStates {
     Eigen::Matrix<double, 3, 2> foot_force_rel;    // estimate from motors' torques
     Eigen::Matrix<double, 3, 2> foot_force_world;  
     Eigen::Matrix<double, 3, 2> foot_force_est_world;
+    // Eigen::Matrix<double, 3, 2> foot_force_simulation;
 
     Eigen::Matrix<double, 3, 2> foot_force_cmd_rel;    // command
     Eigen::Matrix<double, 3, 2> foot_force_cmd_world;  // from mpc

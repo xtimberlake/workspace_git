@@ -1,0 +1,179 @@
+<?xml version='1.0'?>
+<sdf version='1.9'>
+
+  <model name='centaur_sim_scene'>
+  <link name='ground'>
+    <visual name='visual'>
+      <pose>0 0 -0.025 0 0 0</pose>
+      <geometry>
+        <box>  <size>25.0 3.0 0.05</size> </box>
+      </geometry>
+      <material>
+        <diffuse>0.9 0.8 0.7 1.0</diffuse>
+      </material>
+    </visual> 
+    <collision name="collision">
+      <pose>0 0 -0.025 0 0 0</pose>
+      <geometry>
+        <box>  <size>25.0 3.0 0.05</size> </box>
+      </geometry>
+    </collision>
+  </link>
+
+  <frame name='x_block_init_frame' attached_to='ground'> 
+    <pose relative_to='ground'>0.217 0 0.990 0 0 0</pose>
+  </frame>
+  <link name='x_block'>
+    <pose relative_to='x_block_init_frame'>0 0 0 0 0 0</pose>
+    <!-- <visual name='visual'>
+      <pose relative_to='x_block_init_frame'>0 0 0 0 0 0</pose>
+      <geometry> <box> <size>0.02 0.02 0.02</size> </box> </geometry>
+      <material>
+        <diffuse>0.5 0.0 0.0 0.6</diffuse>
+      </material>
+    </visual>   -->
+  </link>
+  <joint name='x_prismastic_joint' type='prismatic'>
+    <pose relative_to='x_block_init_frame'>0 0 0 0 0 0</pose>
+    <parent>ground</parent>
+    <child>x_block</child>
+    <axis>  
+      <xyz>1 0 0</xyz>
+      <limit> 
+        <!-- <lower>-0.8028514559173915</lower>
+        <upper>0.8028514559173915</upper> -->
+        <!-- <effort>1000000.0</effort> -->
+        <!-- <velocity>1000.0</velocity> -->
+      </limit>
+    </axis>
+  </joint> 
+
+  <frame name='y_block_init_frame' attached_to='x_block'> 
+    <pose relative_to='x_block'>0.0 0 0 0 0 0</pose>
+  </frame>
+  <link name='y_block'>
+    <pose relative_to='y_block_init_frame'>0 0 0 0 0 0</pose>
+    <!-- <visual name='visual'>
+      <pose relative_to='y_block_init_frame'>0 0 0 0 0 0</pose>
+      <geometry> <box> <size>0.02 0.02 0.02</size> </box> </geometry>
+      <material>
+        <diffuse>0.0 0.5 0.0 0.6</diffuse>
+      </material>
+    </visual>   -->
+  </link>
+  <joint name='y_prismastic_joint' type='prismatic'>
+    <pose relative_to='y_block_init_frame'>0 0 0 0 0 0</pose>
+    <parent>x_block</parent>
+    <child>y_block</child>
+    <axis>  
+      <xyz>0 1 0</xyz>
+      <limit> 
+        <!-- <lower>-0.8028514559173915</lower>
+        <upper>0.8028514559173915</upper> -->
+        <!-- <effort>1000000.0</effort>
+        <velocity>1000.0</velocity> -->
+      </limit>
+    </axis>
+  </joint>  
+
+  <frame name='z_block_init_frame' attached_to='y_block'> 
+    <pose relative_to='y_block'>0 0.0 0 0 0 0</pose>
+  </frame>
+  <link name='z_block'>
+    <pose relative_to='z_block_init_frame'>0 0 0 0 0 0</pose>
+    <visual name='visual'>
+      <pose relative_to='z_block_init_frame'>0.03 0 0.1 0 0 0</pose>
+      <geometry> <box> <size>0.02 0.3 0.5</size> </box> </geometry>
+      <material>
+        <diffuse>0.1 0.1 0.1 0.2</diffuse>
+      </material>
+    </visual>  
+  </link>
+  <joint name='z_prismastic_joint' type='prismatic'>
+    <pose relative_to='z_block_init_frame'>0 0 0 0 0 0</pose>
+    <parent>y_block</parent>
+    <child>z_block</child>
+    <axis>  
+      <xyz>0 0 1</xyz>
+      <limit> 
+        <!-- <lower>-0.8028514559173915</lower>
+        <upper>0.8028514559173915</upper> -->
+        <!-- <effort>1000000.0</effort>
+        <velocity>1000.0</velocity> -->
+      </limit>
+    </axis>
+  </joint>  
+
+  <frame name='f_t_sensor_frame' attached_to='z_block'> 
+    <pose relative_to='z_block'>0 0 0.0 0 0 0</pose>
+  </frame>
+  <link name='f_t_sensor_link'>
+    <pose relative_to='f_t_sensor_frame'>0 0 0 0 0 0</pose>
+    <visual name='visual'>
+      <pose relative_to='f_t_sensor_frame'>0 0 0 0 1.57 0</pose>
+      <geometry>
+       <!-- <box> <size>0.05 0.08 0.1</size> </box> -->
+       <cylinder> 
+       <radius>0.05</radius> <length>0.04</length>
+       </cylinder>
+      </geometry>
+      <material>
+        <!-- <diffuse>1.0 0.423529411765 0.0392156862745 0.5</diffuse> -->
+        <diffuse>0.95 0.95 0.95 1.0</diffuse>
+      </material>
+    </visual>  
+  </link>
+  <joint name='f_t_sensor_fixed_joint' type='fixed'>
+    <pose relative_to='f_t_sensor_frame'>0.0000 0 0 0 0 0</pose>
+    <parent>z_block</parent>
+    <child>f_t_sensor_link</child>
+  </joint>
+
+
+
+  <frame name='ball_joint_frame' attached_to='f_t_sensor_link'> 
+    <pose relative_to='f_t_sensor_link'>-0.001 0 0 0 0 0</pose>
+  </frame>
+
+  <joint name='ball_joint_fixed' type='fixed'>
+    <pose relative_to='ball_joint_frame'>0 0 0 0 0 0</pose>
+    <parent>f_t_sensor_link</parent>
+    <child>load_link</child>
+  </joint>
+
+
+  <link name='load_link'>
+    <pose relative_to='f_t_sensor_link'>-0.06 0 0.1 0 -1.57 0</pose>
+    <visual name='visual'>
+      <pose relative_to='f_t_sensor_link'>-0.02 0.135 -0.12 1.57 0 -1.57</pose>
+      <!-- <pose relative_to='f_t_sensor_link'>-0.06 0 0.1 0 -1.57 0</pose> -->
+      <!-- <geometry> 
+        <box> <size>0.432 0.2 0.1</size> </box>
+      </geometry> -->
+      <material>
+        <diffuse>0.3 0.6 0.3 1.0</diffuse>
+      </material>
+      <geometry>
+          <mesh>
+            <scale>0.0009 0.0009 0.0009</scale>
+            <uri>/home/haoyun/Data/Code/drake/workspace/centaur_sim/data/backpack_obj_paint.obj</uri>
+          </mesh>
+      </geometry>
+    </visual>
+    <inertial>
+      <mass>30.0</mass>
+      <inertia> <ixx>0.125</ixx> <iyy>0.49155</iyy> <izz>0.56656</izz> </inertia>
+    </inertial>
+    <collision name='collision'>
+      <pose relative_to='f_t_sensor_link'>0 0 0.16 0 0 0</pose>
+      <geometry> 
+        <box> <size>0.432 0.2 0.1</size> </box>
+      </geometry>
+    </collision>
+  </link>
+
+
+  </model> 
+
+
+</sdf>
