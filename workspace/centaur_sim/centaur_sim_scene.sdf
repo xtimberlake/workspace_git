@@ -682,12 +682,12 @@
       <material>
         <diffuse>0.3 0.6 0.3 1.0</diffuse>
       </material>
-      <!-- <geometry>
+      <geometry>
           <mesh>
             <scale>0.0009 0.0009 0.0009</scale>
             <uri>/home/haoyun/Data/Code/drake/workspace/centaur_sim/data/backpack_obj_paint.obj</uri>
           </mesh>
-      </geometry> -->
+      </geometry>
     </visual>
     <inertial>
       <!-- <mass>30.0</mass>
@@ -697,6 +697,213 @@
     </inertial>
   </link>
 
+
+
+  <!-- gaps and stairs -->
+  <frame name='terrain_zero_frame' attached_to='ground'>
+    <pose relative_to='ground'>2.0 0 0.025 0 0 0</pose>
+  </frame>
+
+  <joint name='plane_1_joint' type='fixed'>
+    <pose relative_to='terrain_zero_frame'>0 0 0 0 0 0</pose>
+    <parent>ground</parent>
+    <child>plane_1</child>
+  </joint> 
+
+  <link name='plane_1'>
+    <pose relative_to='terrain_zero_frame'>0.2 0.0 0 0 0 0</pose>
+    <visual name='visual'>
+      <pose relative_to='terrain_zero_frame'>0.2 0.0 0 0 0 0</pose>
+      <geometry>
+        <box> <size>0.4 1.0 0.04</size> </box>
+      </geometry>
+      <material>
+        <diffuse>1.0 0.423529411765 0.0392156862745 0.5</diffuse>
+      </material>
+    </visual>
+    <collision name='collision'>
+      <pose relative_to='terrain_zero_frame'>0.2 0 0 0 0 0</pose>
+      <geometry>
+        <box> <size>0.4 1.0 0.04</size> </box>
+      </geometry>
+    </collision>
+  </link> 
+
+  <joint name='plane_2_joint' type='fixed'>
+    <pose relative_to='plane_1'>0 0 0 0 0 0</pose>
+    <parent>ground</parent>
+    <child>plane_2</child>
+  </joint>
+
+  <link name='plane_2'>
+    <pose relative_to='plane_1'>0.5515 0.0 0 0 0 0</pose>
+    <visual name='visual'>
+      <pose relative_to='plane_1'>0.5515 0.0 0 0 0 0</pose>
+      <geometry>
+        <box> <size>0.397 1.0 0.04</size> </box>
+      </geometry>
+      <material>
+        <diffuse>1.0 0.423529411765 0.0392156862745 0.5</diffuse>
+      </material>
+    </visual>
+    <collision name='collision'>
+      <pose relative_to='plane_1'>0.5515 0.0 0 0 0 0</pose>
+      <geometry>
+        <box> <size>0.397 1.0 0.04</size> </box>
+      </geometry>
+    </collision>
+  </link> 
+
+  <joint name='plane_3_joint' type='fixed'>
+    <pose relative_to='plane_2'>0 0 0 0 0 0</pose>
+    <parent>ground</parent>
+    <child>plane_3</child>
+  </joint>
+
+  <link name='plane_3'>
+    <pose relative_to='plane_2'>0.5535 0.0 0 0 0 0</pose>
+    <visual name='visual'>
+      <pose relative_to='plane_2'>0.5535 0.0 0 0 0 0</pose>
+      <geometry>
+        <box> <size>0.41 1.0 0.04</size> </box>
+      </geometry>
+      <material>
+        <diffuse>1.0 0.423529411765 0.0392156862745 0.5</diffuse>
+      </material>
+    </visual>
+    <collision name='collision'>
+      <pose relative_to='plane_2'>0.5535 0.0 0 0 0 0</pose>
+      <geometry>
+        <box> <size>0.41 1.0 0.04</size> </box>
+      </geometry>
+    </collision>
+  </link> 
+
+
+  <joint name='plane_4_joint' type='fixed'>
+    <pose relative_to='plane_3'>0 0 0 0 0 0</pose>
+    <parent>ground</parent>
+    <child>plane_4</child>
+  </joint>
+
+  <link name='plane_4'>
+    <pose relative_to='plane_3'>0.5 0.0 0 0 0 0</pose>
+    <visual name='visual'>
+      <pose relative_to='plane_3'>0.5 0.0 0 0 0 0</pose>
+      <geometry>
+        <box> <size>0.29 1.0 0.04</size> </box>
+      </geometry>
+      <material>
+        <diffuse>1.0 0.423529411765 0.0392156862745 0.5</diffuse>
+      </material>
+    </visual>
+    <collision name='collision'>
+      <pose relative_to='plane_3'>0.5 0.0 0 0 0 0</pose>
+      <geometry>
+        <box> <size>0.29 1.0 0.04</size> </box>
+      </geometry>
+    </collision>
+  </link> 
+
+  <joint name='stair_1_joint' type='fixed'>
+    <pose relative_to='plane_4'>0 0 0 0 0 0</pose>
+    <parent>ground</parent>
+    <child>stair_1</child>
+  </joint>
+
+  <link name='stair_1'>
+    <pose relative_to='plane_4'>0.2995 0.0 0 0 0 0</pose>
+    <visual name='visual'>
+      <pose relative_to='plane_4'>0.2995 0.0 0 0 0 0</pose>
+      <geometry>
+        <box> <size>0.309 1.0 0.336</size> </box>
+      </geometry>
+      <material>
+        <diffuse>1.0 0.423529411765 0.0392156862745 0.5</diffuse>
+      </material>
+    </visual>
+    <collision name='collision'>
+      <pose relative_to='plane_4'>0.2995 0.0 0 0 0 0</pose>
+      <geometry>
+        <box> <size>0.309 1.0 0.336</size> </box>
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name='stair_2_joint' type='fixed'>
+    <pose relative_to='plane_4'>0 0 0 0 0 0</pose>
+    <parent>ground</parent>
+    <child>stair_2</child>
+  </joint>
+
+  <link name='stair_2'>
+    <pose relative_to='stair_1'>0.2995 0.0 0 0 0 0</pose>
+    <visual name='visual'>
+      <pose relative_to='stair_1'>0.2995 0.0 0 0 0 0</pose>
+      <geometry>
+        <box> <size>0.29 1.0 0.634</size> </box>
+      </geometry>
+      <material>
+        <diffuse>1.0 0.423529411765 0.0392156862745 0.5</diffuse>
+      </material>
+    </visual>
+    <collision name='collision'>
+      <pose relative_to='stair_1'>0.2995 0.0 0 0 0 0</pose>
+      <geometry>
+        <box> <size>0.29 1.0 0.634</size> </box>
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name='stair_3_joint' type='fixed'>
+    <pose relative_to='plane_4'>0 0 0 0 0 0</pose>
+    <parent>ground</parent>
+    <child>stair_3</child>
+  </joint>
+
+  <link name='stair_3'>
+    <pose relative_to='stair_2'>0.287 0.0 0 0 0 0</pose>
+    <visual name='visual'>
+      <pose relative_to='stair_2'>0.287 0.0 0 0 0 0</pose>
+      <geometry>
+        <box> <size>0.284 1.0 0.944</size> </box>
+      </geometry>
+      <material>
+        <diffuse>1.0 0.423529411765 0.0392156862745 0.5</diffuse>
+      </material>
+    </visual>
+    <collision name='collision'>
+      <pose relative_to='stair_2'>0.287 0.0 0 0 0 0</pose>
+      <geometry>
+        <box> <size>0.284 1.0 0.944</size> </box>
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name='stair_4_joint' type='fixed'>
+    <pose relative_to='plane_4'>0 0 0 0 0 0</pose>
+    <parent>ground</parent>
+    <child>stair_4</child>
+  </joint>
+
+  <link name='stair_4'>
+    <pose relative_to='stair_3'>0.3485 0.0 0 0 0 0</pose>
+    <visual name='visual'>
+      <pose relative_to='stair_3'>0.3485 0.0 0 0 0 0</pose>
+      <geometry>
+        <box> <size>0.413 1.0 1.244</size> </box>
+      </geometry>
+      <material>
+        <diffuse>1.0 0.423529411765 0.0392156862745 0.5</diffuse>
+      </material>
+    </visual>
+    <collision name='collision'>
+      <pose relative_to='stair_3'>0.3485 0.0 0 0 0 0</pose>
+      <geometry>
+        <box> <size>0.413 1.0 1.244</size> </box>
+      </geometry>
+    </collision>
+  </link>
 
   </model> 
 
