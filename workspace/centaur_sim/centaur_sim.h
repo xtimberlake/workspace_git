@@ -32,7 +32,7 @@
 #include "drake/workspace/centaur_sim/extract_data.h"
 #include "drake/workspace/centaur_sim/centaur_controller.h"
 
-DEFINE_double(simulation_sec, 5.0,
+DEFINE_double(simulation_sec, 14,
               "Number of seconds to simulate.");
 DEFINE_double(sim_dt, 5e-4,
               "The time step to use for MultibodyPlant model"
@@ -246,7 +246,7 @@ namespace centaur_sim {
         // test_params_struct data{4.0, {5.0, 6.0}};
         // yaml::SaveYamlFile("/home/haoyun/Data/Code/drake/workspace/centaur_sim/log/test_params.yaml", data);
 
-        
+
 
         std::cout << Eigen::Vector2d(test_params.bar.at(0), test_params.bar.at(1)) << std::endl;
         drake::log()->info(test_params.foo);

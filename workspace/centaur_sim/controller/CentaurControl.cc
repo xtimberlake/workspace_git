@@ -2,8 +2,8 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:31:07
  * @LastEditors: haoyun 
- * @LastEditTime: 2023-03-12 21:01:31
- * @FilePath: /centaur_sim/controller/CentaurControl.cc
+ * @LastEditTime: 2023-03-31 22:34:59
+ * @FilePath: /drake/workspace/centaur_sim/controller/CentaurControl.cc
  * @Description: 
  * 
  * Copyright (c) 2022 by HAR-Lab, All Rights Reserved. 
@@ -45,8 +45,8 @@ void CentaurControl::UpdateDesiredStates(CentaurStates& state) {
     number_of_traj =  static_cast<int>((state.k/5));
     if(number_of_traj > state.max_human_ref_index) 
         number_of_traj = state.max_human_ref_index;
-    state.root_euler_d[2] = state.human_ref_traj.yaw[number_of_traj];
-    // state.root_euler_d[2] = 0.0;
+    // state.root_euler_d[2] = state.human_ref_traj.yaw[number_of_traj];
+    state.root_euler_d[2] = 0.0;
 
     state.root_pos_d = state.root_pos;
     state.root_pos_d[2] = 0.9;
@@ -71,14 +71,22 @@ void CentaurControl::CalcHRITorques(CentaurStates& state) {
     Eigen::Vector3d prismatic_joint_q_des; prismatic_joint_q_des.setZero();
     Eigen::Vector3d prismatic_joint_qdot_des; prismatic_joint_qdot_des.setZero();
 
+    // int number_of_traj = 0;
+    // number_of_traj =  static_cast<int>((state.k/5));
+    // if(number_of_traj > state.max_human_ref_index) 
+    //     number_of_traj = state.max_human_ref_index;
+        
+    // // // std::cout << "num of traj = " << number_of_traj << std::endl;
+    // prismatic_joint_q_des[0] = state.human_ref_traj.x[number_of_traj];
+    // prismatic_joint_q_des[1] = state.human_ref_traj.y[number_of_traj];
+
+
     int number_of_traj = 0;
-    number_of_traj =  static_cast<int>((state.k/5));
-    if(number_of_traj > state.max_human_ref_index) 
-        number_of_traj = state.max_human_ref_index;
+    number_of_traj =  static_cast<int>((state.k));
         
     // // std::cout << "num of traj = " << number_of_traj << std::endl;
-    prismatic_joint_q_des[0] = state.human_ref_traj.x[number_of_traj];
-    prismatic_joint_q_des[1] = state.human_ref_traj.y[number_of_traj];
+    prismatic_joint_q_des[0] = number_of_traj*0.0003;
+    prismatic_joint_q_des[1] = 0.0;
 
 
     prismatic_joint_q = state.hri_joint_states.segment<3>(0);
@@ -288,22 +296,50 @@ void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
         pDelta[1] = (pDelta[1]>FOOT_DELTA_Y_LIMIT)?(FOOT_DELTA_Y_LIMIT):((pDelta[1]<-FOOT_DELTA_Y_LIMIT)?(-FOOT_DELTA_Y_LIMIT):pDelta[1]);
 
         foot_final_pos = pYawCorrected + pDelta;
-        foot_final_pos[2] = -0.003; // height in world frame
+        foot_final_pos[2] = -0.000; // height in world frame
 
         // if (leg == 0) {
         //     std::cout << "pSymmetry = " << pSymmetry.transpose() << ", " << "pCentrifugal = " << pCentrifugal.transpose() << "," 
         //     << "swingT*vel =  " << swingTimeRemain * state.root_lin_vel_world.transpose() 
         //     << "final x = " << foot_final_pos[0] << "y = " << foot_final_pos[1] << std::endl;
         // }
-        
+
+
+        if(foot_final_pos[0] > 2.0) {   
+            float x = foot_final_pos[0];
+            float y = foot_final_pos[1];
+            int coordinate_x = int((x - 2.0)/0.02);
+            int coordinate_y = int((y + 0.5)/0.02);
+            // if(state.k % 10 == 0)
+            foot_final_pos = SpiralBinarySearch(foot_final_pos.head(2), state.map, 3);
+
+
+            foot_final_pos[2] += state.map.elevation(coordinate_x, coordinate_y);
+        }
 
         state.foothold_dest_world.block<3, 1>(0, leg) = foot_final_pos;
         state.foothold_dest_abs.block<3, 1>(0, leg) = state.foothold_dest_world.block<3, 1>(0, leg) - state.root_pos;
         state.foothold_dest_rel.block<3, 1>(0, leg) = state.root_rot_mat.transpose() * state.foothold_dest_abs.block<3, 1>(0, leg);
     }
+
+    // // terrain height adaption
+    // for(int leg = 0; leg < 2; leg++) { 
+    //     // if(state.plan_swings_phase[leg] > 0.9) {
+
+    //     // }
+    //     if(state.foot_final_pos(0, leg) > 2.0) {
+    //         float x = state.foot_final_pos(0, leg);
+    //         float y = state.foot_final_pos(1, leg);
+    //         int coordinate_x = int((x - 2.0)/0.02);
+    //         int coordinate_y = int((y + 0.5)/0.02);
+    //         foot_final_pos[2] += state.map.elevation(coordinate_x, coordinate_y);
+    //         std::cout << "(x,y)=(" << coordinate_x << "," << coordinate_y << ")" << " = " << foot_final_pos[2] <<std::endl;
+    //     }
+    
+    // }
     
 
-
+    // std::cout << "test height = " << state.map.elevation  << std::endl;
     
     // Step 2: generate trajectory(in world) using Bezier curve given gait scheduler
     if(FirstTimeSwing) {
@@ -414,3 +450,85 @@ void CentaurControl::InverseKinematics(CentaurStates& state)
 
 }
 
+Eigen::Matrix<double, 3, 1> CentaurControl::SpiralBinarySearch(
+     Eigen::Matrix<double, 2, 1> initial_pos,
+     map_struct map,
+     int layer) {
+        
+        Eigen::Matrix<double, 3, 1> valid_pos; valid_pos.setZero();
+        valid_pos.head(2) = initial_pos;
+        int coordinate_x = int((initial_pos(0) - 2.0)/0.02);
+        int coordinate_y = int((initial_pos(1) + 0.5)/0.02);
+        if(map.traversability(coordinate_x, coordinate_y) > 0.99) {
+            valid_pos(2) =  valid_pos(2) = map.elevation(coordinate_x, coordinate_y);
+            return valid_pos;
+        }
+
+        int left, right, top, bottom;
+        for (int layer_i = 1; layer_i < layer+1; layer_i++) {
+            left = layer_i;
+            right = -layer_i;
+            top = layer_i;
+            bottom = -layer_i;
+
+            // [1,1], [1,0]
+            for (int i = left; i > right; i--) {
+                int temp_x, temp_y;
+                temp_x = (coordinate_x+top<0)?0:(coordinate_x+top);
+                temp_y = (coordinate_y+i);
+            
+                if(map.traversability(coordinate_x+temp_x, coordinate_y+temp_y) > 0.99) {
+                    valid_pos(0) = initial_pos(0) + temp_x*0.02;
+                    valid_pos(1) = initial_pos(1) + temp_y*0.02;
+                    valid_pos(2) = map.elevation(coordinate_x+temp_x, coordinate_y+temp_y);
+                    return valid_pos;
+                }
+            }
+
+            // [1,-1], [0,-1]
+            for (int i = top; i > bottom; i--) {
+                int temp_x, temp_y;
+                temp_x = (coordinate_x+i<0)?0:(coordinate_x+i);
+                temp_y = (coordinate_y+right);
+                
+                if(map.traversability(coordinate_x+temp_x, coordinate_y+temp_y) > 0.99) {
+                    valid_pos(0) = initial_pos(0) + temp_x*0.02;
+                    valid_pos(1) = initial_pos(1) + temp_y*0.02;
+                    valid_pos(2) = map.elevation(coordinate_x+temp_x, coordinate_y+temp_y);
+                    return valid_pos;
+                }
+            }
+            
+            // [-1,-1], [-1,0]
+            for (int i = right; i < left; i++) {
+                int temp_x, temp_y;
+                temp_x = (coordinate_x+bottom<0)?0:(coordinate_x+bottom);
+                temp_y = (coordinate_y+i);   
+                if(map.traversability(coordinate_x+temp_x, coordinate_y+temp_y) > 0.99) {
+
+                    valid_pos(0) = initial_pos(0) + temp_x*0.02;
+                    valid_pos(1) = initial_pos(1) + temp_y*0.02;
+                    valid_pos(2) = map.elevation(coordinate_x+temp_x, coordinate_y+temp_y);
+                    return valid_pos;
+                }
+            }
+
+            // [-1,1], [0,1]
+            for (int i = bottom; i < top; i++) {
+                int temp_x, temp_y;
+                temp_x = (coordinate_x+i<0)?0:(coordinate_x+i);
+                temp_y = (coordinate_y+left); 
+                if(map.traversability(coordinate_x+temp_x, coordinate_y+temp_y) > 0.99) {
+                    
+                    valid_pos(0) = initial_pos(0) + temp_x*0.02;
+                    valid_pos(1) = initial_pos(1) + temp_y*0.02;
+                    valid_pos(2) = map.elevation(coordinate_x+temp_x, coordinate_y+temp_y);
+                    return valid_pos;
+                }
+            }
+
+        }
+
+        valid_pos(2) =  valid_pos(2) = map.elevation(coordinate_x, coordinate_y);
+        return valid_pos;
+}

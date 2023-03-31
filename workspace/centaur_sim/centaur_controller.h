@@ -2,8 +2,8 @@
  * @Author: haoyun 
  * @Date: 2022-07-14 12:43:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2023-03-12 21:44:19
- * @FilePath: /centaur_sim/centaur_controller.h
+ * @LastEditTime: 2023-03-31 19:25:15
+ * @FilePath: /drake/workspace/centaur_sim/centaur_controller.h
  * @Description: controller block for drake simulation
  * 
  * Copyright (c) 2022 by HAR-Lab, All Rights Reserved. 
@@ -65,6 +65,7 @@ namespace centaur_sim{
 
         }
     };
+
 
 
 template<typename T>
@@ -486,7 +487,7 @@ private:
         ct->ctrl_states.hri_joint_states = pos_rpy_states;
 
 
-                static record_states_struct record_states;
+        static record_states_struct record_states;
         static bool finished_write = false;
         double now = context.get_time();
         if((ct->ctrl_states.t - ct->ctrl_states.k * ct->ctrl_states.control_dt) > ct->ctrl_states.control_dt)

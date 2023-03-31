@@ -2,8 +2,8 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:30:49
  * @LastEditors: haoyun 
- * @LastEditTime: 2023-03-12 21:42:05
- * @FilePath: /centaur_sim/controller/CentaurStates.h
+ * @LastEditTime: 2023-03-31 15:59:06
+ * @FilePath: /drake/workspace/centaur_sim/controller/CentaurStates.h
  * @Description: define all the states that used in controller; mainly 
  *                adapted from https://github.com/ShuoYangRobotics/A1-QP-MPC-Controller
  * 
@@ -106,10 +106,31 @@ struct robot_params_constant {
         }
     };
 
+    struct map_struct {
+        Eigen::MatrixXf elevation;
+        Eigen::MatrixXf torso;
+        Eigen::MatrixXf traversability;
+
+
+        template <typename Archive>
+        void Serialize(Archive* a) {
+        a->Visit(DRAKE_NVP(elevation));
+        a->Visit(DRAKE_NVP(torso));
+        a->Visit(DRAKE_NVP(traversability));
+
+        }
+    };
+
+
 
 class CentaurStates {
  public:
     CentaurStates() {
+
+        this->map = drake::yaml::LoadYamlFile<map_struct>(
+            drake::FindResourceOrThrow("drake/workspace/centaur_sim/data/gaps_stairs_map.yaml")
+        );
+        // std::cout << "The size of map:" << map.elevation(0, 159) << std::endl;
 
         this->human_ref_traj = drake::yaml::LoadYamlFile<human_ref_traj_struct>(
             drake::FindResourceOrThrow("drake/workspace/centaur_sim/data/ab17_level_ground.yaml")
@@ -400,5 +421,7 @@ class CentaurStates {
 
     int robot_yaw_circle;
     double last_robot_yaw;
+
+    map_struct map;
 
 };
