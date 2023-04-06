@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:30:49
  * @LastEditors: haoyun 
- * @LastEditTime: 2023-03-31 15:59:06
+ * @LastEditTime: 2023-04-06 20:10:26
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurStates.h
  * @Description: define all the states that used in controller; mainly 
  *                adapted from https://github.com/ShuoYangRobotics/A1-QP-MPC-Controller
@@ -128,9 +128,9 @@ class CentaurStates {
     CentaurStates() {
 
         this->map = drake::yaml::LoadYamlFile<map_struct>(
-            drake::FindResourceOrThrow("drake/workspace/centaur_sim/data/gaps_stairs_map.yaml")
+            drake::FindResourceOrThrow("drake/workspace/centaur_sim/data/gaps_stairs_map2.yaml")
         );
-        // std::cout << "The size of map:" << map.elevation(0, 159) << std::endl;
+        std::cout << "The size of map:" << map.elevation.rows() << std::endl;
 
         this->human_ref_traj = drake::yaml::LoadYamlFile<human_ref_traj_struct>(
             drake::FindResourceOrThrow("drake/workspace/centaur_sim/data/ab17_level_ground.yaml")

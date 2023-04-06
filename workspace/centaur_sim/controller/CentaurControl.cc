@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:31:07
  * @LastEditors: haoyun 
- * @LastEditTime: 2023-03-31 22:34:59
+ * @LastEditTime: 2023-04-06 23:08:14
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurControl.cc
  * @Description: 
  * 
@@ -85,7 +85,7 @@ void CentaurControl::CalcHRITorques(CentaurStates& state) {
     number_of_traj =  static_cast<int>((state.k));
         
     // // std::cout << "num of traj = " << number_of_traj << std::endl;
-    prismatic_joint_q_des[0] = number_of_traj*0.0003;
+    prismatic_joint_q_des[0] = number_of_traj*0.00032;
     prismatic_joint_q_des[1] = 0.0;
 
 
@@ -281,6 +281,10 @@ void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
 
     
     for (int leg = 0; leg < 2; leg++) {
+
+        // fix the target position after 70% of the swing phase:
+        if(state.plan_swings_phase[leg] > 0.7) continue;
+
         Eigen::Matrix<double, 3, 1> offset(1.0 * state.ctrl_params_const.default_foot_pos_under_hip.at(0), side_sign[leg] * state.ctrl_params_const.default_foot_pos_under_hip.at(1), 0);
         swingTimeRemain = (1 - state.plan_swings_phase[leg]) * state.gait_period * (1 - state.stance_duration[leg]);
         tStance = (state.gait_period * state.stance_duration(leg));
@@ -306,15 +310,10 @@ void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
 
 
         if(foot_final_pos[0] > 2.0) {   
-            float x = foot_final_pos[0];
-            float y = foot_final_pos[1];
-            int coordinate_x = int((x - 2.0)/0.02);
-            int coordinate_y = int((y + 0.5)/0.02);
             // if(state.k % 10 == 0)
-            foot_final_pos = SpiralBinarySearch(foot_final_pos.head(2), state.map, 3);
+            foot_final_pos = SpiralBinarySearch(foot_final_pos.head(2), state.map, 8);
 
 
-            foot_final_pos[2] += state.map.elevation(coordinate_x, coordinate_y);
         }
 
         state.foothold_dest_world.block<3, 1>(0, leg) = foot_final_pos;
@@ -460,7 +459,14 @@ Eigen::Matrix<double, 3, 1> CentaurControl::SpiralBinarySearch(
         int coordinate_x = int((initial_pos(0) - 2.0)/0.02);
         int coordinate_y = int((initial_pos(1) + 0.5)/0.02);
         if(map.traversability(coordinate_x, coordinate_y) > 0.99) {
-            valid_pos(2) =  valid_pos(2) = map.elevation(coordinate_x, coordinate_y);
+            valid_pos(2) = map.elevation(coordinate_x, coordinate_y);     
+            // if(initial_pos(1)>0) {
+            // std::cout << "choose the default foothold! ";
+            // std::cout << "initial_pos = (" << initial_pos(0) << "," <<initial_pos(1) << ")";
+            // std::cout << " coordinate = (" << coordinate_x << "," <<coordinate_y << ")";
+            // std::cout << " trav = " << map.traversability(coordinate_x, coordinate_y) << std::endl;
+            // }
+            
             return valid_pos;
         }
 
@@ -477,10 +483,14 @@ Eigen::Matrix<double, 3, 1> CentaurControl::SpiralBinarySearch(
                 temp_x = (coordinate_x+top<0)?0:(coordinate_x+top);
                 temp_y = (coordinate_y+i);
             
-                if(map.traversability(coordinate_x+temp_x, coordinate_y+temp_y) > 0.99) {
-                    valid_pos(0) = initial_pos(0) + temp_x*0.02;
-                    valid_pos(1) = initial_pos(1) + temp_y*0.02;
-                    valid_pos(2) = map.elevation(coordinate_x+temp_x, coordinate_y+temp_y);
+                if(map.traversability(temp_x, temp_y) > 0.99) {
+                    valid_pos(0) = initial_pos(0) + static_cast<float>(top)*0.02;
+                    valid_pos(1) = initial_pos(1) + static_cast<float>(i)*0.02;
+                    valid_pos(2) = map.elevation(temp_x, temp_y);
+                    // if(initial_pos(1)>0) {
+                    // std::cout << "default = [" << initial_pos(0) << "," << initial_pos(1)<<"]" << std::endl;
+                    // std::cout << "modified = [" << valid_pos(0) << "," << valid_pos(1)<<"]" << std::endl;
+                    // }
                     return valid_pos;
                 }
             }
@@ -491,10 +501,14 @@ Eigen::Matrix<double, 3, 1> CentaurControl::SpiralBinarySearch(
                 temp_x = (coordinate_x+i<0)?0:(coordinate_x+i);
                 temp_y = (coordinate_y+right);
                 
-                if(map.traversability(coordinate_x+temp_x, coordinate_y+temp_y) > 0.99) {
-                    valid_pos(0) = initial_pos(0) + temp_x*0.02;
-                    valid_pos(1) = initial_pos(1) + temp_y*0.02;
-                    valid_pos(2) = map.elevation(coordinate_x+temp_x, coordinate_y+temp_y);
+                if(map.traversability(temp_x, temp_y) > 0.99) {
+                    valid_pos(0) = initial_pos(0) + static_cast<float>(i)*0.02;
+                    valid_pos(1) = initial_pos(1) + static_cast<float>(right)*0.02;
+                    valid_pos(2) = map.elevation(temp_x, temp_y);
+                    // if(initial_pos(1)>0) {
+                    // std::cout << "default  = [" << initial_pos(0) << "," << initial_pos(1)<<"]" << std::endl;
+                    // std::cout << "modified = [" << valid_pos(0) << "," << valid_pos(1)<<"]" << std::endl;
+                    // }
                     return valid_pos;
                 }
             }
@@ -504,11 +518,15 @@ Eigen::Matrix<double, 3, 1> CentaurControl::SpiralBinarySearch(
                 int temp_x, temp_y;
                 temp_x = (coordinate_x+bottom<0)?0:(coordinate_x+bottom);
                 temp_y = (coordinate_y+i);   
-                if(map.traversability(coordinate_x+temp_x, coordinate_y+temp_y) > 0.99) {
+                if(map.traversability(temp_x, temp_y) > 0.99) {
 
-                    valid_pos(0) = initial_pos(0) + temp_x*0.02;
-                    valid_pos(1) = initial_pos(1) + temp_y*0.02;
-                    valid_pos(2) = map.elevation(coordinate_x+temp_x, coordinate_y+temp_y);
+                    valid_pos(0) = initial_pos(0) + static_cast<float>(bottom)*0.02;
+                    valid_pos(1) = initial_pos(1) + static_cast<float>(i)*0.02;
+                    valid_pos(2) = map.elevation(temp_x, temp_y);
+                    // if(initial_pos(1)>0) {
+                    // std::cout << "default  = [" << initial_pos(0) << "," << initial_pos(1)<<"]" << std::endl;
+                    // std::cout << "modified = [" << valid_pos(0) << "," << valid_pos(1)<<"]" << std::endl;
+                    // }
                     return valid_pos;
                 }
             }
@@ -518,16 +536,23 @@ Eigen::Matrix<double, 3, 1> CentaurControl::SpiralBinarySearch(
                 int temp_x, temp_y;
                 temp_x = (coordinate_x+i<0)?0:(coordinate_x+i);
                 temp_y = (coordinate_y+left); 
-                if(map.traversability(coordinate_x+temp_x, coordinate_y+temp_y) > 0.99) {
+                if(map.traversability(temp_x, temp_y) > 0.99) {
                     
-                    valid_pos(0) = initial_pos(0) + temp_x*0.02;
-                    valid_pos(1) = initial_pos(1) + temp_y*0.02;
-                    valid_pos(2) = map.elevation(coordinate_x+temp_x, coordinate_y+temp_y);
+                    valid_pos(0) = initial_pos(0) + static_cast<float>(i)*0.02;
+                    valid_pos(1) = initial_pos(1) + static_cast<float>(left)*0.02;
+                    valid_pos(2) = map.elevation(temp_x, temp_y);
+                    // if(initial_pos(1)>0) {
+                    // std::cout << "default  = [" << initial_pos(0) << "," << initial_pos(1)<<"]" << std::endl;
+                    // std::cout << "modified = [" << valid_pos(0) << "," << valid_pos(1)<<"]" << std::endl;
+                    // }
                     return valid_pos;
                 }
             }
 
         }
+        
+        std::cout << "optimal not found!!";
+        std::cout << "initial_pos = (" << initial_pos(0) << "," <<initial_pos(1) << ")" << std::endl;
 
         valid_pos(2) =  valid_pos(2) = map.elevation(coordinate_x, coordinate_y);
         return valid_pos;

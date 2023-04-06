@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-14 12:43:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2023-03-31 19:25:15
+ * @LastEditTime: 2023-04-06 21:39:20
  * @FilePath: /drake/workspace/centaur_sim/centaur_controller.h
  * @Description: controller block for drake simulation
  * 
@@ -275,46 +275,39 @@ private:
                 3: grf_y
                 4: grf_z
             */
-           double s_phi, s_phi_bar;
-            if(ct->ctrl_states.plan_contacts_phase[0] > 0)  {
-                s_phi = 1.0;
-                s_phi_bar = 0.0;
-            }
-            else {
-                s_phi = 0.0;
-                s_phi_bar = 1.0;
-            }
-            double lambda[2] = {0.0, 1.0};
-            double sigma2[2] = {0.025, 0.025};
-            double prob;
+        //    double s_phi, s_phi_bar;
+        //     if(ct->ctrl_states.plan_contacts_phase[0] > 0)  {
+        //         s_phi = 1.0;
+        //         s_phi_bar = 0.0;
+        //     }
+        //     else {
+        //         s_phi = 0.0;
+        //         s_phi_bar = 1.0;
+        //     }
+        //     double lambda[2] = {0.0, 1.0};
+        //     double sigma2[2] = {0.025, 0.025};
+            // double prob;
             
-            prob = 0.5 * (s_phi * (std::erf( (ct->ctrl_states.plan_contacts_phase[0]-lambda[0]) / (std::sqrt(2)*sigma2[0]) )
-                                 + std::erf( (lambda[1]-ct->ctrl_states.plan_contacts_phase[0]) / (std::sqrt(2)*sigma2[1]) ))
-                        + s_phi_bar * (2 + std::erf( (lambda[0]-ct->ctrl_states.plan_swings_phase[0]) / (std::sqrt(2)*sigma2[0]) )
-                                         + std::erf( (ct->ctrl_states.plan_swings_phase[0]-lambda[1]) / (std::sqrt(2)*sigma2[1]) )));
+            // prob = 0.5 * (s_phi * (std::erf( (ct->ctrl_states.plan_contacts_phase[0]-lambda[0]) / (std::sqrt(2)*sigma2[0]) )
+            //                      + std::erf( (lambda[1]-ct->ctrl_states.plan_contacts_phase[0]) / (std::sqrt(2)*sigma2[1]) ))
+            //             + s_phi_bar * (2 + std::erf( (lambda[0]-ct->ctrl_states.plan_swings_phase[0]) / (std::sqrt(2)*sigma2[0]) )
+            //                              + std::erf( (ct->ctrl_states.plan_swings_phase[0]-lambda[1]) / (std::sqrt(2)*sigma2[1]) )));
 
 
             output_log_vector[0] = context.get_time();
 
-            // output_log_vector[0] = ct->ctrl_states.root_pos(2);
-            output_log_vector[0] = ct->ctrl_states.plan_contacts_phase[1];
-            output_log_vector[1] = prob;
-            output_log_vector[1] = ct->ctrl_states.foot_acc_world(2, 1);
-            output_log_vector[1] = ct->ctrl_states.prob_contact_of_velocity(1);
-            output_log_vector[2] = -ct->ctrl_states.foot_force_world(2, 0); // right foot vertical position
-            output_log_vector[3] = -ct->ctrl_states.foot_force_world(2, 1);
+            output_log_vector[0] = ct->ctrl_states.foot_pos_cmd_world(0,0);
+            output_log_vector[1] = ct->ctrl_states.foot_pos_world(0,0);
 
-            // output_log_vector[4] = ct->ctrl_states.foot_force_est_world(2, 0); // right foot vertical position
-            // output_log_vector[5] = ct->ctrl_states.foot_force_est_world(2, 1);
-            output_log_vector[4] = ct->ctrl_states.filted_collision_signal(1); // right foot vertical position
-            output_log_vector[5] = ct->ctrl_states.foot_acc_world(2, 1);
+            output_log_vector[2] = ct->ctrl_states.foot_pos_cmd_world(0,0);
+            output_log_vector[3] = ct->ctrl_states.foot_pos_world(0,0);
 
-            output_log_vector[6] = ct->ctrl_states.prob_contact(1);
-
-
-
-            output_log_vector[6] = ct->ctrl_states.q(2);
-            output_log_vector[7] = ct->ctrl_states.wbc_q_cmd(2);
+            output_log_vector[4] = ct->ctrl_states.foot_pos_cmd_world(1,0);
+            output_log_vector[5] = ct->ctrl_states.foot_pos_world(1,0);
+            output_log_vector[6] = ct->ctrl_states.foot_pos_cmd_world(2,0);
+            output_log_vector[7] = ct->ctrl_states.foot_pos_world(2,0);
+            
+           
 
 
 

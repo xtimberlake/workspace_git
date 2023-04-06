@@ -103,6 +103,7 @@ drake_cc_library(
         "data/ab30_level_ground_normal.yaml",
         "data/ab6_treadmill_walking.yaml",
         "data/gaps_stairs_map.yaml",
+        "data/gaps_stairs_map2.yaml",
     ],
     deps = [
         "//systems/framework:leaf_system",
