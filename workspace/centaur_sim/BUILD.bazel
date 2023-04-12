@@ -204,6 +204,8 @@ drake_cc_binary(
         "centaur_v3.urdf",
         "centaur_v2.urdf",
         "centaur_sim_scene.sdf",
+        "centaur_sim_scene_cheat.sdf",
+        "centaur_sim_scene_proprioceptive.sdf",
         "config/test_params.yaml",
 
     ],

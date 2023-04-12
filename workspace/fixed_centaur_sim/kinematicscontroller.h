@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-22 14:53:06
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-22 19:14:13
+ * @LastEditTime: 2023-04-12 21:44:29
  * @FilePath: /drake/workspace/fixed_centaur_sim/kinematicscontroller.h
  * @Description: 
  * 
@@ -117,7 +117,8 @@ private:
 
     FootSwingTrajectory<double>  swingtrajectory[2];
     swingtrajectory[0].setInitialPosition(defualt_foot_pose);
-    swingtrajectory[0].setHeight(0.24);
+    swingtrajectory[0].setHeight(FOOT_SWING_CLEARANCE2);
+    swingtrajectory[1].setHeight(FOOT_SWING_CLEARANCE2);
 
     const multibody::BodyFrame<T>& FloatingBodyFrame = 
                 _control_model.GetBodyByName("floating_base").body_frame();

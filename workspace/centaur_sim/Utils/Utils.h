@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-19 11:07:07
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-07-19 11:14:17
+ * @LastEditTime: 2023-04-12 22:10:19
  * @FilePath: /drake/workspace/centaur_sim/Utils/Utils.h
  * @Description: 
  * 
@@ -89,7 +89,8 @@ public:
     return _a;
   }
 
-private:
+public:
+// private:
   Eigen::Matrix<T, 3, 1> _p0, _pf, _p, _v, _a;
   T _height;
 };

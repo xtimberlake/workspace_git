@@ -32,7 +32,7 @@
 #include "drake/workspace/centaur_sim/extract_data.h"
 #include "drake/workspace/centaur_sim/centaur_controller.h"
 
-DEFINE_double(simulation_sec, 12,
+DEFINE_double(simulation_sec, 25.1,
               "Number of seconds to simulate.");
 DEFINE_double(sim_dt, 5e-4,
               "The time step to use for MultibodyPlant model"
@@ -66,6 +66,8 @@ namespace centaur_sim {
 
         std::string centaur_scene_SDF_path = 
             "drake/workspace/centaur_sim/centaur_sim_scene.sdf";
+        // std::string centaur_scene_SDF_path = 
+        //     "drake/workspace/centaur_sim/centaur_sim_scene_proprioceptive.sdf";
         std::string sdf = FindResourceOrThrow(centaur_scene_SDF_path);  
         multibody::Parser parser(plant, scene_graph);
         drake::multibody::ModelInstanceIndex centaur_model_index;

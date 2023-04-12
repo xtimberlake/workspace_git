@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:31:07
  * @LastEditors: haoyun 
- * @LastEditTime: 2023-04-06 23:08:14
+ * @LastEditTime: 2023-04-12 22:20:59
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurControl.cc
  * @Description: 
  * 
@@ -50,6 +50,12 @@ void CentaurControl::UpdateDesiredStates(CentaurStates& state) {
 
     state.root_pos_d = state.root_pos;
     state.root_pos_d[2] = 0.9;
+    if(state.Hri_pos[0] > 2.0 + state.sphere_joint_location(0)) {
+        int coordinate_x = int((state.Hri_pos[0] - 2.0 - state.sphere_joint_location(0))/0.02);
+        int coordinate_y = int((state.Hri_pos[1] + 0.5)/0.02);
+
+        state.root_pos_d[2] = 0.9 + state.map.torso(coordinate_x, coordinate_y);
+    }
     
     Eigen::Matrix<double, 3, 1> Kang, Kpos;
     Kang.setZero(); Kpos.setZero();
@@ -85,8 +91,15 @@ void CentaurControl::CalcHRITorques(CentaurStates& state) {
     number_of_traj =  static_cast<int>((state.k));
         
     // // std::cout << "num of traj = " << number_of_traj << std::endl;
-    prismatic_joint_q_des[0] = number_of_traj*0.00032;
+    prismatic_joint_q_des[0] = number_of_traj*0.0002;
     prismatic_joint_q_des[1] = 0.0;
+    if(state.Hri_pos[0] > 2.0) {
+        int coordinate_x = int((state.Hri_pos[0] - 2.0)/0.02);
+        int coordinate_y = int((state.Hri_pos[1] + 0.5)/0.02);
+
+        prismatic_joint_q_des[2] = 0.0 + state.map.torso(coordinate_x, coordinate_y);
+    }
+    
 
 
     prismatic_joint_q = state.hri_joint_states.segment<3>(0);
@@ -312,8 +325,6 @@ void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
         if(foot_final_pos[0] > 2.0) {   
             // if(state.k % 10 == 0)
             foot_final_pos = SpiralBinarySearch(foot_final_pos.head(2), state.map, 8);
-
-
         }
 
         state.foothold_dest_world.block<3, 1>(0, leg) = foot_final_pos;
@@ -365,6 +376,14 @@ void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
             else {
                 // swing
                 swingtrajectory[leg].setFinalPosition(state.foothold_dest_world.block<3, 1>(0, leg));
+
+                if(state.foothold_dest_world(0, leg) > 2.0) { 
+                double height = (state.foothold_dest_world(2, leg) - swingtrajectory[leg]._p0(2))*4 + 0.12;
+                height = height>0.12?height:0.12;
+                swingtrajectory[leg].setHeight(height);
+                // std::cout << "height = " << height << std::endl;
+                }
+
                 swingtrajectory[leg].computeSwingTrajectoryBezier(state.plan_swings_phase(leg), state.gait_period * (1 - state.stance_duration(leg)));
                 state.foot_pos_cmd_world.block<3, 1>(0, leg) = swingtrajectory[leg].getPosition();
                 state.foot_vel_cmd_world.block<3, 1>(0, leg) = swingtrajectory[leg].getVelocity();
@@ -557,3 +576,24 @@ Eigen::Matrix<double, 3, 1> CentaurControl::SpiralBinarySearch(
         valid_pos(2) =  valid_pos(2) = map.elevation(coordinate_x, coordinate_y);
         return valid_pos;
 }
+
+// double CentaurControl::iterateTheHeight(
+//      Eigen::Matrix<double, 3, 1> from,
+//      Eigen::Matrix<double, 3, 1> to,
+//      double init_height,
+//      map_struct map) {
+
+//         FootSwingTrajectory<double> check_trajectory;
+//         double valid_height = init_height;
+//         bool valid_flag = false;
+        
+//         while (!valid_flag)
+//         {
+
+            
+//         }
+        
+        
+//         return valid_height;
+
+// }

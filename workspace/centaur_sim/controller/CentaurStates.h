@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:30:49
  * @LastEditors: haoyun 
- * @LastEditTime: 2023-04-06 20:10:26
+ * @LastEditTime: 2023-04-12 21:14:47
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurStates.h
  * @Description: define all the states that used in controller; mainly 
  *                adapted from https://github.com/ShuoYangRobotics/A1-QP-MPC-Controller
@@ -128,7 +128,7 @@ class CentaurStates {
     CentaurStates() {
 
         this->map = drake::yaml::LoadYamlFile<map_struct>(
-            drake::FindResourceOrThrow("drake/workspace/centaur_sim/data/gaps_stairs_map2.yaml")
+            drake::FindResourceOrThrow("drake/workspace/centaur_sim/data/gaps_stairs_map.yaml")
         );
         std::cout << "The size of map:" << map.elevation.rows() << std::endl;
 
@@ -267,6 +267,7 @@ class CentaurStates {
         last_robot_yaw = 0.0;
 
         // foot_force_simulation.setZero();
+        Hri_pos.setZero();
 
     }
 
@@ -410,6 +411,7 @@ class CentaurStates {
 
 
     // human reference data
+    Eigen::Matrix<double, 3, 1> Hri_pos;
     human_ref_traj_struct human_ref_traj;
     int max_human_ref_index;
     Eigen::Matrix<double, 3, 1> human_pos_ref;

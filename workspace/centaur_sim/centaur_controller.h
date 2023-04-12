@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-14 12:43:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2023-04-06 21:39:20
+ * @LastEditTime: 2023-04-12 21:23:59
  * @FilePath: /drake/workspace/centaur_sim/centaur_controller.h
  * @Description: controller block for drake simulation
  * 
@@ -347,6 +347,9 @@ private:
         ct->ctrl_states.root_ang_vel_rel = ct->ctrl_states.root_rot_mat.transpose() * ct->ctrl_states.root_ang_vel_world;
         ct->ctrl_states.root_lin_vel_rel = ct->ctrl_states.root_rot_mat.transpose() * ct->ctrl_states.root_lin_vel_world;
 
+        ct->ctrl_states.Hri_pos = ct->ctrl_states.root_pos + ct->ctrl_states.root_rot_mat * ct->ctrl_states.sphere_joint_location;
+        // std::cout << "hri pos = " << ct->ctrl_states.Hri_pos.transpose() << std::endl;
+
         static bool init_flag = false;
         if(!init_flag) {
             std::cout << "height = " << ct->ctrl_states.root_pos[2] << std::endl;
@@ -518,11 +521,11 @@ private:
         }
         }
                 
-        if(now > 30.0 && !finished_write) {
-            yaml::SaveYamlFile("/home/haoyun/Data/Code/drake/workspace/centaur_sim/log/representative_ab24.yaml", record_states);
-            finished_write = true;
-            std::cout << "write data ... " << record_states.time_stamp.size() << "in total." << std::endl;
-        }
+        // if(now > 12.0 && !finished_write) {
+        //     yaml::SaveYamlFile("/home/haoyun/Data/Code/drake/workspace/centaur_sim/log/reactive_control_state.yaml", record_states);
+        //     finished_write = true;
+        //     std::cout << "write data ... " << record_states.time_stamp.size() << "in total." << std::endl;
+        // }
 
     }
 };
