@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-11-23 11:35:59
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-11-23 20:57:52
+ * @LastEditTime: 2023-04-13 16:30:22
  * @FilePath: /drake/workspace/centaur_sim/Utils/butterworthFilter.h
  * @Description: implement discrete-time Butterworth filter.
  * 
@@ -103,7 +103,7 @@ public:
 			_y_vec.push_back(res);
 		}
 
-		if(abs(res) > 2000) throw std::runtime_error("the butterworth filter has diverged!");
+		// if(abs(res) > 2000) throw std::runtime_error("the butterworth filter has diverged!");
 		now = res;
 		return res;
 	}

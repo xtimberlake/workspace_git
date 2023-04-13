@@ -905,6 +905,31 @@
     </collision>
   </link>
 
+  <joint name='extend_joint' type='fixed'>
+    <pose relative_to='stair_4'>2.5 0 0 0 0 0</pose>
+    <parent>ground</parent>
+    <child>extend_plane</child>
+  </joint>
+
+  <link name='extend_plane'>
+    <pose relative_to='stair_4'>2.5 0.0 0 0 0 0</pose>
+    <visual name='visual'>
+      <pose relative_to='stair_4'>2.5 0.0 0 0 0 0</pose>
+      <geometry>
+        <box> <size>5 1.0 1.244</size> </box>
+      </geometry>
+      <material>
+        <diffuse>1.0 0.423529411765 0.0392156862745 0.5</diffuse>
+      </material>
+    </visual>
+    <collision name='collision'>
+      <pose relative_to='stair_4'>2.5 0.0 0 0 0 0</pose>
+      <geometry>
+        <box> <size>5 1.0 1.244</size> </box>
+      </geometry>
+    </collision>
+  </link>
+
   </model> 
 
 

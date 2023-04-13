@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-11-07 15:32:23
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-12-13 19:24:53
+ * @LastEditTime: 2023-04-13 16:42:22
  * @FilePath: /drake/workspace/centaur_sim/estimator/contactEstimate.cc
  * @Description: 
  * 
@@ -235,8 +235,8 @@ void contactEstimate<T>::eventsDetect() {
                     bool collision_detect = false;
 
                     if (this->phiSwing[leg] > 0.5) start_detect = true; // detect the evnets at second half of the swing phase
-                    if(this->_foot_force_hat(2, leg) > 80.0)  collision_detect = true; // threshold the vertical impulse
-                    // if(this->footAcc(2, leg) > 40.0)  collision_detect = true; // threshold the vertical acceleration
+                    // if(this->_foot_force_hat(2, leg) > 80.0)  collision_detect = true; // threshold the vertical impulse
+                    if(this->footAcc(2, leg) > 40.0)  collision_detect = true; // threshold the vertical acceleration
                     if (start_detect && collision_detect)
                     {
 
@@ -278,8 +278,8 @@ void contactEstimate<T>::eventsDetect() {
                     bool extend_time_out = false;
                     time_pass = this->_system_time - this->_time_start_to_extend[leg];
                 
-                    if(this->_foot_force_hat(2, leg) > 50.0)  collision_detect = true; // threshold the vertical impulse
-                    // if(this->footAcc(2, leg) > 40.0)  collision_detect = true; // threshold the vertical acceleration
+                    // if(this->_foot_force_hat(2, leg) > 50.0)  collision_detect = true; // threshold the vertical impulse
+                    if(this->footAcc(2, leg) > 40.0)  collision_detect = true; // threshold the vertical acceleration
                     if(time_pass > this->max_extend_time) extend_time_out = true;
                     _restance_k[leg]++;
                     if(collision_detect || extend_time_out)

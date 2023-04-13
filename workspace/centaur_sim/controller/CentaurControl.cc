@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:31:07
  * @LastEditors: haoyun 
- * @LastEditTime: 2023-04-12 22:20:59
+ * @LastEditTime: 2023-04-13 16:06:10
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurControl.cc
  * @Description: 
  * 
@@ -54,7 +54,7 @@ void CentaurControl::UpdateDesiredStates(CentaurStates& state) {
         int coordinate_x = int((state.Hri_pos[0] - 2.0 - state.sphere_joint_location(0))/0.02);
         int coordinate_y = int((state.Hri_pos[1] + 0.5)/0.02);
 
-        state.root_pos_d[2] = 0.9 + state.map.torso(coordinate_x, coordinate_y);
+        state.root_pos_d[2] = 0.9 + state.map.torso(coordinate_x, coordinate_y)*0.6019989318684672/0.777187762264438;
     }
     
     Eigen::Matrix<double, 3, 1> Kang, Kpos;
@@ -97,7 +97,7 @@ void CentaurControl::CalcHRITorques(CentaurStates& state) {
         int coordinate_x = int((state.Hri_pos[0] - 2.0)/0.02);
         int coordinate_y = int((state.Hri_pos[1] + 0.5)/0.02);
 
-        prismatic_joint_q_des[2] = 0.0 + state.map.torso(coordinate_x, coordinate_y);
+        prismatic_joint_q_des[2] = -0.0 + state.map.torso(coordinate_x, coordinate_y)*0.6019989318684672/0.777187762264438;
     }
     
 
@@ -378,8 +378,11 @@ void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
                 swingtrajectory[leg].setFinalPosition(state.foothold_dest_world.block<3, 1>(0, leg));
 
                 if(state.foothold_dest_world(0, leg) > 2.0) { 
-                double height = (state.foothold_dest_world(2, leg) - swingtrajectory[leg]._p0(2))*4 + 0.12;
-                height = height>0.12?height:0.12;
+                double height = (state.foothold_dest_world(2, leg) - swingtrajectory[leg]._p0(2))*3 + 0.3;
+                // std::cout << "height = " << height << std::endl;
+                height = height>0.15?(height<0.5?height:0.5):0.15;
+
+                // height = 0.3;
                 swingtrajectory[leg].setHeight(height);
                 // std::cout << "height = " << height << std::endl;
                 }
