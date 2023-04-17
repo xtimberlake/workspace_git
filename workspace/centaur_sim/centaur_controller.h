@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-14 12:43:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2023-04-12 21:23:59
+ * @LastEditTime: 2023-04-17 17:35:05
  * @FilePath: /drake/workspace/centaur_sim/centaur_controller.h
  * @Description: controller block for drake simulation
  * 
@@ -91,7 +91,7 @@ public:
         this->DeclareVectorInputPort("force_sensors_output",
                                     12);
 
-        this->DeclareVectorOutputPort("actuated_torque", 9,
+        this->DeclareVectorOutputPort("actuated_torque", 12,
                                     &CentaurController::CalcTorques);
         this->DeclareVectorOutputPort("controller_log_data", 8,
                                     &CentaurController::OutpotLog);
@@ -111,7 +111,7 @@ private:
                   systems::BasicVector<T>* output) const {
 
             
-        static Eigen::VectorXd total_torques(3 + _control_model.num_actuators()); 
+        static Eigen::VectorXd total_torques(6 + _control_model.num_actuators()); 
         // total_torques.setZero();
         static Eigen::Matrix<double, 6, 1> output_torques;
         // output_torques.setZero();
@@ -193,8 +193,8 @@ private:
 
             ct->controller->CalcHRITorques(ct->ctrl_states);
             ct->controller->UpdateDesiredStates(ct->ctrl_states);
-            total_torques.head(3) = ct->ctrl_states.hri_actuated_torques.head(3);
-           
+            total_torques.segment<3>(0) = ct->ctrl_states.hri_actuated_torques.head(3);
+            total_torques.segment<3>(3) = ct->ctrl_states.hri_actuated_torques.tail(3);
 
             if(ct->ctrl_states.t < 0.1) { // start trotting in 0.1 seconds
                 ct->standing->update_gait_pattern(ct->ctrl_states);
@@ -299,11 +299,12 @@ private:
             output_log_vector[0] = ct->ctrl_states.foot_pos_cmd_world(0,0);
             output_log_vector[1] = ct->ctrl_states.foot_pos_world(0,0);
 
-            output_log_vector[2] = ct->ctrl_states.foot_pos_cmd_world(0,0);
-            output_log_vector[3] = ct->ctrl_states.foot_pos_world(0,0);
+            output_log_vector[2] = ct->ctrl_states.root_pos_d(2);
+            output_log_vector[3] = ct->ctrl_states.root_pos(2);
 
-            output_log_vector[4] = ct->ctrl_states.foot_pos_cmd_world(1,0);
-            output_log_vector[5] = ct->ctrl_states.foot_pos_world(1,0);
+            output_log_vector[4] = ct->ctrl_states.root_euler_d(1);
+            output_log_vector[5] = ct->ctrl_states.root_euler(1);
+
             output_log_vector[6] = ct->ctrl_states.foot_pos_cmd_world(2,0);
             output_log_vector[7] = ct->ctrl_states.foot_pos_world(2,0);
             

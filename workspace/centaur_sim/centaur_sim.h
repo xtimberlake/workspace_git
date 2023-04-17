@@ -32,7 +32,7 @@
 #include "drake/workspace/centaur_sim/extract_data.h"
 #include "drake/workspace/centaur_sim/centaur_controller.h"
 
-DEFINE_double(simulation_sec, 37.1,
+DEFINE_double(simulation_sec, 34.,
               "Number of seconds to simulate.");
 DEFINE_double(sim_dt, 5e-4,
               "The time step to use for MultibodyPlant model"
@@ -65,7 +65,9 @@ namespace centaur_sim {
             multibody::AddMultibodyPlantSceneGraph(&builder, FLAGS_sim_dt);
 
         std::string centaur_scene_SDF_path = 
-            "drake/workspace/centaur_sim/centaur_sim_scene.sdf";
+            "drake/workspace/centaur_sim/centaur_sim_scene_actuated_balljoint.sdf";
+        // std::string centaur_scene_SDF_path = 
+        //     "drake/workspace/centaur_sim/centaur_sim_scene_cheat.sdf";
         // std::string centaur_scene_SDF_path = 
         //     "drake/workspace/centaur_sim/centaur_sim_scene_proprioceptive.sdf";
         std::string sdf = FindResourceOrThrow(centaur_scene_SDF_path);  
@@ -101,9 +103,9 @@ namespace centaur_sim {
 
         auto states_logger = builder.AddSystem<systems::VectorLogSink<double>>(25);
 
-        auto zoh = builder.AddSystem<systems::ZeroOrderHold<double>>(FLAGS_sim_dt, plant->num_actuated_dofs(centaur_model_index));
+        auto zoh = builder.AddSystem<systems::ZeroOrderHold<double>>(FLAGS_sim_dt, 12);
 
-        auto zoh2 = builder.AddSystem<systems::ZeroOrderHold<double>>(FLAGS_sim_dt, 8);
+        auto zoh2 = builder.AddSystem<systems::ZeroOrderHold<double>>(FLAGS_sim_dt ,8);
 
         auto interest_data_logger = builder.AddSystem<systems::VectorLogSink<double>>(18);
 
@@ -340,14 +342,16 @@ namespace centaur_sim {
         common::CallPython("subplot", 4, 1, 2);
         common::CallPython("plot", controller_log_data.sample_times(),
                            controller_log_data.data().row(2).transpose());  
-        common::CallPython("legend", common::ToPythonTuple("left foot force"));
+        common::CallPython("plot", controller_log_data.sample_times(),
+                           controller_log_data.data().row(3).transpose());  
+        common::CallPython("legend", common::ToPythonTuple("desired height", "height"));
 
         common::CallPython("subplot", 4, 1, 3);
         common::CallPython("plot", controller_log_data.sample_times(),
                            controller_log_data.data().row(4).transpose());  
         common::CallPython("plot", controller_log_data.sample_times(),
                            controller_log_data.data().row(5).transpose()); 
-        common::CallPython("legend", common::ToPythonTuple("commanded y", "y"));
+        common::CallPython("legend", common::ToPythonTuple("desired pitch", "pitch"));
 
         common::CallPython("subplot", 4, 1, 4);
         common::CallPython("plot", controller_log_data.sample_times(),

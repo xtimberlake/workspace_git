@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-17 16:49:42
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-16 20:10:23
+ * @LastEditTime: 2023-04-17 19:58:01
  * @FilePath: /drake/workspace/centaur_sim/controller/Tasks/TorsoPosTask.hpp
  * @Description: 
  * 
@@ -31,9 +31,13 @@ public:
         _Kd = DVec<T>::Zero(Task<T>::dim_task_);
 
         // base pos task for x, y, z
-        _Kp_kin << 0.0, 0.0, 2.0;
-        _Kp << 0.0, 0.0, 200.0;
-        _Kd << 0.0, 0.0, 17.70;
+        // _Kp_kin << 0.0, 0.0, 2.0;
+        // _Kp << 0.0, 0.0, 200.0;
+        // _Kd << 0.0, 0.0, 17.70;
+
+        _Kp_kin << 0.0, 0.0, 1.0;
+        _Kp << 0.0, 0.0, 10.0;
+        _Kd << 0.0, 0.0, 10.0;
 
     }
     ~TorsoPosTask() {}

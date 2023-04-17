@@ -128,26 +128,71 @@
 
 
 
-  <frame name='ball_joint_frame' attached_to='f_t_sensor_link'> 
+  <frame name='roll_joint_frame' attached_to='f_t_sensor_link'> 
     <pose relative_to='f_t_sensor_link'>-0.001 0 0 0 0 0</pose>
   </frame>
-
-  <joint name='ball_joint' type='ball'>
-    <pose relative_to='ball_joint_frame'>0 0 0 0 0 0</pose>
+  <joint name='roll_joint' type='revolute'>
+    <pose relative_to='roll_joint_frame'>0 0 0 0 0 0</pose>
     <parent>f_t_sensor_link</parent>
-    <child>floating_base</child>
-    <axis>
-    <dynamics>
-      <damping> 20 </damping>
-      <!-- <spring_reference>0 0 0</spring_reference>
-      <spring_stiffness>1000.0 1000.0 1000.0</spring_stiffness> -->
-    </dynamics>
+    <child>roll_block</child>
+    <axis>  
+      <xyz>1 0 0</xyz>
+      <limit> 
+        <effort>140.0</effort>
+        <velocity>93.0</velocity>
+      </limit>
     </axis>
-    
   </joint>
+  <link name='roll_block'>
+    <pose relative_to='roll_joint_frame'>0 0 0 0 0 0</pose>
+  </link>
 
+  <frame name='pitch_joint_frame' attached_to='roll_block'> 
+    <pose relative_to='roll_block'>0 0 0 0 0 0</pose>
+  </frame>
+  <joint name='pitch_joint' type='revolute'>
+    <pose relative_to='pitch_joint_frame'>0 0 0 0 0 0</pose>
+    <parent>roll_block</parent>
+    <child>pitch_block</child>
+    <axis>  
+      <xyz>0 1 0</xyz>
+      <limit> 
+        <effort>140.0</effort>
+        <velocity>93.0</velocity>
+      </limit>
+    </axis>
+  </joint>
+  <link name='pitch_block'>
+    <pose relative_to='pitch_joint_frame'>0 0 0 0 0 0</pose>
+  </link>
+
+  <frame name='yaw_joint_frame' attached_to='pitch_block'> 
+    <pose relative_to='pitch_block'>0 0 0 0 0 0</pose>
+  </frame>
+  <joint name='yaw_joint' type='revolute'>
+    <pose relative_to='yaw_joint_frame'>0 0 0 0 0 0</pose>
+    <parent>pitch_block</parent>
+    <child>yaw_block</child>
+    <axis>  
+      <xyz>0 0 1</xyz>
+      <limit> 
+        <effort>140.0</effort>
+        <velocity>93.0</velocity>
+      </limit>
+    </axis>
+  </joint>
+  <link name='yaw_block'>
+    <pose relative_to='yaw_joint_frame'>0 0 0 0 0 0</pose>
+  </link>
+
+  
+
+  <joint name='base' type='fixed'>
+    <parent>yaw_block</parent>
+    <child>floating_base</child>
+  </joint>
   <link name='floating_base'>
-    <pose relative_to='ball_joint_frame'>-0.216 0 -0.09 0 0 0</pose>
+    <pose relative_to='yaw_joint_frame'>-0.216 0 -0.09 0 0 0</pose>
     <!-- <visual name='visual'>
       <pose relative_to='ball_joint_frame'>-0.216 0 -0.09 0 0 0</pose>
       <geometry> <sphere> <radius>0.02</radius> </sphere> </geometry>
@@ -912,9 +957,9 @@
   </joint>
 
   <link name='extend_plane'>
-    <pose relative_to='stair_4'>2.5 0.0 0 0 0 0</pose>
+    <pose relative_to='stair_4'>2.7 0.0 0 0 0 0</pose>
     <visual name='visual'>
-      <pose relative_to='stair_4'>2.5 0.0 0 0 0 0</pose>
+      <pose relative_to='stair_4'>2.7 0.0 0 0 0 0</pose>
       <geometry>
         <box> <size>5 1.0 1.244</size> </box>
       </geometry>
@@ -923,7 +968,7 @@
       </material>
     </visual>
     <collision name='collision'>
-      <pose relative_to='stair_4'>2.5 0.0 0 0 0 0</pose>
+      <pose relative_to='stair_4'>2.7 0.0 0 0 0 0</pose>
       <geometry>
         <box> <size>5 1.0 1.244</size> </box>
       </geometry>

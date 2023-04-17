@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:31:07
  * @LastEditors: haoyun 
- * @LastEditTime: 2023-04-13 16:06:10
+ * @LastEditTime: 2023-04-17 20:32:10
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurControl.cc
  * @Description: 
  * 
@@ -48,13 +48,29 @@ void CentaurControl::UpdateDesiredStates(CentaurStates& state) {
     // state.root_euler_d[2] = state.human_ref_traj.yaw[number_of_traj];
     state.root_euler_d[2] = 0.0;
 
+
+    // torso pitch align
+    if(state.root_pos[0] > 2.0 + 1.95) {
+        state.root_euler_d[1] = -atan2f32(0.602, 1.586);
+        
+        if(state.root_pos[0] > 2.0 + 3.1) {
+            state.root_euler_d[1] = 0.0;
+        }
+        // std::cout << "desired pitch = " << state.root_euler_d[2] << std::endl;
+    }
+
     state.root_pos_d = state.root_pos;
     state.root_pos_d[2] = 0.9;
-    if(state.Hri_pos[0] > 2.0 + state.sphere_joint_location(0)) {
-        int coordinate_x = int((state.Hri_pos[0] - 2.0 - state.sphere_joint_location(0))/0.02);
-        int coordinate_y = int((state.Hri_pos[1] + 0.5)/0.02);
+    if(state.Hri_pos[0] - state.sphere_joint_location(0) > 2.0) {
 
-        state.root_pos_d[2] = 0.9 + state.map.torso(coordinate_x, coordinate_y)*0.6019989318684672/0.777187762264438;
+        if(state.Hri_pos[0] - state.sphere_joint_location(0) > 2.0 + 2.9) state.root_pos_d[2] = 0.9 + 0.6019989318684672;
+        else {
+            int coordinate_x = int((state.Hri_pos[0] - 2.0 - state.sphere_joint_location(0))/0.02);
+            int coordinate_y = int((state.Hri_pos[1] + 0.5)/0.02);
+
+            state.root_pos_d[2] = 0.9 + state.map.torso(coordinate_x, coordinate_y)*0.6019989318684672/0.777187762264438;
+        }
+        
     }
     
     Eigen::Matrix<double, 3, 1> Kang, Kpos;
@@ -91,13 +107,17 @@ void CentaurControl::CalcHRITorques(CentaurStates& state) {
     number_of_traj =  static_cast<int>((state.k));
         
     // // std::cout << "num of traj = " << number_of_traj << std::endl;
-    prismatic_joint_q_des[0] = number_of_traj*0.0002;
+    prismatic_joint_q_des[0] = number_of_traj*0.00023;
     prismatic_joint_q_des[1] = 0.0;
     if(state.Hri_pos[0] > 2.0) {
-        int coordinate_x = int((state.Hri_pos[0] - 2.0)/0.02);
-        int coordinate_y = int((state.Hri_pos[1] + 0.5)/0.02);
+        if(state.Hri_pos[0] > 2.0 + 2.9) prismatic_joint_q_des[2] = 0.6019989318684672;
+        else {
+            int coordinate_x = int((state.Hri_pos[0] - 2.0)/0.02);
+            int coordinate_y = int((state.Hri_pos[1] + 0.5)/0.02);
 
-        prismatic_joint_q_des[2] = -0.0 + state.map.torso(coordinate_x, coordinate_y)*0.6019989318684672/0.777187762264438;
+            prismatic_joint_q_des[2] = -0.0 + state.map.torso(coordinate_x, coordinate_y)*0.6019989318684672/0.777187762264438;
+        }
+        
     }
     
 
@@ -108,7 +128,21 @@ void CentaurControl::CalcHRITorques(CentaurStates& state) {
     total_torques.head(3) = state.human_pos_stiff.cwiseProduct(prismatic_joint_q_des - prismatic_joint_q)
                           + state.human_pos_damp.cwiseProduct(prismatic_joint_qdot_des - prismatic_joint_qdot);
 
-    
+
+    Eigen::Vector3d revolute_joint_q_des; revolute_joint_q_des.setZero();
+    revolute_joint_q_des = state.root_euler_d;
+    Eigen::Vector3d revolute_joint_qdot_des; revolute_joint_qdot_des.setZero();
+
+    Eigen::Vector3d revolute_joint_q, revolute_joint_qdot;
+    revolute_joint_q = state.hri_joint_states.segment<3>(0+3);
+    revolute_joint_qdot = state.hri_joint_states.segment<3>(6+3);
+    Eigen::Vector3d human_rot_stiff, human_rot_damp; human_rot_stiff.setZero(); human_rot_damp.setZero();
+
+    human_rot_stiff << 20, 0, 20;
+    human_rot_damp << 10, 0, 10;
+    total_torques.tail(3) = human_rot_stiff.cwiseProduct(revolute_joint_q_des - revolute_joint_q)
+                          + human_rot_damp.cwiseProduct(revolute_joint_qdot_des - revolute_joint_qdot);
+
 
 
     state.hri_actuated_torques = total_torques;
@@ -296,7 +330,7 @@ void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
     for (int leg = 0; leg < 2; leg++) {
 
         // fix the target position after 70% of the swing phase:
-        if(state.plan_swings_phase[leg] > 0.7) continue;
+        if(state.plan_swings_phase[leg] > 0.6) continue;
 
         Eigen::Matrix<double, 3, 1> offset(1.0 * state.ctrl_params_const.default_foot_pos_under_hip.at(0), side_sign[leg] * state.ctrl_params_const.default_foot_pos_under_hip.at(1), 0);
         swingTimeRemain = (1 - state.plan_swings_phase[leg]) * state.gait_period * (1 - state.stance_duration[leg]);
@@ -377,15 +411,20 @@ void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
                 // swing
                 swingtrajectory[leg].setFinalPosition(state.foothold_dest_world.block<3, 1>(0, leg));
 
-                if(state.foothold_dest_world(0, leg) > 2.0) { 
-                double height = (state.foothold_dest_world(2, leg) - swingtrajectory[leg]._p0(2))*3 + 0.3;
+                if(state.foothold_dest_world(0, leg) > 2.0 && state.foothold_dest_world(0, leg) < 2.0 + 2.9) { 
+                
+                double height = fabs(state.foothold_dest_world(2, leg) - swingtrajectory[leg]._p0(2))*2 + 0.33;
                 // std::cout << "height = " << height << std::endl;
-                height = height>0.15?(height<0.5?height:0.5):0.15;
+                height = height>0.15?(height<0.55?height:0.55):0.15;
 
                 // height = 0.3;
                 swingtrajectory[leg].setHeight(height);
                 // std::cout << "height = " << height << std::endl;
                 }
+                else {
+                    swingtrajectory[leg].setHeight(0.15);
+                }
+                
 
                 swingtrajectory[leg].computeSwingTrajectoryBezier(state.plan_swings_phase(leg), state.gait_period * (1 - state.stance_duration(leg)));
                 state.foot_pos_cmd_world.block<3, 1>(0, leg) = swingtrajectory[leg].getPosition();

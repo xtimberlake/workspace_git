@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-11-07 15:32:23
  * @LastEditors: haoyun 
- * @LastEditTime: 2023-04-13 16:42:22
+ * @LastEditTime: 2023-04-17 20:20:16
  * @FilePath: /drake/workspace/centaur_sim/estimator/contactEstimate.cc
  * @Description: 
  * 
@@ -242,7 +242,7 @@ void contactEstimate<T>::eventsDetect() {
 
                         this->_locked_foot_pos = this->pFoot; // store the collision pos
                         this->_foot_contact_event[leg] = ContactEvent::EARLY_CONTACT;
-                        std::cout << "leg " << leg << ": " << "Early Contact at phase = " << this->phiSwing[leg] << "." << std::endl;
+                        // std::cout << "leg " << leg << ": " << "Early Contact at phase = " << this->phiSwing[leg] << "." << std::endl;
                     }
 
                     if (start_detect && !collision_detect && this->phiSwing[leg] > 0.996)
@@ -250,7 +250,7 @@ void contactEstimate<T>::eventsDetect() {
                         this->_locked_foot_pos = this->pFoot; // store the collision pos
                         this->_foot_contact_event[leg] = ContactEvent::LATE_CONTACT;
                         this->_time_start_to_extend[leg] = this->_system_time;
-                        std::cout << "leg " << leg << ": " << "Late Contact at phase = " << this->phiSwing[leg] << "." << std::endl;
+                        // std::cout << "leg " << leg << ": " << "Late Contact at phase = " << this->phiSwing[leg] << "." << std::endl;
                         _restance_k[leg]++;
 
                         // cancell the downward motion

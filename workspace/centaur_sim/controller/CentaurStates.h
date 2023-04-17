@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:30:49
  * @LastEditors: haoyun 
- * @LastEditTime: 2023-04-12 21:14:47
+ * @LastEditTime: 2023-04-17 14:59:30
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurStates.h
  * @Description: define all the states that used in controller; mainly 
  *                adapted from https://github.com/ShuoYangRobotics/A1-QP-MPC-Controller

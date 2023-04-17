@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-19 09:55:16
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-11-16 19:01:34
+ * @LastEditTime: 2023-04-17 15:47:54
  * @FilePath: /drake/workspace/centaur_sim/extract_data.h
  * @Description: 
  * 
@@ -31,7 +31,8 @@ public:
         _plant_context = _plant.CreateDefaultContext();
         this->DeclareVectorInputPort("sim_scene_states", 24);
         std::cout<< (this->DeclareAbstractInputPort("spatial_forces_in",
-            Value<std::vector<drake::multibody::SpatialForce<double>>>()).get_index());
+            Value<std::vector<drake::multibody::SpatialForce<double>>>()).get_index()) << std::endl;
+    
         std::cout << "index is above" << std::endl;
 
         this->DeclareVectorOutputPort(
@@ -142,6 +143,7 @@ private:
         // Part 2: forces data
         // spatial_vec include 12x6 wrenches for each joint; including the fixed joints and the 'worldWeld' joint
         // index [4]: hri_wrench
+        // if we modify the ball joint as 3 revolute joints...
         // index [6]: left abAd motor
         // index [7]: left hip motor
         // index [8]: left knee motor

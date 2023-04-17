@@ -206,6 +206,7 @@ drake_cc_binary(
         "centaur_sim_scene.sdf",
         "centaur_sim_scene_cheat.sdf",
         "centaur_sim_scene_proprioceptive.sdf",
+        "centaur_sim_scene_actuated_balljoint.sdf",
         "config/test_params.yaml",
 
     ],
