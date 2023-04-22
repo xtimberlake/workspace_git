@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-14 12:43:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2023-04-17 17:35:05
+ * @LastEditTime: 2023-04-22 10:19:04
  * @FilePath: /drake/workspace/centaur_sim/centaur_controller.h
  * @Description: controller block for drake simulation
  * 
@@ -93,6 +93,10 @@ public:
 
         this->DeclareVectorOutputPort("actuated_torque", 12,
                                     &CentaurController::CalcTorques);
+        // if use passive ball joint
+        // this->DeclareVectorOutputPort("actuated_torque", 9,
+        //                             &CentaurController::CalcTorques);
+
         this->DeclareVectorOutputPort("controller_log_data", 8,
                                     &CentaurController::OutpotLog);
         
@@ -110,7 +114,9 @@ private:
     void CalcTorques(const systems::Context<T>& context,
                   systems::BasicVector<T>* output) const {
 
-            
+        // if use passive ball joint    
+        // static Eigen::VectorXd total_torques(3 + _control_model.num_actuators()); 
+        
         static Eigen::VectorXd total_torques(6 + _control_model.num_actuators()); 
         // total_torques.setZero();
         static Eigen::Matrix<double, 6, 1> output_torques;
@@ -194,6 +200,7 @@ private:
             ct->controller->CalcHRITorques(ct->ctrl_states);
             ct->controller->UpdateDesiredStates(ct->ctrl_states);
             total_torques.segment<3>(0) = ct->ctrl_states.hri_actuated_torques.head(3);
+            // if use passive ball joint
             total_torques.segment<3>(3) = ct->ctrl_states.hri_actuated_torques.tail(3);
 
             if(ct->ctrl_states.t < 0.1) { // start trotting in 0.1 seconds
@@ -522,8 +529,8 @@ private:
         }
         }
                 
-        // if(now > 12.0 && !finished_write) {
-        //     yaml::SaveYamlFile("/home/haoyun/Data/Code/drake/workspace/centaur_sim/log/reactive_control_state.yaml", record_states);
+        // if(now > 12 && !finished_write) {
+        //     yaml::SaveYamlFile("/home/haoyun/Data/Code/drake/workspace/centaur_sim/log/new.yaml", record_states);
         //     finished_write = true;
         //     std::cout << "write data ... " << record_states.time_stamp.size() << "in total." << std::endl;
         // }

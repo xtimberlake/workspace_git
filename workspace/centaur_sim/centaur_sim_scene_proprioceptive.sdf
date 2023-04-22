@@ -642,15 +642,15 @@
   </link> 
 
   <joint name='box5_fix' type='fixed'>
-    <pose relative_to='ground'>0 0 0 0 0 0</pose>
+    <pose relative_to='ground'>3.2 0 0 0 0 1.57</pose>
     <parent>ground</parent>
     <child>box5</child>
   </joint>  
 
   <link name='box5'>
-    <pose relative_to='ground'>3.2 .0 0 0 0 1.57</pose>
+    <pose relative_to='ground'>3.2 0 0 0 0 1.57</pose>
     <visual name='visual'>
-      <pose relative_to='ground'>3.2 .0 0 0 0 1.57</pose>
+      <pose relative_to='ground'>3.2 0 0 0 0 1.57</pose>
       <geometry>
         <box> <size>0.7 0.14 0.14</size> </box>
       </geometry>
@@ -659,7 +659,7 @@
       </material>
     </visual>
     <collision name='collision'>
-      <pose relative_to='ground'>3.2 .0 0 0 0 1.57</pose>
+      <pose relative_to='ground'>3.21 0 0 0 0 1.57</pose>
       <geometry>
         <box> <size>0.7 0.14 0.14</size> </box>
       </geometry>

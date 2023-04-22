@@ -32,7 +32,7 @@
 #include "drake/workspace/centaur_sim/extract_data.h"
 #include "drake/workspace/centaur_sim/centaur_controller.h"
 
-DEFINE_double(simulation_sec, 34.,
+DEFINE_double(simulation_sec, 16,
               "Number of seconds to simulate.");
 DEFINE_double(sim_dt, 5e-4,
               "The time step to use for MultibodyPlant model"
@@ -103,6 +103,8 @@ namespace centaur_sim {
 
         auto states_logger = builder.AddSystem<systems::VectorLogSink<double>>(25);
 
+        // if use passive ball joint
+        // auto zoh = builder.AddSystem<systems::ZeroOrderHold<double>>(FLAGS_sim_dt, 9);
         auto zoh = builder.AddSystem<systems::ZeroOrderHold<double>>(FLAGS_sim_dt, 12);
 
         auto zoh2 = builder.AddSystem<systems::ZeroOrderHold<double>>(FLAGS_sim_dt ,8);

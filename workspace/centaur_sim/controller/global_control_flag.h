@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-12-13 16:27:46
  * @LastEditors: haoyun 
- * @LastEditTime: 2023-04-13 16:27:35
+ * @LastEditTime: 2023-04-22 10:14:26
  * @FilePath: /drake/workspace/centaur_sim/controller/global_control_flag.h
  * @Description: 
  * 
@@ -10,4 +10,5 @@
  */
 
 #define USE_REACTIVE_CONTROL 1
+#define USE_PERCEPTIVE_CONTROL 1
 

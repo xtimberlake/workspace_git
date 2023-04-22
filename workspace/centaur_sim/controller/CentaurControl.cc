@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:31:07
  * @LastEditors: haoyun 
- * @LastEditTime: 2023-04-17 20:32:10
+ * @LastEditTime: 2023-04-22 12:11:24
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurControl.cc
  * @Description: 
  * 
@@ -48,7 +48,7 @@ void CentaurControl::UpdateDesiredStates(CentaurStates& state) {
     // state.root_euler_d[2] = state.human_ref_traj.yaw[number_of_traj];
     state.root_euler_d[2] = 0.0;
 
-
+    #ifdef USE_PERCEPTIVE_CONTROL
     // torso pitch align
     if(state.root_pos[0] > 2.0 + 1.95) {
         state.root_euler_d[1] = -atan2f32(0.602, 1.586);
@@ -58,9 +58,11 @@ void CentaurControl::UpdateDesiredStates(CentaurStates& state) {
         }
         // std::cout << "desired pitch = " << state.root_euler_d[2] << std::endl;
     }
+    #endif
 
     state.root_pos_d = state.root_pos;
     state.root_pos_d[2] = 0.9;
+    #ifdef USE_PERCEPTIVE_CONTROL
     if(state.Hri_pos[0] - state.sphere_joint_location(0) > 2.0) {
 
         if(state.Hri_pos[0] - state.sphere_joint_location(0) > 2.0 + 2.9) state.root_pos_d[2] = 0.9 + 0.6019989318684672;
@@ -72,6 +74,7 @@ void CentaurControl::UpdateDesiredStates(CentaurStates& state) {
         }
         
     }
+    #endif
     
     Eigen::Matrix<double, 3, 1> Kang, Kpos;
     Kang.setZero(); Kpos.setZero();
@@ -107,8 +110,9 @@ void CentaurControl::CalcHRITorques(CentaurStates& state) {
     number_of_traj =  static_cast<int>((state.k));
         
     // // std::cout << "num of traj = " << number_of_traj << std::endl;
-    prismatic_joint_q_des[0] = number_of_traj*0.00023;
+    prismatic_joint_q_des[0] = number_of_traj*0.0003;
     prismatic_joint_q_des[1] = 0.0;
+    #ifdef USE_PERCEPTIVE_CONTROL
     if(state.Hri_pos[0] > 2.0) {
         if(state.Hri_pos[0] > 2.0 + 2.9) prismatic_joint_q_des[2] = 0.6019989318684672;
         else {
@@ -119,6 +123,7 @@ void CentaurControl::CalcHRITorques(CentaurStates& state) {
         }
         
     }
+    #endif
     
 
 
@@ -355,11 +360,12 @@ void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
         //     << "final x = " << foot_final_pos[0] << "y = " << foot_final_pos[1] << std::endl;
         // }
 
-
+        #ifdef USE_PERCEPTIVE_CONTROL
         if(foot_final_pos[0] > 2.0) {   
             // if(state.k % 10 == 0)
             foot_final_pos = SpiralBinarySearch(foot_final_pos.head(2), state.map, 8);
         }
+        #endif
 
         state.foothold_dest_world.block<3, 1>(0, leg) = foot_final_pos;
         state.foothold_dest_abs.block<3, 1>(0, leg) = state.foothold_dest_world.block<3, 1>(0, leg) - state.root_pos;
@@ -411,20 +417,21 @@ void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
                 // swing
                 swingtrajectory[leg].setFinalPosition(state.foothold_dest_world.block<3, 1>(0, leg));
 
+                #ifdef USE_PERCEPTIVE_CONTROL
                 if(state.foothold_dest_world(0, leg) > 2.0 && state.foothold_dest_world(0, leg) < 2.0 + 2.9) { 
                 
-                double height = fabs(state.foothold_dest_world(2, leg) - swingtrajectory[leg]._p0(2))*2 + 0.33;
-                // std::cout << "height = " << height << std::endl;
-                height = height>0.15?(height<0.55?height:0.55):0.15;
+                // double height = fabs(state.foothold_dest_world(2, leg) - swingtrajectory[leg]._p0(2))*2 + 0.33;
+                double height = iterateTheHeight(swingtrajectory[leg]._p0, state.foothold_dest_world.block<3, 1>(0, leg),
+                                                 state.gait_period * (1 - state.stance_duration(leg)), 0.2, state.map);
 
-                // height = 0.3;
+                height = height>0.15?(height<0.55?height:0.55):0.15;
                 swingtrajectory[leg].setHeight(height);
                 // std::cout << "height = " << height << std::endl;
                 }
                 else {
                     swingtrajectory[leg].setHeight(0.15);
                 }
-                
+                #endif
 
                 swingtrajectory[leg].computeSwingTrajectoryBezier(state.plan_swings_phase(leg), state.gait_period * (1 - state.stance_duration(leg)));
                 state.foot_pos_cmd_world.block<3, 1>(0, leg) = swingtrajectory[leg].getPosition();
@@ -454,7 +461,7 @@ void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
             case ContactEvent::LATE_CONTACT:
             {
                 // // downward motion
-                // double distance = 0.08;
+                // double distance = 0.02;
                 // // distance = 0.08 + 0.01 * state.restance_k(leg);
                 // // distance = (distance>0.2)?0.2:distance;
                 
@@ -619,23 +626,58 @@ Eigen::Matrix<double, 3, 1> CentaurControl::SpiralBinarySearch(
         return valid_pos;
 }
 
-// double CentaurControl::iterateTheHeight(
-//      Eigen::Matrix<double, 3, 1> from,
-//      Eigen::Matrix<double, 3, 1> to,
-//      double init_height,
-//      map_struct map) {
+double CentaurControl::iterateTheHeight(
+     Eigen::Matrix<double, 3, 1> from,
+     Eigen::Matrix<double, 3, 1> to,
+     double swing_time,
+     double init_height,
+     map_struct map) {
 
-//         FootSwingTrajectory<double> check_trajectory;
-//         double valid_height = init_height;
-//         bool valid_flag = false;
-        
-//         while (!valid_flag)
-//         {
+        FootSwingTrajectory<double> check_trajectory;
+        double valid_height = init_height;
+        bool valid_flag = false;
+        check_trajectory.setInitialPosition(from);
+        check_trajectory.setFinalPosition(to);
 
+
+        while (!valid_flag)
+        {
+            valid_flag = true;
+            check_trajectory.setHeight(valid_height);
+            for (int seed = 1; seed < 9; seed++)
+            {
+                double check_phase = static_cast<double>(seed)/10.0;
+                check_trajectory.computeSwingTrajectoryBezier(check_phase, swing_time);
+                Eigen::Matrix<double, 3, 1> check_pos =  check_trajectory.getPosition();
+
+                // this part needs to be update
+                int coordinate_x = int((check_pos(0) - 2.0)/0.02);
+                int coordinate_y = int((check_pos(1) + 0.5)/0.02);
+                if(coordinate_x < 0) coordinate_x = 0;
+
+
+                double err = map.elevation(coordinate_x, coordinate_y) - check_pos(2);
+                // std::cout << check_phase << "-----------------" << std::endl;
+                // std::cout << "x = " << coordinate_x << ", y = " << coordinate_y
+                //     << "map_height = " << map.elevation(coordinate_x, coordinate_y) 
+                //     << ", check_height = " << check_pos(2) <<", err = " << err << ", curr_height = " 
+                //     << valid_height << std::endl;
+
+                if(err > 0.0)
+                {
+                    valid_flag = false;
+                    valid_height += (0.5 * err + 0.05);
+                    // std::cout << "x = " << coordinate_x << ", y = " << coordinate_y
+                    // << "map_height = " << map.elevation(coordinate_x, coordinate_y) 
+                    // << ", check_height = " << check_pos(2) <<", err = " << err << ", curr_height = " << valid_height << std::endl;
+                    break;
+                }
+            }
             
-//         }
+            
+        }
         
         
-//         return valid_height;
+        return valid_height;
 
-// }
+}

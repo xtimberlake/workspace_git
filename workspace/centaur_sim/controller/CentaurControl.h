@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:31:28
  * @LastEditors: haoyun 
- * @LastEditTime: 2023-04-12 22:02:56
+ * @LastEditTime: 2023-04-22 10:36:41
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurControl.h
  * @Description: centaur root controller
  * 
@@ -37,11 +37,12 @@ public:
      Eigen::Matrix<double, 2, 1> initial_pos,
      map_struct map,
      int layer);
-    // double iterateTheHeight(
-    //  Eigen::Matrix<double, 3, 1> from,
-    //  Eigen::Matrix<double, 3, 1> to,
-    //  double init_height,
-    //  map_struct map);
+    double iterateTheHeight(
+     Eigen::Matrix<double, 3, 1> from,
+     Eigen::Matrix<double, 3, 1> to,
+     double swing_time,
+     double init_height,
+     map_struct map);
     
     // variables:
     

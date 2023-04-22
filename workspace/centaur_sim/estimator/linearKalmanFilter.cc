@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-11-07 19:14:01
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-11-08 16:34:30
+ * @LastEditTime: 2023-04-21 20:44:04
  * @FilePath: /drake/workspace/centaur_sim/estimator/linearKalmanFilter.cc
  * @Description: 
  * 
@@ -61,8 +61,8 @@ void linearKalmanFilter<T>::updateInputMeasure(const DVec<T>& uk, const DVec<T>&
     x_before = _A * _xk + _B * _uk;
     P_before = _A * _errCovP * _A.transpose() + _Q;
     
-    // mesurement update
-    Kk = P_before * _H.transpose() * (_H * P_before * _H.transpose() + _R);
+    // mesurement update !! need to update!
+    Kk = P_before * _H.transpose() * (_H * P_before * _H.transpose() + _R).inverse();
     _xk = x_before + Kk * (_zk - _H * x_before);
     _errCovP = (eye - Kk * _H) * P_before;
    
