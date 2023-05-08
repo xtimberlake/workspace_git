@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:31:07
  * @LastEditors: haoyun 
- * @LastEditTime: 2023-04-22 12:11:24
+ * @LastEditTime: 2023-05-08 18:39:52
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurControl.cc
  * @Description: 
  * 
@@ -421,12 +421,18 @@ void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
                 if(state.foothold_dest_world(0, leg) > 2.0 && state.foothold_dest_world(0, leg) < 2.0 + 2.9) { 
                 
                 // double height = fabs(state.foothold_dest_world(2, leg) - swingtrajectory[leg]._p0(2))*2 + 0.33;
-                double height = iterateTheHeight(swingtrajectory[leg]._p0, state.foothold_dest_world.block<3, 1>(0, leg),
-                                                 state.gait_period * (1 - state.stance_duration(leg)), 0.2, state.map);
+                // double height = iterateTheHeight(swingtrajectory[leg]._p0, state.foothold_dest_world.block<3, 1>(0, leg),
+                //                                  state.gait_period * (1 - state.stance_duration(leg)), 0.2, state.map);
+                // Eigen::Vector3d dest;
+                // dest << 0.7, 0, 0.1;
+                // iterateTheHeight(Eigen::Vector3d::Zero(), dest,
+                //                                  1.0, 0.2, state.map);
 
+                double height = 0.25;
                 height = height>0.15?(height<0.55?height:0.55):0.15;
                 swingtrajectory[leg].setHeight(height);
-                // std::cout << "height = " << height << std::endl;
+                // drake::log()->info(height);
+
                 }
                 else {
                     swingtrajectory[leg].setHeight(0.15);
@@ -657,19 +663,19 @@ double CentaurControl::iterateTheHeight(
 
 
                 double err = map.elevation(coordinate_x, coordinate_y) - check_pos(2);
-                // std::cout << check_phase << "-----------------" << std::endl;
-                // std::cout << "x = " << coordinate_x << ", y = " << coordinate_y
-                //     << "map_height = " << map.elevation(coordinate_x, coordinate_y) 
-                //     << ", check_height = " << check_pos(2) <<", err = " << err << ", curr_height = " 
-                //     << valid_height << std::endl;
+                std::cout << check_phase << "-----------------" << std::endl;
+                std::cout << "x = " << coordinate_x << ", y = " << coordinate_y
+                    << "map_height = " << map.elevation(coordinate_x, coordinate_y) 
+                    << ", check_height = " << check_pos(2) <<", err = " << err << ", curr_height = " 
+                    << valid_height << std::endl;
 
                 if(err > 0.0)
                 {
                     valid_flag = false;
                     valid_height += (0.5 * err + 0.05);
-                    // std::cout << "x = " << coordinate_x << ", y = " << coordinate_y
-                    // << "map_height = " << map.elevation(coordinate_x, coordinate_y) 
-                    // << ", check_height = " << check_pos(2) <<", err = " << err << ", curr_height = " << valid_height << std::endl;
+                    std::cout << "x = " << coordinate_x << ", y = " << coordinate_y
+                    << "map_height = " << map.elevation(coordinate_x, coordinate_y) 
+                    << ", check_height = " << check_pos(2) <<", err = " << err << ", curr_height = " << valid_height << std::endl;
                     break;
                 }
             }
