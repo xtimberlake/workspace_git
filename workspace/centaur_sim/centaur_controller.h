@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-14 12:43:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2023-04-22 10:19:04
+ * @LastEditTime: 2023-05-24 21:52:22
  * @FilePath: /drake/workspace/centaur_sim/centaur_controller.h
  * @Description: controller block for drake simulation
  * 
@@ -89,7 +89,7 @@ public:
                                     12);
 
         this->DeclareVectorInputPort("force_sensors_output",
-                                    12);
+                                    18);
 
         this->DeclareVectorOutputPort("actuated_torque", 12,
                                     &CentaurController::CalcTorques);
@@ -226,14 +226,19 @@ private:
             // whole-body impluse controller
             ct->wbicontroller->run(ct->ctrl_states);
             
-            if(ct->ctrl_states.t < 0.1) { // start trotting in 0.5 seconds
-                // output_torques = ct->legcontroller->task_impedance_control(ct->ctrl_states);
-                output_torques = ct->legcontroller->wbc_low_level_control(ct->ctrl_states);
-            }
-            else {
-                // output_torques = ct->legcontroller->task_impedance_control(ct->ctrl_states);
-                output_torques = ct->legcontroller->wbc_low_level_control(ct->ctrl_states);
-            }
+            // if(ct->ctrl_states.t < 0.1) { // start trotting in 0.1 seconds
+            //     // output_torques = ct->legcontroller->task_impedance_control(ct->ctrl_states);
+            //     output_torques = ct->legcontroller->wbc_low_level_control(ct->ctrl_states);
+            // }
+            // else {
+            //     // output_torques = ct->legcontroller->task_impedance_control(ct->ctrl_states);
+            //     output_torques = ct->legcontroller->wbc_low_level_control(ct->ctrl_states);
+            // }
+
+            output_torques = ct->legcontroller->wbc_low_level_control(ct->ctrl_states);
+            // ct->controller->InverseKinematics(ct->ctrl_states);
+            // output_torques = ct->legcontroller->joint_impedance_control(ct->ctrl_states);
+
 
             #ifdef USE_REACTIVE_CONTROL
             ct->contactestimate->updateMeasurement(ct->ctrl_states);
@@ -303,19 +308,54 @@ private:
 
             output_log_vector[0] = context.get_time();
 
-            output_log_vector[0] = ct->ctrl_states.foot_pos_cmd_world(0,0);
-            output_log_vector[1] = ct->ctrl_states.foot_pos_world(0,0);
+            // // joint angle
+            // output_log_vector[0] = ct->ctrl_states.wbc_q_cmd(2);
+            // output_log_vector[1] = ct->ctrl_states.q(2);
 
-            output_log_vector[2] = ct->ctrl_states.root_pos_d(2);
-            output_log_vector[3] = ct->ctrl_states.root_pos(2);
+            // output_log_vector[2] = ct->ctrl_states.wbc_qdot_cmd(2);
+            // output_log_vector[3] = ct->ctrl_states.qdot(2);
 
-            output_log_vector[4] = ct->ctrl_states.root_euler_d(1);
-            output_log_vector[5] = ct->ctrl_states.root_euler(1);
+            // force
+            // output_log_vector[0] = ct->ctrl_states.wbc_tau_ff(0);
+            // output_log_vector[1] = ct->ctrl_states.wbc_tau_ff(0);
 
-            output_log_vector[6] = ct->ctrl_states.foot_pos_cmd_world(2,0);
-            output_log_vector[7] = ct->ctrl_states.foot_pos_world(2,0);
+            // output_log_vector[2] = ct->ctrl_states.wbc_tau_ff(1);
+            // output_log_vector[3] = ct->ctrl_states.wbc_tau_ff(2);
+
+            output_log_vector[4] = -ct->ctrl_states.foot_force_simulation(2, 0);
+            output_log_vector[5] = ct->contactestimate->_foot_force_hat(2, 0);
+
+            // foot pos
+            output_log_vector[0] = ct->ctrl_states.foot_pos_cmd_world(0, 0);
+            output_log_vector[1] = ct->ctrl_states.foot_pos_world(0, 0);
+
+            output_log_vector[2] = ct->ctrl_states.foot_vel_world(0, 0);
+            output_log_vector[3] = ct->ctrl_states.foot_vel_cmd_world(0, 0);
+
+
+        
+            // output_log_vector[2] = ct->ctrl_states.root_pos_d(2);
+            // output_log_vector[3] = ct->ctrl_states.root_pos(2);
+       
+            //  output_log_vector[4] = ct->ctrl_states.theta_opt;
+            // output_log_vector[5] = ct->ctrl_states.root_euler(1);
+
+            // output_log_vector[6] = ct->ctrl_states.foot_pos_cmd_world(2,0);
+            // output_log_vector[7] = ct->ctrl_states.foot_pos_world(2,0);
             
-           
+            // output_log_vector[0] = ct->ctrl_states.root_pos_d[2];
+            // output_log_vector[1] = ct->ctrl_states.root_pos[2];
+
+            // output_log_vector[2] = ct->ctrl_states.root_euler_d(1);
+            // output_log_vector[3] = ct->ctrl_states.root_euler(1);
+
+            // output_log_vector[4] = ct->ctrl_states.root_euler_d(1);
+
+            output_log_vector[6] = ct->contactestimate->_foot_force_hat(2, 0);
+            output_log_vector[7] = ct->contactestimate->_foot_force_hat(2, 1);
+
+            // output_log_vector[4] = ct->contactestimate->footAcc(2,0);
+            // output_log_vector[5] = ct->contactestimate->footAcc(2,1);
 
 
 
@@ -341,7 +381,9 @@ private:
         Eigen::VectorXd force_sensor_data = this->GetInputPort("force_sensors_output").Eval(context);
 
         ct->ctrl_states.tau_feedback = force_sensor_data.head(6); 
-        ct->ctrl_states.hri_wrench_realtime = force_sensor_data.tail(6); 
+        ct->ctrl_states.hri_wrench_realtime = force_sensor_data.segment<6>(6); 
+        ct->ctrl_states.foot_force_simulation.block<3, 1>(0, 0) = force_sensor_data.segment<3>(12); 
+        ct->ctrl_states.foot_force_simulation.block<3, 1>(0, 1) = force_sensor_data.segment<3>(15); 
 
         //TODO(haoyun) acceleration is actuators- and wrench- dependent states
         // // ct->ctrl_states.root_acc = FloatingBodyFrame.CalcSpatialAccelerationInWorld(*_plant_context).translational(); 

@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-19 09:55:16
  * @LastEditors: haoyun 
- * @LastEditTime: 2023-04-17 15:47:54
+ * @LastEditTime: 2023-05-24 21:23:39
  * @FilePath: /drake/workspace/centaur_sim/extract_data.h
  * @Description: 
  * 
@@ -48,7 +48,7 @@ public:
             &extractData::ExtractPosRot);
 
         this->DeclareVectorOutputPort(
-            "force_sensors_output", 12,
+            "force_sensors_output", 18,
             &extractData::ExtractForce);
         
     }
@@ -178,7 +178,7 @@ private:
     void ExtractForce(const systems::Context<T>& context,
                            systems::BasicVector<T>* output) const {
 
-        Eigen::VectorXd forces(12); forces.setZero();
+        Eigen::VectorXd forces(18); forces.setZero();
         // // extract the forces 
         // index [4]: hri_wrench
         // index [6, 7, 8]: left abAd motor, left hip motor, left knee motor 
@@ -187,7 +187,7 @@ private:
             this->GetInputPort("spatial_forces_in").template Eval<std::vector<drake::multibody::SpatialForce<double>>>(context);
         
         forces(0) = spatial_vec[6].get_coeffs()(0); // x-axis
-        forces(1) = spatial_vec[7].get_coeffs()(1);
+        forces(1) = spatial_vec[7].get_coeffs()(1); // y-axis
         forces(2) = spatial_vec[8].get_coeffs()(1);
 
         forces(3) = spatial_vec[10].get_coeffs()(0); // x-axis
@@ -195,6 +195,17 @@ private:
         forces(5) = spatial_vec[12].get_coeffs()(1);
 
         forces.segment<6>(6) = spatial_vec[4].get_coeffs();
+
+        // left foot
+        forces(12) = spatial_vec[9].get_coeffs()(3); // linear force x
+        forces(13) = spatial_vec[9].get_coeffs()(4); // y
+        forces(14) = spatial_vec[9].get_coeffs()(5); // z
+
+        // right foot
+        forces(15) = spatial_vec[13].get_coeffs()(3);
+        forces(16) = spatial_vec[13].get_coeffs()(4);
+        forces(17) = spatial_vec[13].get_coeffs()(5);
+
 
 
         output->set_value(forces);

@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-11-07 15:32:23
  * @LastEditors: haoyun 
- * @LastEditTime: 2023-04-17 20:20:16
+ * @LastEditTime: 2023-05-24 21:48:48
  * @FilePath: /drake/workspace/centaur_sim/estimator/contactEstimate.cc
  * @Description: 
  * 
@@ -188,7 +188,7 @@ void contactEstimate<T>::updateEstimate() {
     C_mtx = this->coriolisVec * qdot_pinv;
     
     generalizedMomentum = this->MassqMtx * generalizedQdotVec;
-    dynamics_effect = _beta*generalizedMomentum /*+ this->tau_actuated */+ C_mtx.transpose()*this->generalizedQdotVec /*- tau_g*/;
+    dynamics_effect = _beta*generalizedMomentum + this->tau_actuated + C_mtx.transpose()*this->generalizedQdotVec - tau_g;
     for (int i = 6; i < 12; i++) {
         filteded_dynamics_effect[i] =  firstOrderFilter[i]->feedData(dynamics_effect[i]);
     }
@@ -236,13 +236,13 @@ void contactEstimate<T>::eventsDetect() {
 
                     if (this->phiSwing[leg] > 0.5) start_detect = true; // detect the evnets at second half of the swing phase
                     // if(this->_foot_force_hat(2, leg) > 80.0)  collision_detect = true; // threshold the vertical impulse
-                    if(this->footAcc(2, leg) > 40.0)  collision_detect = true; // threshold the vertical acceleration
+                    if(this->footAcc(2, leg) > 50.0)  collision_detect = true; // threshold the vertical acceleration
                     if (start_detect && collision_detect)
                     {
 
                         this->_locked_foot_pos = this->pFoot; // store the collision pos
                         this->_foot_contact_event[leg] = ContactEvent::EARLY_CONTACT;
-                        // std::cout << "leg " << leg << ": " << "Early Contact at phase = " << this->phiSwing[leg] << "." << std::endl;
+                        std::cout << "leg " << leg << ": " << "Early Contact at phase = " << this->phiSwing[leg] << "." << std::endl;
                     }
 
                     if (start_detect && !collision_detect && this->phiSwing[leg] > 0.996)
@@ -250,7 +250,7 @@ void contactEstimate<T>::eventsDetect() {
                         this->_locked_foot_pos = this->pFoot; // store the collision pos
                         this->_foot_contact_event[leg] = ContactEvent::LATE_CONTACT;
                         this->_time_start_to_extend[leg] = this->_system_time;
-                        // std::cout << "leg " << leg << ": " << "Late Contact at phase = " << this->phiSwing[leg] << "." << std::endl;
+                        std::cout << "leg " << leg << ": " << "Late Contact at phase = " << this->phiSwing[leg] << "." << std::endl;
                         _restance_k[leg]++;
 
                         // cancell the downward motion

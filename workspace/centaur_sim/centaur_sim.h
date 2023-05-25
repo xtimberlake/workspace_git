@@ -32,7 +32,7 @@
 #include "drake/workspace/centaur_sim/extract_data.h"
 #include "drake/workspace/centaur_sim/centaur_controller.h"
 
-DEFINE_double(simulation_sec, 16,
+DEFINE_double(simulation_sec, 28,
               "Number of seconds to simulate.");
 DEFINE_double(sim_dt, 5e-4,
               "The time step to use for MultibodyPlant model"

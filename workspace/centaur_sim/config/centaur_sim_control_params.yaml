@@ -31,7 +31,7 @@ q_weights: [100.0, 100.0, 300.0,    # Roll Pitch Yaw
 r_weights: [0.005, 0.005, .005,
             0.005, 0.005, .005] # fx fy fz
 
-mu: 0.22
+mu: 0.2
 
 
 # Swing foot(left)

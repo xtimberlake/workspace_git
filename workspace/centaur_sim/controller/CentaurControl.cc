@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:31:07
  * @LastEditors: haoyun 
- * @LastEditTime: 2023-05-08 18:39:52
+ * @LastEditTime: 2023-05-25 20:54:42
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurControl.cc
  * @Description: 
  * 
@@ -74,6 +74,13 @@ void CentaurControl::UpdateDesiredStates(CentaurStates& state) {
         }
         
     }
+
+    
+    // state.theta_opt = thetaOpt.argminTheta(state);
+    // state.root_euler_d[1] = state.theta_opt;
+    // state.root_pos_d[2] = state.Hri_pos(2)-state.sphere_joint_location(2) + sin(state.theta_opt) * state.sphere_joint_location(0);
+
+
     #endif
     
     Eigen::Matrix<double, 3, 1> Kang, Kpos;
@@ -110,7 +117,7 @@ void CentaurControl::CalcHRITorques(CentaurStates& state) {
     number_of_traj =  static_cast<int>((state.k));
         
     // // std::cout << "num of traj = " << number_of_traj << std::endl;
-    prismatic_joint_q_des[0] = number_of_traj*0.0003;
+    prismatic_joint_q_des[0] = number_of_traj*0.0002;
     prismatic_joint_q_des[1] = 0.0;
     #ifdef USE_PERCEPTIVE_CONTROL
     if(state.Hri_pos[0] > 2.0) {
@@ -143,12 +150,10 @@ void CentaurControl::CalcHRITorques(CentaurStates& state) {
     revolute_joint_qdot = state.hri_joint_states.segment<3>(6+3);
     Eigen::Vector3d human_rot_stiff, human_rot_damp; human_rot_stiff.setZero(); human_rot_damp.setZero();
 
-    human_rot_stiff << 20, 0, 20;
-    human_rot_damp << 10, 0, 10;
+    human_rot_stiff << 8, 0, 8;
+    human_rot_damp << 4, 0, 4;
     total_torques.tail(3) = human_rot_stiff.cwiseProduct(revolute_joint_q_des - revolute_joint_q)
                           + human_rot_damp.cwiseProduct(revolute_joint_qdot_des - revolute_joint_qdot);
-
-
 
     state.hri_actuated_torques = total_torques;
 
@@ -336,6 +341,7 @@ void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
 
         // fix the target position after 70% of the swing phase:
         if(state.plan_swings_phase[leg] > 0.6) continue;
+        if(state.k % 50 != 0) continue;
 
         Eigen::Matrix<double, 3, 1> offset(1.0 * state.ctrl_params_const.default_foot_pos_under_hip.at(0), side_sign[leg] * state.ctrl_params_const.default_foot_pos_under_hip.at(1), 0);
         swingTimeRemain = (1 - state.plan_swings_phase[leg]) * state.gait_period * (1 - state.stance_duration[leg]);
@@ -421,14 +427,14 @@ void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
                 if(state.foothold_dest_world(0, leg) > 2.0 && state.foothold_dest_world(0, leg) < 2.0 + 2.9) { 
                 
                 // double height = fabs(state.foothold_dest_world(2, leg) - swingtrajectory[leg]._p0(2))*2 + 0.33;
-                // double height = iterateTheHeight(swingtrajectory[leg]._p0, state.foothold_dest_world.block<3, 1>(0, leg),
-                //                                  state.gait_period * (1 - state.stance_duration(leg)), 0.2, state.map);
+                double height = iterateTheHeight(swingtrajectory[leg]._p0, state.foothold_dest_world.block<3, 1>(0, leg),
+                                                 state.gait_period * (1 - state.stance_duration(leg)), state.plan_swings_phase[leg], 0.2, state.map);
                 // Eigen::Vector3d dest;
                 // dest << 0.7, 0, 0.1;
                 // iterateTheHeight(Eigen::Vector3d::Zero(), dest,
                 //                                  1.0, 0.2, state.map);
 
-                double height = 0.25;
+                // double height = 0.25;
                 height = height>0.15?(height<0.55?height:0.55):0.15;
                 swingtrajectory[leg].setHeight(height);
                 // drake::log()->info(height);
@@ -502,7 +508,7 @@ void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
         state.foot_pos_cmd_abs.block<3, 1>(0, leg) = state.foot_pos_cmd_world.block<3, 1>(0, leg) - state.root_pos;
         state.foot_pos_cmd_rel.block<3, 1>(0, leg) = state.root_rot_mat.transpose() * state.foot_pos_cmd_abs.block<3, 1>(0, leg);
 
-        state.foot_vel_cmd_rel.block<3, 1>(0, leg) = state.root_rot_mat_z.transpose() * state.foot_vel_cmd_world.block<3, 1>(0, leg);
+        state.foot_vel_cmd_rel.block<3, 1>(0, leg) = state.root_rot_mat.transpose() * state.foot_vel_cmd_world.block<3, 1>(0, leg);
     }
     
 }
@@ -515,12 +521,39 @@ void CentaurControl::InverseKinematics(CentaurStates& state)
     }
 
     Eigen::Matrix<double, 3, 2> foot_pos_err;
+    Eigen::Vector3d k;
+    k << 15, 15, 25;
     for (int leg = 0; leg < 2; leg++)
     {
-        foot_pos_err.block<3, 1>(0, leg) = state.foot_pos_cmd_rel.block<3, 1>(0, leg) - state.foot_pos_rel.block<3, 1>(0, leg);
-        state.q_cmd.segment<3>(leg * 3) = state.q.segment<3>(leg * 3) + state.control_dt * Utils::pseudo_inverse(state.JacobianFoot[leg]) * foot_pos_err.block<3, 1>(0, leg);
+        foot_pos_err.block<3, 1>(0, leg) = k.cwiseProduct(state.foot_pos_cmd_rel.block<3, 1>(0, leg) - state.foot_pos_rel.block<3, 1>(0, leg));
+        state.q_cmd.segment<3>(leg * 3) = state.q.segment<3>(leg * 3) + /*state.control_dt **/ Utils::pseudo_inverse(state.JacobianFoot[leg]) * foot_pos_err.block<3, 1>(0, leg);
     }
 
+    // double max_vel = 50;
+
+    for (int i = 0; i < 6; i++)
+    {
+        // limit
+        // state.qdot_cmd(i) = (state.qdot_cmd(i)>max_vel)?(max_vel):(state.qdot_cmd(i)<-max_vel?-max_vel:state.qdot_cmd(i));
+        // switch (i%3)
+        // {
+        // case 0:
+        //     state.q_cmd(i) = (state.qdot_cmd(i)>0.8)?(0.8):(state.qdot_cmd(i)<-0.8?-0.8:state.qdot_cmd(i));
+        //     break;
+        // case 1:
+        //     state.q_cmd(i) = (state.qdot_cmd(i)>0.8)?(0.8):(state.qdot_cmd(i)<-0.8?-0.8:state.qdot_cmd(i));
+        //     break;
+        // case 2:
+        //     state.q_cmd(i) = (state.qdot_cmd(i)>0)?(0):(state.qdot_cmd(i)<-1.5?-1.5:state.qdot_cmd(i));
+        //     break;
+        // default:
+        //     break;
+        // }
+        
+       
+    }
+    
+   
 }
 
 Eigen::Matrix<double, 3, 1> CentaurControl::SpiralBinarySearch(
@@ -636,6 +669,7 @@ double CentaurControl::iterateTheHeight(
      Eigen::Matrix<double, 3, 1> from,
      Eigen::Matrix<double, 3, 1> to,
      double swing_time,
+     double phase,
      double init_height,
      map_struct map) {
 
@@ -650,9 +684,16 @@ double CentaurControl::iterateTheHeight(
         {
             valid_flag = true;
             check_trajectory.setHeight(valid_height);
-            for (int seed = 1; seed < 9; seed++)
+            // int seed = 0;
+            int seed = static_cast<int>(phase*10);
+            seed = (seed<1)?1:((seed>9)?9:seed);
+            
+            for (; seed < 9; seed++)
             {
-                double check_phase = static_cast<double>(seed)/10.0;
+                double check_phase = phase;
+                // double check_phase = static_cast<double>(seed)/10.0;
+                check_phase = static_cast<double>(seed)/10.0;
+
                 check_trajectory.computeSwingTrajectoryBezier(check_phase, swing_time);
                 Eigen::Matrix<double, 3, 1> check_pos =  check_trajectory.getPosition();
 
@@ -663,20 +704,20 @@ double CentaurControl::iterateTheHeight(
 
 
                 double err = map.elevation(coordinate_x, coordinate_y) - check_pos(2);
-                std::cout << check_phase << "-----------------" << std::endl;
-                std::cout << "x = " << coordinate_x << ", y = " << coordinate_y
-                    << "map_height = " << map.elevation(coordinate_x, coordinate_y) 
-                    << ", check_height = " << check_pos(2) <<", err = " << err << ", curr_height = " 
-                    << valid_height << std::endl;
+                // std::cout << check_phase << "-----------------" << std::endl;
+                // std::cout << "x = " << coordinate_x << ", y = " << coordinate_y
+                //     << "map_height = " << map.elevation(coordinate_x, coordinate_y) 
+                //     << ", check_height = " << check_pos(2) <<", err = " << err << ", curr_height = " 
+                //     << valid_height << std::endl;
 
                 if(err > 0.0)
                 {
                     valid_flag = false;
                     valid_height += (0.5 * err + 0.05);
-                    std::cout << "x = " << coordinate_x << ", y = " << coordinate_y
-                    << "map_height = " << map.elevation(coordinate_x, coordinate_y) 
-                    << ", check_height = " << check_pos(2) <<", err = " << err << ", curr_height = " << valid_height << std::endl;
-                    break;
+                    // std::cout << "x = " << coordinate_x << ", y = " << coordinate_y
+                    // << "map_height = " << map.elevation(coordinate_x, coordinate_y) 
+                    // << ", check_height = " << check_pos(2) <<", err = " << err << ", curr_height = " << valid_height << std::endl;
+                    // break;
                 }
             }
             
@@ -686,4 +727,78 @@ double CentaurControl::iterateTheHeight(
         
         return valid_height;
 
+}
+
+template<typename T>
+ThetaOptimize<T>::ThetaOptimize() {
+    this->theta_last = 0;
+}
+
+template<typename T>
+ThetaOptimize<T>::~ThetaOptimize() {}
+
+
+template<typename T>
+T ThetaOptimize<T>::argminTheta(CentaurStates& state) {
+
+    T theta_star = this->theta_last;
+
+    // Step #1: extract len_from_hri_to_com, h_z and p_z_human from robot states
+    T len = state.sphere_joint_location(0);
+
+    T h_z = 0;
+    int num_of_contacts = 0;
+    for(int leg = 0; leg < 2; leg++) {
+        if(state.plan_contacts_phase(leg) > 0.0) {
+            num_of_contacts++;
+            h_z += state.foot_pos_world(2, leg);
+        }
+    }
+    h_z /= static_cast<T>(num_of_contacts);
+    // std::cout << "h_z = " << h_z << std::endl;
+    
+    T p_z_human = state.Hri_pos(2) - state.sphere_joint_location(2);
+    // std::cout << "p_z_human = " << p_z_human << std::endl;
+
+    // Step #2: setup the quadratic programming 
+    // use CE & ci to represent the relation between robot's height and pitch angle
+    Eigen::MatrixXd CE; CE.resize(1, 2);
+    Eigen::VectorXd ce0; ce0.resize(1);
+    CE << len * cos(theta_last), -1;
+    ce0 << -p_z_human - len * (sin(theta_last) - cos(theta_last) * theta_last);
+
+    //  h_min <= pz - h_z <= h_max
+    float h_min = 0.8;
+    float h_max = 0.96;
+    float relative_height = 0.9;
+    float theta_des = 0;
+    // theta_des = asin((relative_height - p_z_human) / len);
+    Eigen::MatrixXd CI; CI.resize(4, 2);
+    Eigen::VectorXd ci0; ci0.resize(4);
+    CI << 0, 1,
+          0, -1,
+          1, 0,
+          -1, 0;
+
+    ci0 << h_z + h_min, 
+          -h_z - h_max,
+          -M_PI/6,
+          -M_PI/5;
+    
+    //  cost function
+    Eigen::Vector3d k;
+    k << 10.0, 0.5, 2.0;
+    Eigen::MatrixXd G; G.resize(2, 2);
+    Eigen::VectorXd g; g.resize(2);
+    G << k(1) + k(2), 0,
+         0, k(0);
+    g << -k(2) * theta_last -k(1) * theta_des, -k(0) * relative_height;
+
+    Eigen::VectorXd x_star(2);
+    trans_solve_quadprog(G, g, CE, ce0, CI, ci0, x_star);
+
+    theta_last = theta_star = x_star(0);
+    // std::cout << "theta desired = " << theta_star << std::endl;
+
+    return theta_star;
 }

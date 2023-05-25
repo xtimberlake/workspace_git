@@ -2,8 +2,8 @@
  * @Author: haoyun 
  * @Date: 2022-11-07 15:32:34
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-12-01 18:53:30
- * @FilePath: /drake/home/haoyun/.cache/bazel/_bazel_haoyun/a17c303983e829fea1540ab5133f0aae/execroot/drake/bazel-out/k8-opt/bin/workspace/centaur_sim/_virtual_includes/centaur_states_lib/drake/workspace/centaur_sim/estimator/contactEstimate.h
+ * @LastEditTime: 2023-05-21 21:34:53
+ * @FilePath: /drake/workspace/centaur_sim/estimator/contactEstimate.h
  * @Description: contact estimate that fuses plan_states, foot_pos & grf_z
  * [ref]: 
  * Bledt, Gerardo, Patrick M. Wensing, Sam Ingersoll, and Sangbae Kim. "Contact model
@@ -47,7 +47,7 @@ public:
  void publishStates(CentaurStates& states);
 
  // variables 
-protected:
+// protected:
  
  /* Measurement data */
  // prior

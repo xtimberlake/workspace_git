@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-16 17:07:03
  * @LastEditors: haoyun 
- * @LastEditTime: 2023-01-19 12:49:26
+ * @LastEditTime: 2023-05-21 18:38:37
  * @FilePath: /drake/workspace/centaur_sim/controller/WBIController.cc
  * @Description: 
  * 
@@ -642,6 +642,8 @@ void WBIController::update_command(CentaurStates& state, const DVec<double>& qj,
     state.wbc_q_cmd = qj;
     state.wbc_qdot_cmd = qj_dot;
     state.wbc_tau_ff = tau;
+
+    state.tau_ff = tau;
 
     for (int leg = 0; leg < 2; leg++) {
         if (state.plan_contacts_phase(leg) > 0) {

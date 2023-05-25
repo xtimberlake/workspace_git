@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-16 14:30:49
  * @LastEditors: haoyun 
- * @LastEditTime: 2023-04-17 14:59:30
+ * @LastEditTime: 2023-05-24 21:24:20
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurStates.h
  * @Description: define all the states that used in controller; mainly 
  *                adapted from https://github.com/ShuoYangRobotics/A1-QP-MPC-Controller
@@ -266,8 +266,10 @@ class CentaurStates {
         robot_yaw_circle = 0;
         last_robot_yaw = 0.0;
 
-        // foot_force_simulation.setZero();
+        foot_force_simulation.setZero();
         Hri_pos.setZero();
+
+        theta_opt = 0.0;
 
     }
 
@@ -351,7 +353,7 @@ class CentaurStates {
     Eigen::Matrix<double, 3, 2> foot_force_rel;    // estimate from motors' torques
     Eigen::Matrix<double, 3, 2> foot_force_world;  
     Eigen::Matrix<double, 3, 2> foot_force_est_world;
-    // Eigen::Matrix<double, 3, 2> foot_force_simulation;
+    Eigen::Matrix<double, 3, 2> foot_force_simulation;  // the ground true force from simulator
 
     Eigen::Matrix<double, 3, 2> foot_force_cmd_rel;    // command
     Eigen::Matrix<double, 3, 2> foot_force_cmd_world;  // from mpc
@@ -425,5 +427,8 @@ class CentaurStates {
     double last_robot_yaw;
 
     map_struct map;
+
+    double theta_opt;
+
 
 };
