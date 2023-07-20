@@ -1,8 +1,8 @@
 /*
  * @Author: haoyun 
  * @Date: 2022-07-14 12:43:34
- * @LastEditors: haoyun 
- * @LastEditTime: 2023-05-24 21:52:22
+ * @LastEditors: haoyun-x13 pioneeroppenheimer@163.com
+ * @LastEditTime: 2023-06-28 15:50:23
  * @FilePath: /drake/workspace/centaur_sim/centaur_controller.h
  * @Description: controller block for drake simulation
  * 
@@ -50,6 +50,7 @@ namespace centaur_sim{
         std::vector<double> mx, my, mz, fx, fy, fz;
         std::vector<double> gait_cycle;
         std::vector<double> left_foot_force, right_foot_force;
+        std::vector<double> human_px, human_py, human_pz;
         
 
 
@@ -62,7 +63,7 @@ namespace centaur_sim{
         a->Visit(DRAKE_NVP(mx)); a->Visit(DRAKE_NVP(my)); a->Visit(DRAKE_NVP(mz)); a->Visit(DRAKE_NVP(fx)); a->Visit(DRAKE_NVP(fy)); a->Visit(DRAKE_NVP(fz)); 
         a->Visit(DRAKE_NVP(gait_cycle));
         a->Visit(DRAKE_NVP(left_foot_force)); a->Visit(DRAKE_NVP(right_foot_force));
-
+        a->Visit(DRAKE_NVP(human_px)); a->Visit(DRAKE_NVP(human_py)); a->Visit(DRAKE_NVP(human_pz)); 
         }
     };
 
@@ -209,6 +210,7 @@ private:
             }
             else {
                 ct->walking->update_gait_pattern(ct->ctrl_states);
+                // ct->standing->update_gait_pattern(ct->ctrl_states);
                 // ct->jumping->update_gait_pattern(ct->ctrl_states);
                 // ct->fly_trotting->update_gait_pattern(ct->ctrl_states);
                 
@@ -236,6 +238,21 @@ private:
             // }
 
             output_torques = ct->legcontroller->wbc_low_level_control(ct->ctrl_states);
+            double random_scale[6] = {10, 20, 20, 10, 20, 20};
+            // std::cout << "enable actuators' domain randomization: ";
+            for (int i = 0; i < 6; i++)
+            {
+                std::random_device rd;
+                std::mt19937 gen(rd());
+                std::uniform_real_distribution<> distrib_(-1, 1);
+                output_torques[i] += random_scale[i] * distrib_(gen);
+            }
+            
+            
+            // output_torques = ct->legcontroller->wbc_feedforward_ik_control(ct->ctrl_states);
+            // ct->legcontroller->debug_ik(ct->ctrl_states);
+            
+
             // ct->controller->InverseKinematics(ct->ctrl_states);
             // output_torques = ct->legcontroller->joint_impedance_control(ct->ctrl_states);
 
@@ -322,15 +339,21 @@ private:
             // output_log_vector[2] = ct->ctrl_states.wbc_tau_ff(1);
             // output_log_vector[3] = ct->ctrl_states.wbc_tau_ff(2);
 
-            output_log_vector[4] = -ct->ctrl_states.foot_force_simulation(2, 0);
-            output_log_vector[5] = ct->contactestimate->_foot_force_hat(2, 0);
+            // output_log_vector[4] = -ct->ctrl_states.foot_force_simulation(2, 0);
+            // output_log_vector[5] = ct->contactestimate->_foot_force_hat(2, 0);
 
-            // foot pos
-            output_log_vector[0] = ct->ctrl_states.foot_pos_cmd_world(0, 0);
-            output_log_vector[1] = ct->ctrl_states.foot_pos_world(0, 0);
+            // // foot pos
+            // output_log_vector[0] = ct->ctrl_states.foot_pos_cmd_world(0, 0);
+            // output_log_vector[1] = ct->ctrl_states.foot_pos_world(0, 0);
 
-            output_log_vector[2] = ct->ctrl_states.foot_vel_world(0, 0);
-            output_log_vector[3] = ct->ctrl_states.foot_vel_cmd_world(0, 0);
+            // output_log_vector[2] = ct->ctrl_states.foot_pos_cmd_world(1, 0);
+            // output_log_vector[3] = ct->ctrl_states.foot_pos_world(1, 0);
+
+            // output_log_vector[4] = ct->ctrl_states.foot_pos_cmd_world(2,0);
+            // output_log_vector[5] = ct->ctrl_states.foot_pos_world(2,0);
+
+            // output_log_vector[2] = ct->ctrl_states.foot_vel_world(0, 0);
+            // output_log_vector[3] = ct->ctrl_states.foot_vel_cmd_world(0, 0);
 
 
         
@@ -351,13 +374,39 @@ private:
 
             // output_log_vector[4] = ct->ctrl_states.root_euler_d(1);
 
-            output_log_vector[6] = ct->contactestimate->_foot_force_hat(2, 0);
-            output_log_vector[7] = ct->contactestimate->_foot_force_hat(2, 1);
+            // output_log_vector[6] = ct->contactestimate->_foot_force_hat(2, 0);
+            // output_log_vector[7] = ct->contactestimate->_foot_force_hat(2, 1);
+
+            // output_log_vector[0] = ct->ctrl_states.ik_q_and_qdot_cmd(0);
+            // output_log_vector[1] = ct->ctrl_states.q(0);
+            // output_log_vector[2] = ct->ctrl_states.ik_q_and_qdot_cmd(1);
+            // output_log_vector[3] = ct->ctrl_states.q(1);
+            // output_log_vector[4] = ct->ctrl_states.ik_q_and_qdot_cmd(2);
+            // output_log_vector[5] = ct->ctrl_states.q(2);
+
+            // output_log_vector[6] = ct->ctrl_states.plan_contacts_phase(0);
+            // output_log_vector[5] = ct->ctrl_states.q(2);
+  
+
 
             // output_log_vector[4] = ct->contactestimate->footAcc(2,0);
             // output_log_vector[5] = ct->contactestimate->footAcc(2,1);
 
 
+            // debug ik
+            // output_log_vector[0] = ct->ctrl_states.debug_q_now[6];
+            // output_log_vector[1] = ct->ctrl_states.debug_q_ik_result[6];
+            // output_log_vector[2] = ct->ctrl_states.debug_q_now[7];
+            // output_log_vector[3] = ct->ctrl_states.debug_q_ik_result[7];
+            // output_log_vector[4] = ct->ctrl_states.debug_q_now[8];
+            // output_log_vector[5] = ct->ctrl_states.debug_q_ik_result[8];
+
+
+            // output_log_vector.head(6) = ct->ctrl_states.hri_wrench_realtime;
+
+            output_log_vector.segment<3>(0) = ct->ctrl_states.foot_force_cmd_world.col(0);
+            // output_log_vector.segment<3>(3) = ct->ctrl_states.foot_force_cmd_world.col(1);
+            output_log_vector.segment<3>(0) = ct->ctrl_states.root_lin_vel_world;
 
             output->set_value(output_log_vector);
 
@@ -393,7 +442,7 @@ private:
         ct->ctrl_states.root_pos = FloatingBodyFrame.CalcPoseInWorld(*_plant_context).translation();
         ct->ctrl_states.root_ang_vel_world = FloatingBodyFrame.CalcSpatialVelocityInWorld(*_plant_context).rotational();
         ct->ctrl_states.root_lin_vel_world = FloatingBodyFrame.CalcSpatialVelocityInWorld(*_plant_context).translational();
-        ct->ctrl_states.root_rot_mat = FloatingBodyFrame.CalcRotationMatrixInWorld(*_plant_context).matrix();
+        ct->ctrl_states.root_rot_mat = FloatingBodyFrame.CalcRotationMatrixInWorld(*_plant_context).matrix(); // from body to world
         ct->ctrl_states.root_ang_vel_rel = ct->ctrl_states.root_rot_mat.transpose() * ct->ctrl_states.root_ang_vel_world;
         ct->ctrl_states.root_lin_vel_rel = ct->ctrl_states.root_rot_mat.transpose() * ct->ctrl_states.root_lin_vel_world;
 
@@ -459,7 +508,7 @@ private:
         // ct->ctrl_states.JacobianFoot[0] = J_BF_left.block<3, 3>(0, 6);
         // std::cout << "ground true = " << std::endl << J_BF_left << std::endl;
         
-        // // expressed in the body frame                 
+        // expressed in the body frame                 
         ct->ctrl_states.JacobianFoot[0] = ct->ctrl_states.root_rot_mat.transpose() * J_BF_left.block<3, 3>(0, 6);
 
         ct->ctrl_states.foot_force_rel.block<3, 1>(0, 0) = ct->ctrl_states.JacobianFoot[0].transpose().inverse() * ct->ctrl_states.tau_feedback.head(3);
@@ -565,14 +614,17 @@ private:
 
             record_states.gait_cycle.push_back(ct->ctrl_states.plan_contacts_phase[0]);
 
+            record_states.human_px.push_back(ct->ctrl_states.hri_joint_states[0]);
+            record_states.human_py.push_back(ct->ctrl_states.hri_joint_states[1]);
+            record_states.human_pz.push_back(ct->ctrl_states.hri_joint_states[2]);
             // record_states.left_foot_force.push_back(ct->ctrl_states.foot_force_simulation(2, 0));
             // record_states.right_foot_force.push_back(ct->ctrl_states.foot_force_simulation(2, 1));
 
         }
         }
                 
-        // if(now > 12 && !finished_write) {
-        //     yaml::SaveYamlFile("/home/haoyun/Data/Code/drake/workspace/centaur_sim/log/new.yaml", record_states);
+        // if(now > 12.5 && !finished_write) {
+        //     yaml::SaveYamlFile("/home/haoyun/Data/Code/drake/workspace/centaur_sim/log/adjust_pitch_and_height.yaml", record_states);
         //     finished_write = true;
         //     std::cout << "write data ... " << record_states.time_stamp.size() << "in total." << std::endl;
         // }

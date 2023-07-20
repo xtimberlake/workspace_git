@@ -32,7 +32,7 @@
 #include "drake/workspace/centaur_sim/extract_data.h"
 #include "drake/workspace/centaur_sim/centaur_controller.h"
 
-DEFINE_double(simulation_sec, 28,
+DEFINE_double(simulation_sec, 12.51,
               "Number of seconds to simulate.");
 DEFINE_double(sim_dt, 5e-4,
               "The time step to use for MultibodyPlant model"
@@ -333,35 +333,87 @@ namespace centaur_sim {
 
 
 
+        // const auto& controller_log_data = controller_logger->FindLog(simulator.get_context());
+        // common::CallPython("subplot", 4, 1, 1);
+        // common::CallPython("plot", controller_log_data.sample_times(),
+        //                    controller_log_data.data().row(0).transpose());
+        // common::CallPython("plot", controller_log_data.sample_times(),
+        //                    controller_log_data.data().row(1).transpose());
+        // common::CallPython("legend", common::ToPythonTuple("commanded p_z", "p_z"));
+
+        // common::CallPython("subplot", 4, 1, 2);
+        // common::CallPython("plot", controller_log_data.sample_times(),
+        //                    controller_log_data.data().row(2).transpose());  
+        // common::CallPython("plot", controller_log_data.sample_times(),
+        //                    controller_log_data.data().row(3).transpose());  
+        // common::CallPython("legend", common::ToPythonTuple("desired pitch ", "pitch"));
+
+        // common::CallPython("subplot", 4, 1, 3);
+        // common::CallPython("plot", controller_log_data.sample_times(),
+        //                    controller_log_data.data().row(4).transpose());  
+        // common::CallPython("plot", controller_log_data.sample_times(),
+        //                    controller_log_data.data().row(5).transpose()); 
+        // common::CallPython("legend", common::ToPythonTuple("desired pitch", "pitch"));
+
+        // common::CallPython("subplot", 4, 1, 4);
+        // common::CallPython("plot", controller_log_data.sample_times(),
+        //                    controller_log_data.data().row(6).transpose());  
+        // common::CallPython("plot", controller_log_data.sample_times(),
+        //                    controller_log_data.data().row(7).transpose()); 
+        // common::CallPython("legend", common::ToPythonTuple("commanded z", "z"));
+
         const auto& controller_log_data = controller_logger->FindLog(simulator.get_context());
-        common::CallPython("subplot", 4, 1, 1);
+        common::CallPython("subplot", 3, 2, 1);
         common::CallPython("plot", controller_log_data.sample_times(),
                            controller_log_data.data().row(0).transpose());
+        common::CallPython("legend", common::ToPythonTuple("human-robot interation Mx"));
+
+        common::CallPython("subplot", 3, 2, 3);
         common::CallPython("plot", controller_log_data.sample_times(),
                            controller_log_data.data().row(1).transpose());
-        common::CallPython("legend", common::ToPythonTuple("commanded x", "x"));
+        common::CallPython("legend", common::ToPythonTuple("human-robot interation My"));
 
-        common::CallPython("subplot", 4, 1, 2);
+        common::CallPython("subplot", 3, 2, 5);
         common::CallPython("plot", controller_log_data.sample_times(),
-                           controller_log_data.data().row(2).transpose());  
-        common::CallPython("plot", controller_log_data.sample_times(),
-                           controller_log_data.data().row(3).transpose());  
-        common::CallPython("legend", common::ToPythonTuple("desired height", "height"));
+                           controller_log_data.data().row(2).transpose());
+        common::CallPython("legend", common::ToPythonTuple("human-robot interation Mz"));
 
-        common::CallPython("subplot", 4, 1, 3);
-        common::CallPython("plot", controller_log_data.sample_times(),
-                           controller_log_data.data().row(4).transpose());  
-        common::CallPython("plot", controller_log_data.sample_times(),
-                           controller_log_data.data().row(5).transpose()); 
-        common::CallPython("legend", common::ToPythonTuple("desired pitch", "pitch"));
 
-        common::CallPython("subplot", 4, 1, 4);
+        common::CallPython("subplot", 3, 2, 2);
         common::CallPython("plot", controller_log_data.sample_times(),
-                           controller_log_data.data().row(6).transpose());  
-        common::CallPython("plot", controller_log_data.sample_times(),
-                           controller_log_data.data().row(7).transpose()); 
-        common::CallPython("legend", common::ToPythonTuple("commanded z", "z"));
+                           controller_log_data.data().row(3).transpose());
+        common::CallPython("legend", common::ToPythonTuple("human-robot interation Fx"));
 
+        common::CallPython("subplot", 3, 2, 4);
+        common::CallPython("plot", controller_log_data.sample_times(),
+                           controller_log_data.data().row(4).transpose());
+        common::CallPython("legend", common::ToPythonTuple("human-robot interation Fy"));
+
+        common::CallPython("subplot", 3, 2, 6);
+        common::CallPython("plot", controller_log_data.sample_times(),
+                           controller_log_data.data().row(5).transpose());
+        common::CallPython("legend", common::ToPythonTuple("human-robot interation Fz"));
+
+        // common::CallPython("subplot", 4, 1, 2);
+        // common::CallPython("plot", controller_log_data.sample_times(),
+        //                    controller_log_data.data().row(2).transpose());  
+        // common::CallPython("plot", controller_log_data.sample_times(),
+        //                    controller_log_data.data().row(3).transpose());  
+        // common::CallPython("legend", common::ToPythonTuple("desired pitch ", "pitch"));
+
+        // common::CallPython("subplot", 4, 1, 3);
+        // common::CallPython("plot", controller_log_data.sample_times(),
+        //                    controller_log_data.data().row(4).transpose());  
+        // common::CallPython("plot", controller_log_data.sample_times(),
+        //                    controller_log_data.data().row(5).transpose()); 
+        // common::CallPython("legend", common::ToPythonTuple("desired pitch", "pitch"));
+
+        // common::CallPython("subplot", 4, 1, 4);
+        // common::CallPython("plot", controller_log_data.sample_times(),
+        //                    controller_log_data.data().row(6).transpose());  
+        // common::CallPython("plot", controller_log_data.sample_times(),
+        //                    controller_log_data.data().row(7).transpose()); 
+        // common::CallPython("legend", common::ToPythonTuple("commanded z", "z"));
 
         // common::CallPython("subplot", 3, 2, 1);
         // common::CallPython("plot", log.sample_times(),

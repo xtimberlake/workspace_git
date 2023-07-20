@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-09-16 17:07:03
  * @LastEditors: haoyun 
- * @LastEditTime: 2023-05-21 18:38:37
+ * @LastEditTime: 2023-06-19 21:59:10
  * @FilePath: /drake/workspace/centaur_sim/controller/WBIController.cc
  * @Description: 
  * 
@@ -186,7 +186,7 @@ void WBIController::update_contact_task(CentaurStates& state) {
             impulse_force.setZero();
             if (state.plan_contacts_phase[leg] >= 0.95) {
 
-                impulse_force[2] = 0.0 * sin(M_PI * (state.plan_contacts_phase[leg] - 0.95) / 0.05);
+                impulse_force[2] = 0.0 * sin(M_PI / 2  * (state.plan_contacts_phase[leg] - 0.95) / 0.05);
             }
 
             // NOTICE: the sign of GRF

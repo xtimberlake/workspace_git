@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-18 09:28:36
  * @LastEditors: haoyun 
- * @LastEditTime: 2023-01-19 23:53:48
+ * @LastEditTime: 2023-06-19 21:41:49
  * @FilePath: /drake/workspace/centaur_sim/controller/ConvexMPC.cc
  * @Description: 
  * 
@@ -367,9 +367,10 @@ void ConvexMPC::SolveMPC()
             U_all = prog_result.GetSolution();
             result_mat.block<3, 1>(0, 0) = U_all.segment<3>(0);
             result_mat.block<3, 1>(0, 1) = U_all.segment<3>(3);
+
             // drake::log()->info(U_all.transpose());
             // drake::log()->info("mpc force :");
-            // drake::log()->info(U_all.segment<6>(0).transpose());
+            // // drake::log()->info(U_all.segment<6>(0).transpose());
             // drake::log()->info(result_mat.block<3, 1>(0, 0).transpose());
             // drake::log()->info(result_mat.block<3, 1>(0, 1).transpose());
             // // it takes 3-8ms to solve
@@ -377,6 +378,16 @@ void ConvexMPC::SolveMPC()
             // const drake::solvers::MosekSolverDetails& mosek_solver_details =
             //     prog_result.get_solver_details<drake::solvers::MosekSolver>();
             // drake::log()->info("optimizer time: " + std::to_string(mosek_solver_details.optimizer_time));
+            // drake::log()->info("left traj:[" + std::to_string(U_all(2)) + ","
+            //                    + std::to_string(U_all(2 + 1*6)) + ","
+            //                    + std::to_string(U_all(2 + 2*6)) + ","
+            //                    + std::to_string(U_all(2 + 3*6)) + ","
+            //                    + std::to_string(U_all(2 + 4*6)) + ","
+            //                    + std::to_string(U_all(2 + 5*6)) + ","
+            //                    + std::to_string(U_all(2 + 6*6)) + ","
+            //                    + std::to_string(U_all(2 + 7*6)) + ","
+            //                    + std::to_string(U_all(2 + 8*6)) + "]"
+            //                    );
         }
         else {
             drake::log()->warn("fail to find a result...");

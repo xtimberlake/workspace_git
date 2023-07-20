@@ -2,14 +2,14 @@
  * @Author: haoyun 
  * @Date: 2022-09-19 20:29:47
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-10-15 10:13:40
+ * @LastEditTime: 2023-06-10 12:00:17
  * @FilePath: /drake/workspace/centaur_sim/dynamics/CentaurModel.cpp
  * @Description: build the dynamic model of Centaur robot
  * 
  * Copyright (c) 2022 by HAR-Lab, All Rights Reserved. 
  */
 #include "drake/workspace/centaur_sim/dynamics/CentaurModel.h"
-
+ 
 CentaurModel::CentaurModel() {
     // torso 
     

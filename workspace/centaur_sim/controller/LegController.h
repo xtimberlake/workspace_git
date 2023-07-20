@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2022-07-22 08:44:58
  * @LastEditors: haoyun 
- * @LastEditTime: 2022-12-13 17:01:39
+ * @LastEditTime: 2023-06-13 17:13:21
  * @FilePath: /drake/workspace/centaur_sim/controller/LegController.h
  * @Description: 
  * 
@@ -22,6 +22,9 @@ public:
     Eigen::Matrix<double, 6, 1> joint_impedance_control(CentaurStates& state);
     Eigen::Matrix<double, 6, 1> task_impedance_control(CentaurStates& state);
     Eigen::Matrix<double, 6, 1> wbc_low_level_control(CentaurStates& state);
+    Eigen::Matrix<double, 6, 1> wbc_feedforward_ik_control(CentaurStates& state);
+    Eigen::Matrix<double, 12, 1> inverse_kinematics(CentaurStates& state);
+    void debug_ik(CentaurStates& state);
 
 private:
     Eigen::Matrix<double, 3, 1> _kp_swing, _kp_stance;
@@ -30,6 +33,9 @@ private:
     // joint level gain
     Eigen::Matrix<double, 3, 1> _kp_joint_swing, _kd_joint_swing;
     Eigen::Matrix<double, 3, 1> _kp_joint_stance, _kd_joint_stance;
+
+    Eigen::Matrix<double, 3, 1> _kp_pure_joint_stance, _kd_pure_joint_stance;
+    Eigen::Matrix<double, 3, 1> _kp_pure_joint_swing, _kd_pure_joint_swing;
 
 };
 

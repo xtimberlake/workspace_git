@@ -2,7 +2,7 @@
  * @Author: haoyun 
  * @Date: 2023-02-02 17:02:25
  * @LastEditors: haoyun 
- * @LastEditTime: 2023-02-02 23:54:22
+ * @LastEditTime: 2023-06-20 12:36:15
  * @FilePath: /drake/workspace/backpack_sim/backpack_controller.h
  * @Description: 
  * 
@@ -53,7 +53,7 @@ class WBIController;
         std::vector<double> mx, my, mz, fx, fy, fz;
         std::vector<double> gait_cycle;
         std::vector<double> left_foot_force, right_foot_force;
-        
+        std::vector<double> human_px, human_py, human_pz;
 
 
         template <typename Archive>
@@ -65,7 +65,7 @@ class WBIController;
         a->Visit(DRAKE_NVP(mx)); a->Visit(DRAKE_NVP(my)); a->Visit(DRAKE_NVP(mz)); a->Visit(DRAKE_NVP(fx)); a->Visit(DRAKE_NVP(fy)); a->Visit(DRAKE_NVP(fz)); 
         a->Visit(DRAKE_NVP(gait_cycle));
         a->Visit(DRAKE_NVP(left_foot_force)); a->Visit(DRAKE_NVP(right_foot_force));
-
+        a->Visit(DRAKE_NVP(human_px)); a->Visit(DRAKE_NVP(human_py)); a->Visit(DRAKE_NVP(human_pz)); 
         }
     };
 

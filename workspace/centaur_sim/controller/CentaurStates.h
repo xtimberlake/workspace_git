@@ -1,8 +1,8 @@
 /*
  * @Author: haoyun 
  * @Date: 2022-07-16 14:30:49
- * @LastEditors: haoyun 
- * @LastEditTime: 2023-05-24 21:24:20
+ * @LastEditors: haoyun-x13 pioneeroppenheimer@163.com
+ * @LastEditTime: 2023-06-28 16:07:29
  * @FilePath: /drake/workspace/centaur_sim/controller/CentaurStates.h
  * @Description: define all the states that used in controller; mainly 
  *                adapted from https://github.com/ShuoYangRobotics/A1-QP-MPC-Controller
@@ -71,6 +71,8 @@ struct robot_params_constant {
     std::vector<double> sphere_joint_location;
     std::vector<double> left_hip_location;
     std::vector<double> ext_wrench;
+    std::vector<double> left_abad_location;
+    std::vector<double> leg_length;
 
 
     template <typename Archive>
@@ -85,6 +87,8 @@ struct robot_params_constant {
         a->Visit(DRAKE_NVP(sphere_joint_location));
         a->Visit(DRAKE_NVP(left_hip_location));
         a->Visit(DRAKE_NVP(ext_wrench));
+        a->Visit(DRAKE_NVP(left_abad_location));
+        a->Visit(DRAKE_NVP(leg_length));
         
     }
 };
@@ -200,6 +204,7 @@ class CentaurStates {
 
         this->k = 0;
 
+        this->root_pos << 0.0, 0.0, 0.9;
         // default desired states
         this->root_pos_d << 0.0, 0.0, 0.9;
         this->root_euler_d.setZero();
@@ -256,8 +261,8 @@ class CentaurStates {
         human_pos_ref.setZero();
         // human_pos_ref(2) = 0.9;
         human_yaw_ref = 0;
-        human_pos_stiff << 5000, 5000, 10000;
-        human_pos_damp << 3000, 3000, 5000;
+        human_pos_stiff << 500, 500, 1000;
+        human_pos_damp << 200, 200, 400;
         human_ref_k = 0;
 
         hri_actuated_torques.setZero();
@@ -270,6 +275,11 @@ class CentaurStates {
         Hri_pos.setZero();
 
         theta_opt = 0.0;
+
+        ik_q_and_qdot_cmd.setZero();
+
+        debug_q_now.setZero();
+        debug_q_ik_result.setZero();
 
     }
 
@@ -311,8 +321,8 @@ class CentaurStates {
     Eigen::Vector3d root_ang_vel_rel; // expressed in the body frame
     Eigen::Vector3d root_lin_vel_world;
     Eigen::Vector3d root_lin_vel_rel;
-    Eigen::Matrix3d root_rot_mat;
-    Eigen::Matrix3d root_rot_mat_z;  
+    Eigen::Matrix3d root_rot_mat;  // from body to world
+    Eigen::Matrix3d root_rot_mat_z;  // from body to world
     Eigen::Vector3d root_euler;
     Eigen::Vector3d root_acc;
 
@@ -430,5 +440,9 @@ class CentaurStates {
 
     double theta_opt;
 
+    Eigen::Matrix<double, 12, 1> ik_q_and_qdot_cmd;
+
+    Eigen::Matrix<double, 12, 1> debug_q_now;
+    Eigen::Matrix<double, 12, 1> debug_q_ik_result;
 
 };
