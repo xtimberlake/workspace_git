@@ -28,7 +28,7 @@ LegController::LegController()
     this->_kd_swing << 30.0, 20, 10;
 
     // // wbc 
-    // these parameters are quite crutial to retrieve stability!
+    // these parameters are quite crutial to achieve stability!
     this->_kp_joint_stance << 220.0, 220.0, 220.0;
     this->_kd_joint_stance << 50.0, 50, 50;
 

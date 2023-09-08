@@ -273,6 +273,9 @@ class CentaurStates {
 
         foot_force_simulation.setZero();
         Hri_pos.setZero();
+        Hri_pos << this->sphere_joint_location(0),
+                   this->sphere_joint_location(1),
+                   this->sphere_joint_location(2) + this->root_pos[2];
 
         theta_opt = 0.0;
 

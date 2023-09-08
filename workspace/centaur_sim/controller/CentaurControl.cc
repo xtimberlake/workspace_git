@@ -177,7 +177,7 @@ void CentaurControl::CalcHRITorques(CentaurStates& state) {
     std::mt19937 gen_x(rd());
     std::uniform_real_distribution<> distrib_x(-0.08, 0.08);
     prismatic_joint_q_des[0] = 0.0 + distrib_x(gen_x);
-    prismatic_joint_q_des[0] = -0.0007 * state.k;
+    // prismatic_joint_q_des[0] = -0.0007 * state.k;
 
     std::mt19937 gen_y(rd());
     std::uniform_real_distribution<> distrib_y(-0.04, 0.04);
@@ -375,6 +375,62 @@ Eigen::Matrix<double, 3, 2> CentaurControl::ComputeGoundReactionForce(CentaurSta
     return mpc_solver->result_mat;
 }
 
+Eigen::Matrix<double, 3, 2>  CentaurControl::footholds_planning(CentaurStates& state) {
+    int side_sign[2] = {1, -1};
+    static Eigen::Matrix<double, 3, 2> desired_footholds; 
+    // desired_footholds.setZero();
+    for (int leg = 0; leg < 2; leg++)
+    {
+        if(state.plan_swings_phase[leg] > 0.6) continue;
+        if(state.k % 50 != 0) continue;
+
+        
+        Eigen::Vector3d pDelta_moving_in_world; pDelta_moving_in_world.setZero();
+        double timeStance = state.gait_period * state.stance_duration[leg];
+        Eigen::Vector3d pSymmetry = timeStance/2 * state.root_lin_vel_world + 0.05 * (state.root_lin_vel_world - state.root_lin_vel_d_world); // TODO(Haoyun) the moving gain
+        Eigen::Vector3d pCentrifugal = std::sqrt(std::abs(/*state.root_pos(2)*/0.9) / 9.81)/2.0 * state.root_lin_vel_world.cross(state.root_ang_vel_d_world);
+        pCentrifugal.setZero();
+        pDelta_moving_in_world = pSymmetry + pCentrifugal;
+
+        Eigen::Vector3d pDelta_moving_in_body = state.root_rot_mat.transpose() * pDelta_moving_in_world;
+
+        // push recovery based on Centaur-LIP model:
+        Eigen::Vector3d pDelta_pushRecovery_in_body;  pDelta_pushRecovery_in_body.setZero(); // the velocity in the body frame
+        double timeSwing = state.gait_period * (1 - state.stance_duration[leg]);
+        double omega = std::sqrt(9.81/state.root_pos_d(2));
+        double t_prime = timeSwing / 2;
+        pDelta_pushRecovery_in_body(1) = (1.0/omega) * (1.0 / tanh(omega * t_prime)) * state.root_lin_vel_d_rel(1);
+
+        double yaw_control_in_body = -0.01 * (state.root_rot_mat.transpose() * (state.root_lin_vel_d_world - state.root_lin_vel_world))(1);
+        double roll_control_in_body = 0.0 * state.root_euler(0);
+
+        pDelta_pushRecovery_in_body(1) += yaw_control_in_body + roll_control_in_body;
+        pDelta_pushRecovery_in_body.setZero();
+
+        // limit 
+        Eigen::Vector3d pDeltaSum_in_body = pDelta_moving_in_body + pDelta_pushRecovery_in_body;
+        // pDeltaSum_in_body[0] = (pDeltaSum_in_body[0]>FOOT_DELTA_X_LIMIT)?(FOOT_DELTA_X_LIMIT):((pDeltaSum_in_body[0]<-FOOT_DELTA_X_LIMIT)?(-FOOT_DELTA_X_LIMIT):pDeltaSum_in_body[0]);
+        // pDeltaSum_in_body[1] = (pDeltaSum_in_body[1]>FOOT_DELTA_Y_LIMIT)?(FOOT_DELTA_Y_LIMIT):((pDeltaSum_in_body[1]<-FOOT_DELTA_Y_LIMIT)?(-FOOT_DELTA_Y_LIMIT):pDeltaSum_in_body[1]);
+
+
+        // back to world frame
+        Eigen::Vector3d pDeltaSum_in_world; pDeltaSum_in_world.setZero();
+        pDeltaSum_in_world = state.root_rot_mat * pDeltaSum_in_body;
+
+        Eigen::Matrix<double, 3, 1> offset(1.0 * state.ctrl_params_const.default_foot_pos_under_hip.at(0), side_sign[leg] * state.ctrl_params_const.default_foot_pos_under_hip.at(1), 0);
+        Eigen::Vector3d pShoulder_world = state.root_pos + state.root_rot_mat * (state.hipLocation_local.block<3, 1>(0, leg) + offset);
+        double swingTimeRemain = (1 - state.plan_swings_phase[leg]) * state.gait_period * (1 - state.stance_duration[leg]);
+
+        // desired_footholds.block<3, 1>(0, leg) = pShoulder_world + pDeltaSum_in_world + swingTimeRemain * state.root_lin_vel_world;
+        desired_footholds.block<3, 1>(0, leg) = pShoulder_world + pSymmetry + swingTimeRemain * state.root_lin_vel_world;
+
+
+        desired_footholds(2, leg) = -0.01;
+        
+    }
+    return desired_footholds;
+}
+
 void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
 {
     // // Step 1: update foot_pos_dest_rel
@@ -407,57 +463,66 @@ void CentaurControl::GenerateSwingTrajectory(CentaurStates& state)
 
     // }
 
-    Eigen::Matrix<double, 3, 2> pShoulder_world; pShoulder_world.setZero();
-    Eigen::Matrix<double, 3, 1> pSymmetry; pSymmetry.setZero();
-    Eigen::Matrix<double, 3, 1> pCentrifugal; pCentrifugal.setZero();
-    Eigen::Matrix<double, 3, 1> pYawCorrected; pYawCorrected.setZero();
-    Eigen::Matrix<double, 3, 1> pDelta; pDelta.setZero();
-    Eigen::Matrix<double, 3, 1> foot_final_pos; foot_final_pos.setZero();
-    double tStance;
-    double swingTimeRemain;
-    int side_sign[2] = {1, -1};
+    // Eigen::Matrix<double, 3, 2> pShoulder_world; pShoulder_world.setZero();
+    // Eigen::Matrix<double, 3, 1> pSymmetry; pSymmetry.setZero();
+    // Eigen::Matrix<double, 3, 1> pCentrifugal; pCentrifugal.setZero();
+    // Eigen::Matrix<double, 3, 1> pYawCorrected; pYawCorrected.setZero();
+    // Eigen::Matrix<double, 3, 1> pDelta; pDelta.setZero();
+    // Eigen::Matrix<double, 3, 1> foot_final_pos; foot_final_pos.setZero();
+    // double tStance;
+    // double swingTimeRemain;
+    // int side_sign[2] = {1, -1};
 
     
-    for (int leg = 0; leg < 2; leg++) {
+    // for (int leg = 0; leg < 2; leg++) {
 
-        // fix the target position after 70% of the swing phase:
-        if(state.plan_swings_phase[leg] > 0.6) continue;
-        if(state.k % 50 != 0) continue;
+    //     // fix the target position after 70% of the swing phase:
+    //     if(state.plan_swings_phase[leg] > 0.6) continue;
+    //     if(state.k % 50 != 0) continue;
 
-        Eigen::Matrix<double, 3, 1> offset(1.0 * state.ctrl_params_const.default_foot_pos_under_hip.at(0), side_sign[leg] * state.ctrl_params_const.default_foot_pos_under_hip.at(1), 0);
-        swingTimeRemain = (1 - state.plan_swings_phase[leg]) * state.gait_period * (1 - state.stance_duration[leg]);
-        tStance = (state.gait_period * state.stance_duration(leg));
-        pShoulder_world.block<3, 1>(0, leg) = state.root_pos + state.root_rot_mat * (state.hipLocation_local.block<3, 1>(0, leg) + offset);
-        // pYawCorrected = ori::coordinateRotation(ori::CoordinateAxis::Z, - state.root_ang_vel_d_world[2] * tStance / 2) * pShoulder_world.block<3, 1>(0, leg);
-        pYawCorrected = pShoulder_world.block<3, 1>(0, leg);
-        pSymmetry = tStance / 2 * state.root_lin_vel_world + 0.05 * (state.root_lin_vel_world - state.root_lin_vel_d_world);
-        pCentrifugal = std::sqrt(std::abs(/*state.root_pos(2)*/0.9) / 9.81)/2.0 * state.root_lin_vel_world.cross(state.root_ang_vel_d_world);
-        // pCentrifugal = 1.0 * std::sqrt(std::abs(/*state.root_pos(2)*/0.9) / 9.81)/2.0 * state.root_lin_vel_world.cross(state.root_ang_vel_world);
-        pCentrifugal.setZero();
-        pDelta = pSymmetry + pCentrifugal + swingTimeRemain * state.root_lin_vel_world;
-        pDelta[0] = (pDelta[0]>FOOT_DELTA_X_LIMIT)?(FOOT_DELTA_X_LIMIT):((pDelta[0]<-FOOT_DELTA_X_LIMIT)?(-FOOT_DELTA_X_LIMIT):pDelta[0]);
-        pDelta[1] = (pDelta[1]>FOOT_DELTA_Y_LIMIT)?(FOOT_DELTA_Y_LIMIT):((pDelta[1]<-FOOT_DELTA_Y_LIMIT)?(-FOOT_DELTA_Y_LIMIT):pDelta[1]);
+    //     Eigen::Matrix<double, 3, 1> offset(1.0 * state.ctrl_params_const.default_foot_pos_under_hip.at(0), side_sign[leg] * state.ctrl_params_const.default_foot_pos_under_hip.at(1), 0);
+    //     swingTimeRemain = (1 - state.plan_swings_phase[leg]) * state.gait_period * (1 - state.stance_duration[leg]);
+    //     tStance = (state.gait_period * state.stance_duration(leg));
+    //     pShoulder_world.block<3, 1>(0, leg) = state.root_pos + state.root_rot_mat * (state.hipLocation_local.block<3, 1>(0, leg) + offset);
+    //     // pYawCorrected = ori::coordinateRotation(ori::CoordinateAxis::Z, - state.root_ang_vel_d_world[2] * tStance / 2) * pShoulder_world.block<3, 1>(0, leg);
+    //     pYawCorrected = pShoulder_world.block<3, 1>(0, leg);
+    //     pSymmetry = tStance / 2 * state.root_lin_vel_world + 0.05 * (state.root_lin_vel_world - state.root_lin_vel_d_world);
+    //     pCentrifugal = std::sqrt(std::abs(/*state.root_pos(2)*/0.9) / 9.81)/2.0 * state.root_lin_vel_world.cross(state.root_ang_vel_d_world);
+    //     // pCentrifugal = 1.0 * std::sqrt(std::abs(/*state.root_pos(2)*/0.9) / 9.81)/2.0 * state.root_lin_vel_world.cross(state.root_ang_vel_world);
+    //     pCentrifugal.setZero();
+    //     pDelta = pSymmetry + pCentrifugal + swingTimeRemain * state.root_lin_vel_world;
+    //     pDelta[0] = (pDelta[0]>FOOT_DELTA_X_LIMIT)?(FOOT_DELTA_X_LIMIT):((pDelta[0]<-FOOT_DELTA_X_LIMIT)?(-FOOT_DELTA_X_LIMIT):pDelta[0]);
+    //     pDelta[1] = (pDelta[1]>FOOT_DELTA_Y_LIMIT)?(FOOT_DELTA_Y_LIMIT):((pDelta[1]<-FOOT_DELTA_Y_LIMIT)?(-FOOT_DELTA_Y_LIMIT):pDelta[1]);
 
-        foot_final_pos = pYawCorrected + pDelta;
-        foot_final_pos[2] = -0.00; // height in world frame
+    //     foot_final_pos = pYawCorrected + pDelta;
+    //     // foot_final_pos = pShoulder_world.block<3, 1>(0, leg) + pSymmetry;
+    //     foot_final_pos[2] = -0.00; // height in world frame
 
-        // if (leg == 0) {
-        //     std::cout << "pSymmetry = " << pSymmetry.transpose() << ", " << "pCentrifugal = " << pCentrifugal.transpose() << "," 
-        //     << "swingT*vel =  " << swingTimeRemain * state.root_lin_vel_world.transpose() 
-        //     << "final x = " << foot_final_pos[0] << "y = " << foot_final_pos[1] << std::endl;
-        // }
+    //     // if (leg == 0) {
+    //     //     std::cout << "pSymmetry = " << pSymmetry.transpose() << ", " << "pCentrifugal = " << pCentrifugal.transpose() << "," 
+    //     //     << "swingT*vel =  " << swingTimeRemain * state.root_lin_vel_world.transpose() 
+    //     //     << "final x = " << foot_final_pos[0] << "y = " << foot_final_pos[1] << std::endl;
+    //     // }
 
-        #ifdef USE_PERCEPTIVE_CONTROL
-        if(foot_final_pos[0] > 2.0) {   
-            // if(state.k % 10 == 0)
-            foot_final_pos = SpiralBinarySearch(foot_final_pos.head(2), state.map, 8);
-        }
-        #endif
+    //     #ifdef USE_PERCEPTIVE_CONTROL
+    //     if(foot_final_pos[0] > 2.0) {   
+    //         // if(state.k % 10 == 0)
+    //         foot_final_pos = SpiralBinarySearch(foot_final_pos.head(2), state.map, 8);
+    //     }
+    //     #endif
 
-        state.foothold_dest_world.block<3, 1>(0, leg) = foot_final_pos;
+    //     state.foothold_dest_world.block<3, 1>(0, leg) = foot_final_pos;
+    //     state.foothold_dest_abs.block<3, 1>(0, leg) = state.foothold_dest_world.block<3, 1>(0, leg) - state.root_pos;
+    //     state.foothold_dest_rel.block<3, 1>(0, leg) = state.root_rot_mat.transpose() * state.foothold_dest_abs.block<3, 1>(0, leg);
+    // }
+
+    Eigen::Matrix<double, 3, 2> desired_footholds = footholds_planning(state);
+    state.foothold_dest_world = desired_footholds;
+    for(int leg = 0; leg < 2; leg++) {
         state.foothold_dest_abs.block<3, 1>(0, leg) = state.foothold_dest_world.block<3, 1>(0, leg) - state.root_pos;
         state.foothold_dest_rel.block<3, 1>(0, leg) = state.root_rot_mat.transpose() * state.foothold_dest_abs.block<3, 1>(0, leg);
     }
+    
 
     // // terrain height adaption
     // for(int leg = 0; leg < 2; leg++) { 

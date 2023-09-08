@@ -47,6 +47,7 @@ public:
     void GenerateSwingTrajectory(CentaurStates& state);
     void InverseKinematics(CentaurStates& state);
     void CalcHRITorques(CentaurStates& state);
+    Eigen::Matrix<double, 3, 2> footholds_planning(CentaurStates& state);
 
 
     // void EstHRIForces(CentaurStates& state);

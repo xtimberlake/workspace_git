@@ -404,9 +404,9 @@ private:
 
             // output_log_vector.head(6) = ct->ctrl_states.hri_wrench_realtime;
 
-            output_log_vector.segment<3>(0) = ct->ctrl_states.foot_force_cmd_world.col(0);
-            // output_log_vector.segment<3>(3) = ct->ctrl_states.foot_force_cmd_world.col(1);
-            output_log_vector.segment<3>(0) = ct->ctrl_states.root_lin_vel_world;
+            output_log_vector.segment<3>(0) = ct->ctrl_states.foot_force_world.col(0);
+            output_log_vector.segment<3>(3) = ct->ctrl_states.foot_force_cmd_world.col(1);
+            // output_log_vector.segment<3>(0) = ct->ctrl_states.root_lin_vel_world;
 
             output->set_value(output_log_vector);
 
