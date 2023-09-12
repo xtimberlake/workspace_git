@@ -177,7 +177,7 @@ void CentaurControl::CalcHRITorques(CentaurStates& state) {
     std::mt19937 gen_x(rd());
     std::uniform_real_distribution<> distrib_x(-0.08, 0.08);
     prismatic_joint_q_des[0] = 0.0 + distrib_x(gen_x);
-    // prismatic_joint_q_des[0] = -0.0007 * state.k;
+    prismatic_joint_q_des[0] = -0.0006 * state.k;
 
     std::mt19937 gen_y(rd());
     std::uniform_real_distribution<> distrib_y(-0.04, 0.04);
@@ -377,7 +377,7 @@ Eigen::Matrix<double, 3, 2> CentaurControl::ComputeGoundReactionForce(CentaurSta
 
 Eigen::Matrix<double, 3, 2>  CentaurControl::footholds_planning(CentaurStates& state) {
     int side_sign[2] = {1, -1};
-    static Eigen::Matrix<double, 3, 2> desired_footholds; 
+    Eigen::Matrix<double, 3, 2> desired_footholds = state.foothold_dest_world; 
     // desired_footholds.setZero();
     for (int leg = 0; leg < 2; leg++)
     {
@@ -387,7 +387,7 @@ Eigen::Matrix<double, 3, 2>  CentaurControl::footholds_planning(CentaurStates& s
         
         Eigen::Vector3d pDelta_moving_in_world; pDelta_moving_in_world.setZero();
         double timeStance = state.gait_period * state.stance_duration[leg];
-        Eigen::Vector3d pSymmetry = timeStance/2 * state.root_lin_vel_world + 0.05 * (state.root_lin_vel_world - state.root_lin_vel_d_world); // TODO(Haoyun) the moving gain
+        Eigen::Vector3d pSymmetry = timeStance/2 * state.root_lin_vel_world + 0.05 * (state.root_lin_vel_world); // TODO(Haoyun) the moving gain
         Eigen::Vector3d pCentrifugal = std::sqrt(std::abs(/*state.root_pos(2)*/0.9) / 9.81)/2.0 * state.root_lin_vel_world.cross(state.root_ang_vel_d_world);
         pCentrifugal.setZero();
         pDelta_moving_in_world = pSymmetry + pCentrifugal;
@@ -405,12 +405,11 @@ Eigen::Matrix<double, 3, 2>  CentaurControl::footholds_planning(CentaurStates& s
         double roll_control_in_body = 0.0 * state.root_euler(0);
 
         pDelta_pushRecovery_in_body(1) += yaw_control_in_body + roll_control_in_body;
-        pDelta_pushRecovery_in_body.setZero();
 
         // limit 
         Eigen::Vector3d pDeltaSum_in_body = pDelta_moving_in_body + pDelta_pushRecovery_in_body;
-        // pDeltaSum_in_body[0] = (pDeltaSum_in_body[0]>FOOT_DELTA_X_LIMIT)?(FOOT_DELTA_X_LIMIT):((pDeltaSum_in_body[0]<-FOOT_DELTA_X_LIMIT)?(-FOOT_DELTA_X_LIMIT):pDeltaSum_in_body[0]);
-        // pDeltaSum_in_body[1] = (pDeltaSum_in_body[1]>FOOT_DELTA_Y_LIMIT)?(FOOT_DELTA_Y_LIMIT):((pDeltaSum_in_body[1]<-FOOT_DELTA_Y_LIMIT)?(-FOOT_DELTA_Y_LIMIT):pDeltaSum_in_body[1]);
+        pDeltaSum_in_body[0] = (pDeltaSum_in_body[0]>FOOT_DELTA_X_LIMIT)?(FOOT_DELTA_X_LIMIT):((pDeltaSum_in_body[0]<-FOOT_DELTA_X_LIMIT)?(-FOOT_DELTA_X_LIMIT):pDeltaSum_in_body[0]);
+        pDeltaSum_in_body[1] = (pDeltaSum_in_body[1]>FOOT_DELTA_Y_LIMIT)?(FOOT_DELTA_Y_LIMIT):((pDeltaSum_in_body[1]<-FOOT_DELTA_Y_LIMIT)?(-FOOT_DELTA_Y_LIMIT):pDeltaSum_in_body[1]);
 
 
         // back to world frame
@@ -421,8 +420,8 @@ Eigen::Matrix<double, 3, 2>  CentaurControl::footholds_planning(CentaurStates& s
         Eigen::Vector3d pShoulder_world = state.root_pos + state.root_rot_mat * (state.hipLocation_local.block<3, 1>(0, leg) + offset);
         double swingTimeRemain = (1 - state.plan_swings_phase[leg]) * state.gait_period * (1 - state.stance_duration[leg]);
 
-        // desired_footholds.block<3, 1>(0, leg) = pShoulder_world + pDeltaSum_in_world + swingTimeRemain * state.root_lin_vel_world;
-        desired_footholds.block<3, 1>(0, leg) = pShoulder_world + pSymmetry + swingTimeRemain * state.root_lin_vel_world;
+        desired_footholds.block<3, 1>(0, leg) = pShoulder_world + pDeltaSum_in_world + swingTimeRemain * state.root_lin_vel_world;
+        // desired_footholds.block<3, 1>(0, leg) = pShoulder_world + pSymmetry + swingTimeRemain * state.root_lin_vel_world;
 
 
         desired_footholds(2, leg) = -0.01;
